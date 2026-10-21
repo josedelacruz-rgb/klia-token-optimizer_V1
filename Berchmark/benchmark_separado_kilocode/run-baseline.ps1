@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Benchmark baseline: ejecuta las queries con opencode sin optimizadores.
+    Benchmark baseline: ejecuta las queries con kilocode sin optimizadores.
 
 .DESCRIPTION
-    Lanza `opencode run` para cada query en queries/queries.json y genera
+    Lanza `kilocode run` para cada query en queries/queries.json y genera
     results/baseline/baselineNN.md con la respuesta y las metricas.
 
-    Tu activas/desactivas los optimizadores en opencode.json antes de ejecutar.
-    Este script no toca la configuracion de opencode.
+    Tu activas/desactivas los optimizadores en kilo.jsonc antes de ejecutar.
+    Este script no toca la configuracion de kilocode.
 
 .PARAMETER TimeoutMinutes
     Minutos maximos por query (default: 5).

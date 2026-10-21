@@ -5,44 +5,42 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-21T13:46:47Z
-**Duracion:** 32s
+**Fecha:** 2026-10-21T14:19:32Z
+**Duracion:** 40s
 **Estado:** success
 
 ## Respuesta
 
-`RouterEvent` se usa en estos archivos:
+El tipo `RouterEvent` se usa (fuera de docs `.md`) en estos archivos:
 
-**Definición del tipo:**
-- `src/types.ts` (definición de `RouterEvent`, `RouterEventSource`, `RouterEventSignals`, `RouterEventDecision`, `RouterEventExecution`)
+**Definición:**
+- `src/types.ts:203` — declaración del tipo + variantes (`RouterEventSource`, `RouterEventSignals`, `RouterEventDecision`, `RouterEventExecution`)
 
 **Stores y migración:**
-- `src/history/router-event-store.ts` (store v2)
-- `src/history/migrate.ts` (migrador v1 → v2)
-- `src/scripts/migrate-history.ts` (script de migración)
+- `src/history/router-event-store.ts` — `RouterEventStore`, `createDecisionEvent`, `createExecutionEvent`
+- `src/history/migrate.ts` — conversión v1 → v2
+
+**Scoring / reporting:**
+- `src/scorer/stats-report.ts` — `computeEventCost`, agregaciones
 
 **Servidor MCP y CLI:**
-- `src/mcp-server.ts`
-- `src/router-cli.ts`
-
-**Scorer / Reporting:**
-- `src/scorer/stats-report.ts`
-- `src/scripts/stats-display.ts`
+- `src/mcp-server.ts:29` — import del tipo + uso del store
+- `src/router-cli.ts:14` — import del tipo + uso del store
 
 **Tests:**
-- `tests/history/router-event-store.test.ts`
-- `tests/history/migrate-v1-to-v2.test.ts`
-- `tests/scorer/stats-report.test.ts`
+- `tests/scorer/stats-report.test.ts:5` — helpers y fixtures de `RouterEvent`
+
+Documentación que lo referencia (no código): `AGENTS.md`, `dev.md`, `dev_es.md`.
 
 ## Metricas
 
-- tokens_input: 20347
-- tokens_output: 286
-- tokens_reasoning: 37
+- tokens_input: 15068
+- tokens_output: 304
+- tokens_reasoning: 270
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 20670
+- tokens_total: 15642
 - cost_usd: 0
-- tool_calls: 2
-- tools_usadas: grep, grep
-- assistant_messages: 3
+- tool_calls: 1
+- tools_usadas: grep
+- assistant_messages: 2

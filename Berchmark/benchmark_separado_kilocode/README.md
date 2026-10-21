@@ -9,16 +9,16 @@ mismo proveedor y modelo.
 
 ## Como funciona
 
-1. Tu activas o desactivas los optimizadores en `~/.config/opencode/opencode.json`.
+1. Tu activas o desactivas los optimizadores en `~/.config/kilo/kilo.jsonc`.
 2. Ejecutas el script correspondiente:
    - `run-baseline.ps1` cuando los optimizadores estan DESACTIVADOS.
    - `run-optimizer.ps1` cuando los optimizadores estan ACTIVADOS.
-3. Cada script lanza `opencode run` para cada query y genera un .md con
+3. Cada script lanza `kilocode run` para cada query y genera un .md con
    la respuesta y las metricas.
 4. Los archivos se numeran igual en ambos scripts: `baseline07.md` y
    `optimizer07.md` corresponden a la misma query (Q07).
 
-Los scripts no modifican la configuracion de opencode. Tu decides cuando
+Los scripts no modifican la configuracion de kilocode. Tu decides cuando
 los optimizadores estan on/off.
 
 ## Bateria de queries
@@ -43,14 +43,14 @@ Las queries Q13-Q18 son tareas de MODIFICACION (refactor, fix, test, multistep),
 representativas del trabajo real de un programador.
 
 Las queries no mencionan herramientas MCP ni palabras clave del router.
-Solo se pasa el prompt a opencode. El modelo decide como resolver cada tarea.
+Solo se pasa el prompt a kilocode. El modelo decide como resolver cada tarea.
 
 ## Uso
 
 ### Benchmark baseline (optimizadores OFF)
 
 ```powershell
-# 1. Desactiva los optimizadores en opencode.json
+# 1. Desactiva los optimizadores en kilo.jsonc
 # 2. Ejecuta:
 .\run-baseline.ps1
 ```
@@ -58,7 +58,7 @@ Solo se pasa el prompt a opencode. El modelo decide como resolver cada tarea.
 ### Benchmark optimizer (optimizadores ON)
 
 ```powershell
-# 1. Activa los optimizadores en opencode.json
+# 1. Activa los optimizadores en kilo.jsonc
 # 2. Ejecuta:
 .\run-optimizer.ps1
 ```
@@ -105,7 +105,7 @@ results/
     ...
     optimizer18.md
 logs/
-  baseline-01.raw.jsonl    # stream JSON de opencode run
+  baseline-01.raw.jsonl    # stream JSON de kilocode run
   baseline-01.log          # stderr
   optimizer-01.raw.jsonl
   optimizer-01.log
@@ -146,8 +146,8 @@ logs/
 
 ## Metricas
 
-Las metricas se extraen del stream JSON de `opencode run --format json`.
-No se consulta la BD SQLite de opencode.
+Las metricas se extraen del stream JSON de `kilocode run --format json`.
+No se consulta la BD SQLite de kilocode.
 
 | Metrica | Fuente | Descripcion |
 |---|---|---|
@@ -192,17 +192,17 @@ Valor positivo: ahorro. Valor negativo: incremento de consumo.
 
 ## Notas
 
-- Los scripts no modifican la config de opencode. Tu decides cuando los
+- Los scripts no modifican la config de kilocode. Tu decides cuando los
   optimizadores estan on/off.
-- Solo se pasa el prompt a opencode. No se anade system prompt ni informacion
+- Solo se pasa el prompt a kilocode. No se anade system prompt ni informacion
   adicional.
 - Las queries no mencionan herramientas MCP ni palabras clave del router.
 - El modelo decide como resolver cada tarea.
 - Si una query excede el timeout, se marca como `timeout` y se pasa a la
   siguiente. No se aborta el benchmark entero.
 - Re-ejecutar un script sobrescribe los .md anteriores.
-- Las metricas vienen del stream JSONL, no de la BD SQLite de opencode.
-  Esto es mas portable entre versiones de opencode.
+- Las metricas vienen del stream JSONL, no de la BD SQLite de kilocode.
+  Esto es mas portable entre versiones de kilocode.
 
 ## Estructura
 

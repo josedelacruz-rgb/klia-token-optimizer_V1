@@ -21,28 +21,42 @@ function Get-BenchConfig {
     return $config
 }
 
-function Find-OpencodeExecutable {
+function Find-KilocodeExecutable {
     # Preferir .cmd (ejecutable nativo para Start-Process en Windows).
     # Evitar .ps1 porque Start-Process no maneja bien los scripts de PowerShell.
     $candidates = @(
-        (Join-Path $env:APPDATA "npm\opencode.cmd"),
-        (Join-Path $env:LOCALAPPDATA "npm\opencode.cmd"),
-        (Join-Path $env:USERPROFILE ".bun\bin\opencode.cmd"),
-        (Join-Path $env:USERPROFILE ".bun\bin\opencode.exe"),
-        (Join-Path $env:USERPROFILE "AppData\Roaming\npm\opencode.cmd")
+        (Join-Path $env:APPDATA "npm\kilocode.cmd"),
+        (Join-Path $env:LOCALAPPDATA "npm\kilocode.cmd"),
+        (Join-Path $env:USERPROFILE ".bun\bin\kilocode.cmd"),
+        (Join-Path $env:USERPROFILE ".bun\bin\kilocode.exe"),
+        (Join-Path $env:USERPROFILE "AppData\Roaming\npm\kilocode.cmd"),
+        (Join-Path $env:APPDATA "npm\kilo.cmd"),
+        (Join-Path $env:LOCALAPPDATA "npm\kilo.cmd"),
+        (Join-Path $env:USERPROFILE ".bun\bin\kilo.cmd"),
+        (Join-Path $env:USERPROFILE ".bun\bin\kilo.exe"),
+        (Join-Path $env:USERPROFILE "AppData\Roaming\npm\kilo.cmd")
     )
     foreach ($c in $candidates) {
         if (Test-Path -LiteralPath $c) { return $c }
     }
 
     # Fallback: buscar en PATH pero saltando .ps1
-    $cmd = Get-Command opencode -ErrorAction SilentlyContinue |
+    $cmd = Get-Command kilocode -ErrorAction SilentlyContinue |
+        Where-Object { $_.Source -notmatch '\.ps1$' } |
+        Select-Object -First 1 -ExpandProperty Source
+    if ($cmd) { return $cmd }
+
+    $cmd = Get-Command kilo -ErrorAction SilentlyContinue |
         Where-Object { $_.Source -notmatch '\.ps1$' } |
         Select-Object -First 1 -ExpandProperty Source
     if ($cmd) { return $cmd }
 
     # Ultimo recurso: el .ps1 (se ejecutara via powershell.exe)
-    $cmd = Get-Command opencode -ErrorAction SilentlyContinue |
+    $cmd = Get-Command kilocode -ErrorAction SilentlyContinue |
+        Select-Object -First 1 -ExpandProperty Source
+    if ($cmd) { return $cmd }
+
+    $cmd = Get-Command kilo -ErrorAction SilentlyContinue |
         Select-Object -First 1 -ExpandProperty Source
     if ($cmd) { return $cmd }
 
@@ -50,7 +64,7 @@ function Find-OpencodeExecutable {
 }
 
 # ---------------------------------------------------------------------------
-# Parseo del stream JSONL de opencode run --format json
+# Parseo del stream JSONL de kilocode run --format json
 # ---------------------------------------------------------------------------
 
 function Parse-JsonStream {
@@ -258,21 +272,21 @@ function Invoke-SingleQuery {
     if ($promptPreview.Length -gt 80) { $promptPreview = $promptPreview.Substring(0, 80) + "..." }
     Write-Host "    Prompt: $promptPreview" -ForegroundColor DarkGray
 
-    $openCmd = Find-OpencodeExecutable
-    if (-not $openCmd) {
-        Write-Host "    ERROR: opencode no encontrado en PATH" -ForegroundColor Red
+    $kiloCmd = Find-KilocodeExecutable
+    if (-not $kiloCmd) {
+        Write-Host "    ERROR: kilocode no encontrado en PATH" -ForegroundColor Red
         return @{ status = "failed" }
     }
 
     # Si el ejecutable es un .ps1, hay que lanzarlo via powershell.exe
-    $isPs1 = $openCmd -match '\.ps1$'
+    $isPs1 = $kiloCmd -match '\.ps1$'
 
     if ($isPs1) {
-        $argString = "-NoProfile -ExecutionPolicy Bypass -File `"$openCmd`" run --format json --model `"$Model`" --dir `"$ProjectDir`" `"$($Query.prompt)`""
+        $argString = "-NoProfile -ExecutionPolicy Bypass -File `"$kiloCmd`" run --format json --model `"$Model`" --dir `"$ProjectDir`" `"$($Query.prompt)`""
         $exePath = "powershell.exe"
     } else {
         $argString = "run --format json --model `"$Model`" --dir `"$ProjectDir`" `"$($Query.prompt)`""
-        $exePath = $openCmd
+        $exePath = $kiloCmd
     }
 
     Write-Host "    EJECUTANDO (timeout ${TimeoutSeconds}s)..." -ForegroundColor Yellow
@@ -296,7 +310,7 @@ function Invoke-SingleQuery {
             Write-Host "    TIMEOUT tras ${TimeoutSeconds}s" -ForegroundColor Red
         }
     } catch {
-        Write-Host "    ERROR al lanzar opencode: $_" -ForegroundColor Red
+        Write-Host "    ERROR al lanzar kilocode: $_" -ForegroundColor Red
         return @{ status = "failed" }
     }
 
@@ -366,12 +380,12 @@ function Invoke-Benchmark {
         $Model = $config.model
     }
 
-    $openCmd = Find-OpencodeExecutable
-    if (-not $openCmd) {
-        Write-Host "ERROR: opencode no encontrado en PATH. Instalalo o agrega el directorio al PATH." -ForegroundColor Red
+    $kiloCmd = Find-KilocodeExecutable
+    if (-not $kiloCmd) {
+        Write-Host "ERROR: kilocode no encontrado en PATH. Instalalo o agrega el directorio al PATH." -ForegroundColor Red
         return
     }
-    Write-Host "opencode: $openCmd" -ForegroundColor DarkGray
+    Write-Host "kilocode: $kiloCmd" -ForegroundColor DarkGray
 
     if (-not (Test-Path -LiteralPath $ProjectDir)) {
         Write-Host "ERROR: ProjectDir no existe: $ProjectDir" -ForegroundColor Red

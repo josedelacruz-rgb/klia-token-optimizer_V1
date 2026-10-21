@@ -38,6 +38,10 @@ tokens.txt
 *.log
 *.log.json
 
+# Runtime generado por kilocode y artefactos de empaquetado
+.kilocode/
+repo-bundle.md
+
 # OS
 Thumbs.db
 .DS_Store

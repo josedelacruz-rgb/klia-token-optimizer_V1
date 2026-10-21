@@ -5,8 +5,8 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-21T13:46:16Z
-**Duracion:** 31s
+**Fecha:** 2026-10-21T14:18:56Z
+**Duracion:** 36s
 **Estado:** success
 
 ## Respuesta
@@ -21,17 +21,16 @@ Archivos donde se llama o importa `computeCostUsd`:
 - `src/mcp-server.ts:27` (import), `:379` (uso)
 - `src/scorer/stats-report.ts:8` (import, usado en `buildStatsReport` para `savingsUsd`)
 
-**Documentación (solo referencias):**
-- `dev.md` y `dev_es.md`
+**Documentación (solo referencias):** `dev.md` y `dev_es.md`
 
 ## Metricas
 
-- tokens_input: 13219
-- tokens_output: 181
-- tokens_reasoning: 54
+- tokens_input: 14269
+- tokens_output: 178
+- tokens_reasoning: 65
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 13454
+- tokens_total: 14512
 - cost_usd: 0
 - tool_calls: 1
 - tools_usadas: grep

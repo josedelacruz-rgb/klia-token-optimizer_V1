@@ -1,13 +1,13 @@
 <#
 .SYNOPSIS
-    Benchmark optimizer: ejecuta las queries con opencode con optimizadores activados.
+    Benchmark optimizer: ejecuta las queries con kilocode con optimizadores activados.
 
 .DESCRIPTION
-    Lanza `opencode run` para cada query en queries/queries.json y genera
+    Lanza `kilocode run` para cada query en queries/queries.json y genera
     results/optimizer/optimizerNN.md con la respuesta y las metricas.
 
-    Tu activas/desactivas los optimizadores en opencode.json antes de ejecutar.
-    Este script no toca la configuracion de opencode.
+    Tu activas/desactivas los optimizadores en kilo.jsonc antes de ejecutar.
+    Este script no toca la configuracion de kilocode.
 
     El numero de archivo coincide con run-baseline.ps1:
     optimizer07.md corresponde a la misma query que baseline07.md (Q07).

@@ -5,41 +5,50 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-21T13:44:52Z
-**Duracion:** 39s
+**Fecha:** 2026-10-21T14:17:26Z
+**Duracion:** 50s
 **Estado:** success
 
 ## Respuesta
 
-## `classifyTask`
+## `classifyTask` — ubicación y comportamiento
 
 **Ubicación:** `src/classifier/task-classifier.ts:45`
 
-**Qué hace:** Clasifica una tarea en una de las categorías del router (`TaskType`) a partir de un objeto `TaskSignals`. Aplica un orden de prioridad estricto:
+La función `classifyTask(signals: TaskSignals, opts: TaskClassifierOptions): TaskType` clasifica una tarea en una de las categorías del router aplicando un **orden de prioridad estricto**:
 
-1. **Señales explícitas** (líneas 51-65) — si la tarea se marca como refactor, multistep, comandos de terminal o búsqueda en repo, retorna esa categoría inmediatamente.
-2. **Heurística de tamaño** (líneas 67-70) — si el contexto supera 1 MB, retorna `LARGE_CONTEXT` (delegando en `classifyContextSize`, que distingue también un nivel "extremo" a partir de 5 MB).
-3. **Heurística de archivos** (líneas 72-83) — muchos archivos → `REPOSITORY_SEARCH`; pocos archivos y contexto pequeño → `SMALL_CODE`.
-4. **Fallback** → `UNKNOWN`.
+1. **`REFACTOR`** — si `signals.isRefactor` (task-classifier.ts:51)
+2. **`MULTISTEP`** — si `signals.isMultistep` (:55)
+3. **`TERMINAL`** — si `signals.hasTerminalCommands` (:59)
+4. **`REPOSITORY_SEARCH`** — si `signals.isRepositorySearch` (:63)
+5. **`LARGE_CONTEXT`** — si el tamaño de contexto supera los umbrales (1 MB normal / 5 MB extremo), consultando a `classifyContextSize` (:67)
+6. **`REPOSITORY_SEARCH`** — si `fileCount >= manyFilesThreshold` (8 archivos, :72)
+7. **`SMALL_CODE`** — si hay ≤3 archivos, contexto < 1 MB y pocas tool calls esperadas (:77)
+8. **`UNKNOWN`** — fallback por defecto (:85)
 
-**Firma:**
+### Detalles relevantes
+- Los umbrales están en `DEFAULTS` (:12): 1 MB contexto, 5 MB extremo, 8 archivos.
+- `classifyContextSize` (:31) es una función auxiliar que devuelve `LARGE_CONTEXT` o `LARGE_CONTEXT_EXTREME` según el tamaño, pensada para que el selector priorice SEMBLE en casos extremos.
+- Las señales pueden derivarse de texto con `extractSignalsFromQuery` (:92), que detecta patrones en inglés y español (refactor, ejecuta, busca, plan, etc.).
+- Se consume desde `src/index.ts:40,44,97` y se exporta en la API pública (`:109`).
+
+### Uso típico
 ```ts
-classifyTask(signals: TaskSignals, opts?: TaskClassifierOptions): TaskType
+const signals = extractSignalsFromQuery("refactoriza el módulo de auth");
+const taskType = classifyTask(signals); // → 'REFACTOR'
 ```
 
-**Uso principal:** Se invoca desde `src/index.ts:40,44,97` dentro del router para determinar el `TaskType` que luego alimenta `BASE_RULES` y el selector de optimizadores.
-
-Complementariamente, `extractSignalsFromQuery` (mismo archivo, línea 92) deriva las `TaskSignals` desde texto plano usando regex en inglés y español.
+El resultado (`TaskType`) alimenta después a `BASE_RULES` (`src/rules/base-rules.ts`) para determinar los optimizadores candidatos de esa tarea.
 
 ## Metricas
 
-- tokens_input: 20563
-- tokens_output: 453
-- tokens_reasoning: 33
+- tokens_input: 19996
+- tokens_output: 713
+- tokens_reasoning: 32
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 21049
+- tokens_total: 20741
 - cost_usd: 0
-- tool_calls: 2
-- tools_usadas: grep, read
+- tool_calls: 3
+- tools_usadas: grep, glob, read
 - assistant_messages: 3
