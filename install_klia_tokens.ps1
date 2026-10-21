@@ -202,23 +202,15 @@ function Remove-KiloMcpEntry {
     }
 }
 
-function Set-OpencodeJsonFlag {
-    param([object]$Config, [string]$Path, [object]$Value)
-    $parts = $Path.Split('.')
-    $node = $Config
-    for ($i = 0; $i -lt $parts.Length - 1; $i++) {
-        $key = $parts[$i]
-        if (-not ($node.PSObject.Properties.Name -contains $key)) {
-            $node | Add-Member -NotePropertyName $key -NotePropertyValue ([PSCustomObject]@{}) -Force
-        }
-        $node = $node.$key
-    }
-    $leaf = $parts[-1]
-    if ($node.PSObject.Properties.Name -contains $leaf) {
-        $node.$leaf = $Value
-    } else {
-        $node | Add-Member -NotePropertyName $leaf -NotePropertyValue $Value -Force
-    }
+function Save-KiloConfig {
+    # Guarda la config de KiloCode en UTF-8 SIN BOM (igual que el formato
+    # original de kilo.jsonc) y con saltos de 2 espacios.
+    param([string]$Path, [object]$Config)
+    $dir = Split-Path $Path -Parent
+    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+    $json = $Config | ConvertTo-Json -Depth 20
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($Path, $json, $utf8NoBom)
 }
 
 function Backup-OpenCode {
@@ -2456,9 +2448,9 @@ if ($nodeOk) {
 # 0c. npm
 if (Test-Command "npm") { Write-Ok "npm presente" } else { Write-Err "npm no encontrado"; exit 1 }
 
-# 0d. uv (lo instala Serena si falta, pero lo verificamos aqui para info)
-if (Test-Command "uv") { Write-Ok "uv presente (necesario para Semble y Serena)" }
-else { Write-Warn "uv no presente (se instalara automaticamente en la fase de Serena)" }
+# 0d. uv (necesario para Semble; se instala automaticamente si falta)
+if (Test-Command "uv") { Write-Ok "uv presente (necesario para Semble)" }
+else { Write-Warn "uv no presente (se instalara automaticamente en la fase de Semble)" }
 
 # ====================================================================
 # FASE 1-5: Instalar optimizadores
@@ -2477,7 +2469,6 @@ $installCtx    = $true
 $installRtk    = $true
 $installDcp    = $true
 $installRepomix = ($StackProfile -eq 'all' -or $StackProfile -eq 'repomix')
-$installSerena  = ($StackProfile -eq 'all' -or $StackProfile -eq 'serena')
 
 # Resultados de cada instalacion (para ajustar base-rules.ts despues)
 $installResults = @{}
@@ -2517,26 +2508,24 @@ if ($installRepomix) {
     if (-not $ok) { Write-Warn "Repomix fallo. Se usara BASELINE en su lugar." }
 }
 
-if ($installSerena) {
-    Write-Step "5" "Instalando Serena"
-    $ok = Install-Serena
-    $installResults['SERENA'] = $ok
-    if (-not $ok) { Write-Warn "Serena fallo. (No afecta base-rules.ts directamente)" }
-}
+# Serena esta excluida del stack: no se instala. Solo se limpian restos
+# de una instalacion anterior (config en OpenCode/KiloCode y bloque AGENTS.md).
+Write-Step "5" "Limpiando configuracion residual de Serena"
+Remove-SerenaArtifacts
 
 # ====================================================================
-# FASE 6: Preset (normalizar plugin, MCPs, flags)
+# FASE 6: Preset (normalizar plugin, MCPs, eliminar flags de ahorro)
 # ====================================================================
-Write-Step "6" "Aplicando preset (plugin, MCPs, flags)"
+Write-Step "6" "Aplicando preset (plugin, MCPs, limpieza de config de ahorro)"
 Set-OptimalPluginList
 Set-OptimalMcpList -Profile $StackProfile
-Set-OptimalContextFlags
+Remove-OpenCodeSavingsConfig
 
 # Inyectar bloques de routing en AGENTS.md para los que se instalaron
 Write-Step "6" "Inyectando bloques de routing en AGENTS.md"
 if (-not $DryRun) {
     if ($installSemble) { Inject-SembleRoutingBlock }
-    # Los bloques RTK/REPOMIX/SERENA ya se inyectan dentro de sus Install-* respectivas
+    # Los bloques RTK/REPOMIX ya se inyectan dentro de sus Install-* respectivas
 }
 
 # ====================================================================
@@ -2822,8 +2811,9 @@ if ($installResults.ContainsKey('RTK') -and $installResults['RTK']) { Write-Host
 else { Write-Host "   [XX] RTK (fallo o no instalado)" -ForegroundColor Red }
 if ($installResults.ContainsKey('REPOMIX') -and $installResults['REPOMIX']) { Write-Host "   [OK] Repomix" -ForegroundColor Green }
 elseif ($installRepomix) { Write-Host "   [XX] Repomix (fallo)" -ForegroundColor Red }
-if ($installResults.ContainsKey('SERENA') -and $installResults['SERENA']) { Write-Host "   [OK] Serena" -ForegroundColor Green }
-elseif ($installSerena) { Write-Host "   [XX] Serena (fallo)" -ForegroundColor Red }
+Write-Host "   [--] Serena (excluida del stack, no se instala)" -ForegroundColor DarkGray
+Write-Host ""
+Write-Host " Configuracion de KiloCode: $kiloConfigDir" -ForegroundColor White
 Write-Host ""
 if ($unavailableOptimizers.Count -gt 0) {
     Write-Host " Optimizadores ajustados a BASELINE en base-rules.ts: $($unavailableOptimizers -join ', ')" -ForegroundColor Yellow
