@@ -25,8 +25,39 @@ export async function selectOptimizerWithExploration(
 
   const baseDecision = await selectOptimizer(model, taskType, deps, opts, forcedDefault);
 
-  // Si ya hay confianza suficiente, explotar directamente.
+  // Si ya hay confianza suficiente, explotar directamente... salvo que exista
+  // un candidato con muestras insuficientes: sin esto, un saver recomendado
+  // por regla base en una celda madura (BASELINE con confianza >= minConfidence)
+  // nunca alcanza minSamples y queda en deadlock (no se elige "hasta tener
+  // muestras" y no consigue muestras porque no se elige). Se le da su
+  // oportunidad con la misma tasa de exploracion controlada (V3).
   if (baseDecision.confidence >= opts.minConfidence) {
+    const saverCandidates = candidatesForTask(taskType).filter((o) => o !== 'BASELINE');
+    if (saverCandidates.length > 0) {
+      const sampleCountByOptimizer = new Map(
+        (baseDecision.alternatives ?? []).map((a) => [a.optimizer, a.sampleCount] as const),
+      );
+      const underSampled = saverCandidates.filter(
+        (o) => (sampleCountByOptimizer.get(o) ?? 0) < opts.minSamples,
+      );
+      if (underSampled.length > 0 && random() <= opts.explorationRate) {
+        const chosen = underSampled[Math.floor(random() * underSampled.length)];
+        return {
+          decision: {
+            optimizer: chosen,
+            version: 'V3',
+            reason: `Exploración controlada para ${model}/${taskType}: se prueba ${chosen} (muestras insuficientes en una celda madura) para acumular evidencia.`,
+            confidence: 0,
+            taskType,
+            explored: true,
+            exploitedOptimizer: baseDecision.optimizer,
+            alternatives: baseDecision.alternatives,
+          },
+          explored: true,
+          exploitedOptimizer: baseDecision.optimizer,
+        };
+      }
+    }
     return {
       decision: baseDecision,
       explored: false,
@@ -44,6 +75,8 @@ export async function selectOptimizerWithExploration(
         reason: `Confianza insuficiente para ${model}/${taskType}. Se usa fallback seguro ${fallback} mientras se acumula evidencia.`,
         confidence: baseDecision.confidence,
         taskType,
+        explored: false,
+        exploitedOptimizer: baseDecision.optimizer,
         alternatives: baseDecision.alternatives,
       },
       explored: false,
@@ -68,6 +101,8 @@ export async function selectOptimizerWithExploration(
         ...baseDecision,
         version: 'V3',
         reason: `${baseDecision.reason} (sin alternativas sin explorar)`,
+        explored: false,
+        exploitedOptimizer: baseDecision.optimizer,
       },
       explored: false,
       exploitedOptimizer: baseDecision.optimizer,
@@ -82,6 +117,8 @@ export async function selectOptimizerWithExploration(
       reason: `Exploración controlada para ${model}/${taskType}: se prueba ${chosen} para acumular evidencia.`,
       confidence: 0,
       taskType,
+      explored: true,
+      exploitedOptimizer: baseDecision.optimizer,
       alternatives: baseDecision.alternatives,
     },
     explored: true,

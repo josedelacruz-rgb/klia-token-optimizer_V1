@@ -43,7 +43,8 @@ param(
     [int]$TimeoutMinutes = 5,
     [string]$Queries,
     [string]$ProjectDir,
-    [string]$Model
+    [string]$Model,
+    [int]$Repetitions = 1
 )
 
 $ErrorActionPreference = "Stop"
@@ -56,4 +57,5 @@ Invoke-Benchmark -Mode "optimizer" `
     -Queries $Queries `
     -ProjectDir $ProjectDir `
     -Model $Model `
+    -Repetitions $Repetitions `
     -BenchDir $benchDir

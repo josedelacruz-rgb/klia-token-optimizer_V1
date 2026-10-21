@@ -16,6 +16,7 @@ import {
   extractModelFamily,
   normalizeModel,
 } from './index';
+import { isSmallTrivialTask } from './classifier/task-classifier';
 import { McpMetricsStore } from './history/mcp-metrics-store';
 import {
   RouterEventStore,
@@ -37,6 +38,10 @@ const RouteTaskSchema = z.object({
   hasTerminalCommands: z.boolean().optional(),
   isRefactor: z.boolean().optional(),
   isRepositorySearch: z.boolean().optional(),
+  isPackaging: z
+    .boolean()
+    .optional()
+    .describe('true si la tarea pide empaquetar/comprimir el repo completo (REPOMIX)'),
   isMultistep: z.boolean().optional(),
   explore: z.boolean().default(false).describe('Si es true, permite exploración controlada'),
   sessionId: z.string().optional().describe('Identificador de sesión para emparejar decision+execution'),
@@ -73,10 +78,10 @@ const RecordExecutionSchema = z.object({
 
 const GetStatsSchema = z.object({
   model: z.string().optional().describe('Filtrar por modelo exacto'),
-  taskType: z
-    .enum(['SMALL_CODE', 'TERMINAL', 'LARGE_CONTEXT', 'REPOSITORY_SEARCH', 'MULTISTEP', 'REFACTOR'])
-    .optional()
-    .describe('Filtrar por tipo de tarea'),
+    taskType: z
+      .enum(['SMALL_CODE', 'TERMINAL', 'LARGE_CONTEXT', 'REPOSITORY_SEARCH', 'REPO_PACKAGING', 'MULTISTEP', 'REFACTOR'])
+      .optional()
+      .describe('Filtrar por tipo de tarea'),
   excludeSynthetic: z
     .boolean()
     .optional()
@@ -89,7 +94,7 @@ const tools: Tool[] = [
   {
     name: 'route_task',
     description:
-      'Selecciona el optimizador de contexto más adecuado para una tarea dado un modelo y señales de contexto. Devuelve el optimizador, la confianza, la versión del router y las alternativas consideradas. Devuelve un sessionId para emparejar con record_execution.',
+      'Selecciona el optimizador de contexto más adecuado para una tarea dado un modelo y señales de contexto. RECHAZA las tareas pequeñas o triviales (sin señal de coste) devolviendo {refused:true, direct:"NATIVE"}: en esos casos no enrutar, ejecutar directamente con read/grep/glob/shell nativos. Devuelve el optimizador, la confianza, la versión del router y las alternativas consideradas. Devuelve un sessionId para emparejar con record_execution.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -101,6 +106,7 @@ const tools: Tool[] = [
         hasTerminalCommands: { type: 'boolean' },
         isRefactor: { type: 'boolean' },
         isRepositorySearch: { type: 'boolean' },
+        isPackaging: { type: 'boolean', description: 'true si la tarea pide empaquetar/comprimir el repo completo' },
         isMultistep: { type: 'boolean' },
         explore: { type: 'boolean', default: false, description: 'Permitir exploración controlada' },
         sessionId: { type: 'string', description: 'Identificador de sesión' },
@@ -304,6 +310,7 @@ async function main() {
           hasTerminalCommands: args.hasTerminalCommands,
           isRefactor: args.isRefactor,
           isRepositorySearch: args.isRepositorySearch,
+          isPackaging: args.isPackaging,
           isMultistep: args.isMultistep,
         });
 
@@ -327,6 +334,7 @@ async function main() {
             hasTerminalCommands: ctx.signals.hasTerminalCommands,
             isRefactor: ctx.signals.isRefactor,
             isRepositorySearch: ctx.signals.isRepositorySearch,
+            isPackaging: ctx.signals.isPackaging,
             isMultistep: ctx.signals.isMultistep,
           },
           decision: {
@@ -334,6 +342,8 @@ async function main() {
             version: decision.version,
             confidence: decision.confidence,
             reason: decision.reason,
+            explored: decision.explored,
+            exploitedOptimizer: decision.exploitedOptimizer,
             alternatives: decision.alternatives,
           },
           source: 'mcp',
@@ -352,6 +362,33 @@ async function main() {
         });
 
         logger.log('info', 'route_task completado', { sizeCategory, decision, sessionId });
+
+        // Gate de tareas pequenas: la decision se registra (para aprendizaje)
+        // pero la respuesta es un rechazo con recomendacion directa.
+        if (isSmallTrivialTask(ctx.signals)) {
+          logger.log('info', 'route_task rechazada por tarea pequena', { sessionId, taskType: decision.taskType });
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(
+                  {
+                    refused: true,
+                    direct: 'NATIVE',
+                    taskType: decision.taskType,
+                    reason:
+                      'Tarea pequeña/trivial sin señal de coste: ejecutar directamente con read/grep/glob/shell nativos (el overhead del saver supera el ahorro).',
+                    version: decision.version,
+                    sessionId,
+                  },
+                  null,
+                  2,
+                ),
+              },
+            ],
+          };
+        }
+
         return {
           content: [
             {

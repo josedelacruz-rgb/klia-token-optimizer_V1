@@ -64,6 +64,102 @@ function Find-KilocodeExecutable {
 }
 
 # ---------------------------------------------------------------------------
+# Router KLIA: decision por query + directiva inyectada en el prompt
+#
+# En sesiones headless (kilocode run) el hook chat.message del plugin
+# klia-router-inject no se dispara. Para que el benchmark mida la politica
+# Saver-Direct real, el harness pregunta al router (router-cli.js) por cada
+# query y anade a mano la misma directiva que inyectaria el plugin:
+#   - refused (tarea pequena/trivial) -> sin directiva: native.
+#   - saver (RTK/SEMBLE/REPOMIX/CONTEXT_MODE/DCP) -> directiva del saver.
+#   - BASELINE / SMALL_CODE / UNKNOWN -> sin directiva: kilocode puro (0 overhead).
+# ---------------------------------------------------------------------------
+
+$script:KliaStoreDir = Join-Path $env:USERPROFILE ".klia\data"
+
+function Find-RouterCli {
+    $candidates = @(
+        $env:KLIA_ROUTER_CLI_PATH,
+        (Join-Path $env:LOCALAPPDATA "klia-token-optimizer\dist\router-cli.js")
+    ) | Where-Object { $_ }
+    foreach ($c in $candidates) {
+        if (Test-Path -LiteralPath $c) { return $c }
+    }
+    return $null
+}
+
+function Invoke-RouterDecision {
+    param(
+        [string]$RouterCli,
+        [string]$Model,
+        [string]$Prompt,
+        [string]$ProjectDir
+    )
+    if (-not $RouterCli) { return $null }
+
+    $historyPath = Join-Path $script:KliaStoreDir "history.json"
+    $eventsPath  = Join-Path $script:KliaStoreDir "events.json"
+    $projectId   = (Get-Item -LiteralPath $ProjectDir).Name
+
+    $routerArgs = @(
+        $RouterCli,
+        "--model", $Model,
+        "--query", $Prompt,
+        "--history", $historyPath,
+        "--events", $eventsPath,
+        "--project-id", $projectId
+    )
+
+    $out = ""
+    try {
+        $out = (& node @routerArgs 2>$null) -join "`n"
+    } catch { return $null }
+
+    if (-not $out) { return $null }
+
+    $decision = @{
+        optimizer = $null
+        taskType  = "UNKNOWN"
+        refused   = $false
+    }
+    foreach ($line in $out -split "`n") {
+        if     ($line -match '^OPTIMIZER=(.+)$') { $decision.optimizer = $Matches[1].Trim() }
+        elseif ($line -match '^TASK_TYPE=(.+)$') { $decision.taskType  = $Matches[1].Trim() }
+        elseif ($line -match '^REFUSED=true$')   { $decision.refused   = $true }
+    }
+    if (-not $decision.optimizer) { return $null }
+    return $decision
+}
+
+function ConvertTo-KliaDirective {
+    param([hashtable]$Decision)
+
+    if (-not $Decision) { return $null }
+
+    # Tarea pequena/trivial: el router la rechaza y NO se inyecta directiva.
+    if ($Decision.refused) { return $null }
+
+    $opt = [string]$Decision.optimizer
+    $tt  = [string]$Decision.taskType
+
+    $saverText = @{
+        RTK          = "usa EXCLUSIVAMENTE comandos directos (RTK comprime la salida)"
+        SEMBLE       = "usa EXCLUSIVAMENTE semble.search por intencion; si tarda mas de 15s, grep"
+        REPOMIX      = "usa EXCLUSIVAMENTE repomix --compress por defecto"
+        CONTEXT_MODE = "usa EXCLUSIVAMENTE ctx_search sobre el indice"
+        DCP          = "usa EXCLUSIVAMENTE DCP poda el contexto entre pasos"
+    }
+
+    if ($saverText.ContainsKey($opt)) {
+        return "[KLIA] ${tt}: " + $saverText[$opt] + ". Sin route_task."
+    }
+
+    # BASELINE / SMALL_CODE / UNKNOWN no reciben NADA: la query corre igual
+    # que en una sesion kilocode directa (paridad con el plugin de kilo).
+    return $null
+}
+
+# ---------------------------------------------------------------------------
 # Parseo del stream JSONL de kilocode run --format json
 # ---------------------------------------------------------------------------
 
@@ -191,6 +287,11 @@ function New-ResultMarkdown {
     $task    = $Query.task_type
     $prompt  = $Query.prompt
 
+    $routerLine = ""
+    if ($Metrics.router) {
+        $routerLine = "**Router KLIA:** $($Metrics.router)`n"
+    }
+
     $toolsList = "(ninguna)"
     if ($Metrics.tools_used -and $Metrics.tools_used.Count -gt 0) {
         $toolsList = ($Metrics.tools_used -join ', ')
@@ -218,7 +319,7 @@ function New-ResultMarkdown {
 **Fecha:** $StartedAt
 **Duracion:** ${DurationSeconds}s
 **Estado:** $($Metrics.status)
-
+$routerLine
 ## Respuesta
 
 $response
@@ -254,15 +355,17 @@ function Invoke-SingleQuery {
         [string]$ProjectDir,
         [int]$TimeoutSeconds,
         [string]$ResultsDir,
-        [string]$LogsDir
+        [string]$LogsDir,
+        [string]$RouterCli = "",
+        [string]$FileSuffix = ""
     )
 
     $num    = $Query.id -replace '^Q',''
     $prefix = if ($Mode -eq "baseline") { "baseline" } else { "optimizer" }
 
-    $outputFile = Join-Path $ResultsDir "$prefix$num.md"
-    $rawFile    = Join-Path $LogsDir "$prefix-$num.raw.jsonl"
-    $logFile    = Join-Path $LogsDir "$prefix-$num.log"
+    $outputFile = Join-Path $ResultsDir "$prefix$num$FileSuffix.md"
+    $rawFile    = Join-Path $LogsDir "$prefix-$num$FileSuffix.raw.jsonl"
+    $logFile    = Join-Path $LogsDir "$prefix-$num$FileSuffix.log"
 
     $startedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
     $start     = Get-Date
@@ -271,6 +374,26 @@ function Invoke-SingleQuery {
     $promptPreview = $Query.prompt
     if ($promptPreview.Length -gt 80) { $promptPreview = $promptPreview.Substring(0, 80) + "..." }
     Write-Host "    Prompt: $promptPreview" -ForegroundColor DarkGray
+
+    # En modo optimizer, consulta al router y anade su directiva al prompt
+    # (replica el hook chat.message de klia-router-inject para sesiones headless).
+    $effectivePrompt = $Query.prompt
+    $routerInfo = ""
+    if ($Mode -eq "optimizer") {
+        $decision  = Invoke-RouterDecision -RouterCli $RouterCli -Model $Model -Prompt $effectivePrompt -ProjectDir $ProjectDir
+        $directive = ConvertTo-KliaDirective -Decision $decision
+        if ($decision) {
+            $refusedTag = if ($decision.refused) { " (refused -> native)" } else { "" }
+            Write-Host "    [KLIA] router: $($decision.optimizer)/$($decision.taskType)$refusedTag" -ForegroundColor Cyan
+            $routerInfo = "$($decision.optimizer)/$($decision.taskType)$refusedTag"
+        } else {
+            Write-Host "    [KLIA] router no disponible; prompt puro" -ForegroundColor DarkYellow
+            $routerInfo = "(router no disponible)"
+        }
+        if ($directive) {
+            $effectivePrompt = "$effectivePrompt`n`n$directive"
+        }
+    }
 
     $kiloCmd = Find-KilocodeExecutable
     if (-not $kiloCmd) {
@@ -282,10 +405,10 @@ function Invoke-SingleQuery {
     $isPs1 = $kiloCmd -match '\.ps1$'
 
     if ($isPs1) {
-        $argString = "-NoProfile -ExecutionPolicy Bypass -File `"$kiloCmd`" run --format json --model `"$Model`" --dir `"$ProjectDir`" `"$($Query.prompt)`""
+        $argString = "-NoProfile -ExecutionPolicy Bypass -File `"$kiloCmd`" run --format json --model `"$Model`" --dir `"$ProjectDir`" `"$effectivePrompt`""
         $exePath = "powershell.exe"
     } else {
-        $argString = "run --format json --model `"$Model`" --dir `"$ProjectDir`" `"$($Query.prompt)`""
+        $argString = "run --format json --model `"$Model`" --dir `"$ProjectDir`" `"$effectivePrompt`""
         $exePath = $kiloCmd
     }
 
@@ -318,7 +441,7 @@ function Invoke-SingleQuery {
     $duration = [int]($end - $start).TotalSeconds
 
     if ($timedOut) {
-        $metrics = [ordered]@{
+        $timeoutMetrics = [ordered]@{
             tokens_input       = 0
             tokens_output      = 0
             tokens_reasoning   = 0
@@ -333,13 +456,15 @@ function Invoke-SingleQuery {
             status             = "timeout"
             errors             = @("Timeout tras ${TimeoutSeconds}s")
         }
-        New-ResultMarkdown -OutputFile $outputFile -Query $Query -Metrics $metrics `
+        if ($routerInfo) { $timeoutMetrics["router"] = $routerInfo }
+        New-ResultMarkdown -OutputFile $outputFile -Query $Query -Metrics $timeoutMetrics `
             -Mode $Mode -Model $Model -DurationSeconds $duration -StartedAt $startedAt
         Write-Host "    -> $outputFile (timeout)" -ForegroundColor DarkYellow
         return @{ status = "timeout" }
     }
 
     $metrics = Parse-JsonStream -RawFile $rawFile
+    if ($routerInfo) { $metrics["router"] = $routerInfo }
 
     New-ResultMarkdown -OutputFile $outputFile -Query $Query -Metrics $metrics `
         -Mode $Mode -Model $Model -DurationSeconds $duration -StartedAt $startedAt
@@ -368,7 +493,9 @@ function Invoke-Benchmark {
 
         [string]$Model,
 
-        [string]$BenchDir
+        [string]$BenchDir,
+
+        [int]$Repetitions = 1
     )
 
     $config = Get-BenchConfig -BenchDir $BenchDir
@@ -429,6 +556,17 @@ function Invoke-Benchmark {
     $timeoutSeconds = $TimeoutMinutes * 60
     $total = $toRun.Count
 
+    # En modo optimizer: localizar el router una vez por ronda.
+    $routerCli = ""
+    if ($Mode -eq "optimizer") {
+        $routerCli = Find-RouterCli
+        if (-not $routerCli) {
+            Write-Host "AVISO: router-cli.js no encontrado; las queries correra sin directiva KLIA." -ForegroundColor Yellow
+        } else {
+            Write-Host "router-cli: $routerCli" -ForegroundColor DarkGray
+        }
+    }
+
     Write-Host ""
     Write-Host "=== Benchmark $Mode ===" -ForegroundColor Cyan
     Write-Host "Queries: $total | Modelo: $Model | Timeout: ${TimeoutMinutes}min (${timeoutSeconds}s)" -ForegroundColor White
@@ -440,25 +578,35 @@ function Invoke-Benchmark {
     $failed   = 0
     $timeout  = 0
 
-    foreach ($query in $toRun) {
-        $current++
-        Write-Host "[$current/$total]" -ForegroundColor Cyan
-
-        $result = Invoke-SingleQuery -Query $query -Mode $Mode -Model $Model `
-            -ProjectDir $ProjectDir -TimeoutSeconds $timeoutSeconds `
-            -ResultsDir $resultsDir -LogsDir $logsDir
-
-        switch ($result.status) {
-            "success"              { $success++ }
-            "success_with_errors"  { $success++ }
-            "timeout"              { $timeout++ }
-            default                { $failed++ }
+    for ($rep = 1; $rep -le $Repetitions; $rep++) {
+        if ($Repetitions -gt 1) {
+            Write-Host ""
+            Write-Host "=== Repeticion $rep/$Repetitions ===" -ForegroundColor Cyan
         }
+        # Rep 1 mantiene los nombres canonicos; rep>=2 añade sufijo -repN para
+        # no pisar resultados previos (fase-1 de baseline de referencia).
+        $suffix = if ($Repetitions -gt 1 -and $rep -gt 1) { "-rep$rep" } else { "" }
 
-        Write-Host ""
+        foreach ($query in $toRun) {
+            $current++
+            Write-Host "[$current/$total]" -ForegroundColor Cyan
+
+            $result = Invoke-SingleQuery -Query $query -Mode $Mode -Model $Model `
+                -ProjectDir $ProjectDir -TimeoutSeconds $timeoutSeconds `
+                -ResultsDir $resultsDir -LogsDir $logsDir -RouterCli $routerCli -FileSuffix $suffix
+
+            switch ($result.status) {
+                "success"              { $success++ }
+                "success_with_errors"  { $success++ }
+                "timeout"              { $timeout++ }
+                default                { $failed++ }
+            }
+
+            Write-Host ""
+        }
     }
 
     Write-Host "=== Resumen $Mode ===" -ForegroundColor Cyan
-    Write-Host "Total: $total | OK: $success | Timeout: $timeout | Fallidos: $failed" -ForegroundColor White
+    Write-Host "Total: $total x $Repetitions rep | OK: $success | Timeout: $timeout | Fallidos: $failed" -ForegroundColor White
     Write-Host "Resultados: $resultsDir" -ForegroundColor DarkGray
 }

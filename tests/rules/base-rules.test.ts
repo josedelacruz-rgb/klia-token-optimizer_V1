@@ -7,9 +7,19 @@ describe('base-rules', () => {
     expect(defaultOptimizerForTask('SMALL_CODE')).toBe('BASELINE');
   });
 
-  it('TERMINAL → RTK, DCP', () => {
-    expect(candidatesForTask('TERMINAL')).toEqual(['RTK', 'DCP']);
+  it('TERMINAL → RTK (DCP prohibido: no hay contexto que podar en 1 comando)', () => {
+    expect(candidatesForTask('TERMINAL')).toEqual(['RTK']);
     expect(defaultOptimizerForTask('TERMINAL')).toBe('RTK');
+  });
+
+  it('REPOSITORY_SEARCH → SEMBLE (REPOMIX prohibido: empaquetar el repo gasto +17k en busquedas)', () => {
+    expect(candidatesForTask('REPOSITORY_SEARCH')).toEqual(['SEMBLE']);
+    expect(defaultOptimizerForTask('REPOSITORY_SEARCH')).toBe('SEMBLE');
+  });
+
+  it('REPO_PACKAGING → REPOMIX primero (territorio propio: ~64%% tabla AGENTS.md, -89%% Q05)', () => {
+    expect(candidatesForTask('REPO_PACKAGING')).toEqual(['REPOMIX', 'SEMBLE', 'CONTEXT_MODE']);
+    expect(defaultOptimizerForTask('REPO_PACKAGING')).toBe('REPOMIX');
   });
 
   it('LARGE_CONTEXT → SEMBLE, CONTEXT_MODE, REPOMIX', () => {

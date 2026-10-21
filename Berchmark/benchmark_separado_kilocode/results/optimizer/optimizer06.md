@@ -5,46 +5,51 @@
 **TaskType:** LARGE_CONTEXT
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T15:42:00Z
-**Duracion:** 53s
+**Fecha:** 2026-10-21T16:43:10Z
+**Duracion:** 62s
 **Estado:** success
+**Router KLIA:** BASELINE/REPOSITORY_SEARCH
 
 ## Respuesta
 
 # Resumen del módulo `src/pricing/`
 
-El módulo contiene un único archivo:
+El módulo contiene un único archivo: `model-pricing.ts` (94 líneas). No hay `index.ts` barrel.
 
 ## `src/pricing/model-pricing.ts`
 
-Tabla de pricing por modelo/familia. Precios en USD por 1M tokens (datos aprox. septiembre 2026).
+Tabla de pricing por modelo/familia en USD por millón de tokens (datos aprox. septiembre 2026).
 
-### Símbolos exportados
+### Exportaciones
 
 **Interfaz**
-- `ModelPricing` — `{ inputPerMillion: number; outputPerMillion: number }`
+- `ModelPricing` — `{ inputPerMillion: number; outputPerMillion: number }` (USD por 1M tokens).
 
 **Funciones**
-- `getPricing(model: string, family?: string): ModelPricing` (`model-pricing.ts:68`) — Resuelve el pricing con orden de prioridad: 1) modelo exacto (normalizado a minúsculas), 2) familia, 3) fallback genérico.
-- `computeCostUsd(inputTokens, outputTokens, model, family?): number` (`model-pricing.ts:84`) — Calcula el coste en USD combinando el pricing de entrada/salida. Redondea a 6 decimales.
+- `getPricing(model: string, family?: string): ModelPricing` — `model-pricing.ts:68`
+  Resuelve el pricing con orden de prioridad: modelo exacto (normalizado a minúsculas) → familia → fallback genérico (`1.0` / `3.0`).
+- `computeCostUsd(inputTokens, outputTokens, model, family?): number` — `model-pricing.ts:84`
+  Calcula el coste en USD de una ejecución usando `getPricing`. Redondea a 6 decimales.
 
-### Símbolos privados (no exportados)
-- `FAMILY_PRICING` — pricing por familia (glm, deepseek, kimi, qwen, mistral, magistral, ministral, minimax, nemotron, gemma, devstral, cosmos, ami, codestral, llama, claude, gpt).
-- `MODEL_PRICING` — pricing por modelo exacto (sobreescribe al de familia): glm-5.2, glm-5.3-flash, deepseek-v4-pro, deepseek-v4-flash-demo, deepseek-v4.1-flash, kimi-k2.6, kimi-k2.7-code, mistral-large-3, mistral-medium, minimax-m3, gemma4.
-- `FALLBACK_PRICING` — pricing por defecto: input 1.0, output 3.0 USD/1M.
+### Símbolos internos (no exportados)
+- `FAMILY_PRICING` — tabla por familia (glm, deepseek, kimi, qwen, mistral, magistral, ministral, minimax, nemotron, gemma, devstral, cosmos, ami, codestral, llama, claude, gpt).
+- `MODEL_PRICING` — overrides por modelo exacto (glm-5.2, glm-5.3-flash, deepseek-v4-pro, deepseek-v4-flash-demo, deepseek-v4.1-flash, kimi-k2.6, kimi-k2.7-code, mistral-large-3, mistral-medium, minimax-m3, gemma4).
+- `FALLBACK_PRICING` — `{ 1.0, 3.0 }`.
 
-### Nota
-No existe `index.ts` barrel en el módulo; los consumidores importan directamente de `./pricing/model-pricing` (o `../pricing/model-pricing`).
+### Consumidores
+- `src/mcp-server.ts:28` — importa `computeCostUsd`.
+- `src/router-cli.ts:13` — importa `computeCostUsd`.
+- `src/scorer/stats-report.ts:8` — importa `computeCostUsd` y `getPricing`.
 
 ## Metricas
 
-- tokens_input: 24636
-- tokens_output: 574
-- tokens_reasoning: 132
+- tokens_input: 34282
+- tokens_output: 715
+- tokens_reasoning: 89
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 25342
+- tokens_total: 35086
 - cost_usd: 0
-- tool_calls: 2
-- tools_usadas: glob, read
-- assistant_messages: 3
+- tool_calls: 4
+- tools_usadas: glob, read, glob, grep
+- assistant_messages: 4

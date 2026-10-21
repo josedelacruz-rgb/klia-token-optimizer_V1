@@ -5,43 +5,40 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T15:37:34Z
-**Duracion:** 65s
+**Fecha:** 2026-10-21T16:38:24Z
+**Duracion:** 61s
 **Estado:** success
+**Router KLIA:** SEMBLE/REPOSITORY_SEARCH
 
 ## Respuesta
 
-## `classifyTask`
+La función `classifyTask` está en `src/classifier/task-classifier.ts:45`.
 
-**Ubicación:** `src/classifier/task-classifier.ts:45`
+**Qué hace:** Clasifica una tarea en uno de los tipos del router (`TaskType`) a partir de un objeto `TaskSignals` (con opciones configurables). Orden de prioridad:
 
-**Qué hace:** Clasifica una tarea en uno de los tipos del router (`TaskType`) a partir de un objeto `TaskSignals`, devolviendo la categoría que decide qué optimizador de contexto usar.
+1. **Señales explícitas** — devuelve el tipo directamente:
+   - `isRefactor` → `REFACTOR`
+   - `isMultistep` → `MULTISTEP`
+   - `hasTerminalCommands` → `TERMINAL`
+   - `isRepositorySearch` → `REPOSITORY_SEARCH`
+2. **Tamaño de contexto** — delega a `classifyContextSize`: si supera el umbral (1 MB / 5 MB) → `LARGE_CONTEXT`
+3. **Muchos archivos** — `fileCount >= manyFilesThreshold` (default 8) → `REPOSITORY_SEARCH`
+4. **Tarea pequeña** — `fileCount <= 3`, contexto pequeño y pocas tool calls esperadas → `SMALL_CODE`
+5. **Fallback** → `UNKNOWN`
 
-**Orden de prioridad (evalúa y retorna en el primer match):**
-1. `isRefactor` → `REFACTOR`
-2. `isMultistep` → `MULTISTEP`
-3. `hasTerminalCommands` → `TERMINAL`
-4. `isRepositorySearch` → `REPOSITORY_SEARCH`
-5. Contexto grande (vía `classifyContextSize`: ≥1MB → `LARGE_CONTEXT`, ≥5MB → extremo) → `LARGE_CONTEXT`
-6. `fileCount >= 8` (sin otras señales) → `REPOSITORY_SEARCH`
-7. Tarea pequeña (`fileCount <= 3`, contexto < 1MB y `toolCallsExpected` bajo/ausente) → `SMALL_CODE`
-8. Fallback → `UNKNOWN`
+Los umbrales (`largeContextThresholdBytes`, `extremeContextThresholdBytes`, `manyFilesThreshold`) se definen en `DEFAULTS` (task-classifier.ts:12) y pueden sobrescribirse vía `opts`.
 
-**Parámetros:**
-- `signals: TaskSignals` — señales de contexto (flags booleanos + `fileCount`, `contextSizeBytes`, `toolCallsExpected`).
-- `opts: TaskClassifierOptions` — umbrales configurables (por defecto: 1MB grande, 5MB extremo, 8 archivos).
-
-**Uso:** Se importa en `src/index.ts:1213` y es el punto de entrada del clasificador del router. La función hermana `extractSignalsFromQuery` (línea 92) genera el `TaskSignals` a partir del texto de la query mediante heurísticas regex (ES/EN), para casos donde no se pasen señales explícitas.
+Consumidores principales: `src/index.ts:44` (router) y `src/mcp-server.ts` (vía import dinámico de `classifyContextSize`).
 
 ## Metricas
 
-- tokens_input: 37118
-- tokens_output: 629
-- tokens_reasoning: 407
+- tokens_input: 27187
+- tokens_output: 499
+- tokens_reasoning: 38
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 38154
+- tokens_total: 27724
 - cost_usd: 0
-- tool_calls: 3
-- tools_usadas: repomix_pack_codebase, repomix_grep_repomix_output, read
-- assistant_messages: 4
+- tool_calls: 2
+- tools_usadas: semble_search, read
+- assistant_messages: 3

@@ -5,6 +5,7 @@ export type TaskType =
   | 'TERMINAL'
   | 'LARGE_CONTEXT'
   | 'REPOSITORY_SEARCH'
+  | 'REPO_PACKAGING'
   | 'MULTISTEP'
   | 'REFACTOR'
   | 'UNKNOWN';
@@ -24,6 +25,8 @@ export interface TaskSignals {
   isRefactor?: boolean;
   /** Indica si la tarea requiere búsqueda o exploración amplia del repo. */
   isRepositorySearch?: boolean;
+  /** Indica que la tarea pide empaquetar/comprimir el repo completo (REPOMIX). */
+  isPackaging?: boolean;
   /** Indica si la tarea implica muchos pasos o decisiones secuenciales. */
   isMultistep?: boolean;
 }
@@ -80,6 +83,10 @@ export interface RouterDecision {
   confidence: number;
   /** Tipo de tarea clasificado. */
   taskType: TaskType;
+  /** true si la decisión vino de exploración controlada (V3) y no de explotación. */
+  explored?: boolean;
+  /** Optimizador que la política de explotación habría elegido (contrafactual). */
+  exploitedOptimizer?: Optimizer;
   /** Alternativas consideradas con score relativo (si aplica). */
   alternatives?: Array<{ optimizer: Optimizer; relativeCost: number; sampleCount: number }>;
 }
@@ -142,6 +149,7 @@ export interface RouterEventSignals {
   hasTerminalCommands?: boolean;
   isRefactor?: boolean;
   isRepositorySearch?: boolean;
+  isPackaging?: boolean;
   isMultistep?: boolean;
 }
 
@@ -151,6 +159,10 @@ export interface RouterEventDecision {
   version: 'V0' | 'V1' | 'V2' | 'V3';
   confidence: number;
   reason: string;
+  /** true si la decisión vino de exploración controlada (V3). */
+  explored?: boolean;
+  /** Optimizador que la explotación habría elegido: contrafactual por evento. */
+  exploitedOptimizer?: Optimizer;
   /** Alternativas consideradas con score relativo (si aplica). */
   alternatives?: Array<{ optimizer: Optimizer; relativeCost: number; sampleCount: number }>;
 }

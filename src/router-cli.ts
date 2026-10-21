@@ -9,6 +9,7 @@ import {
 } from './index';
 import { McpMetricsStore } from './history/mcp-metrics-store';
 import { RouterEventStore, createDecisionEvent, createExecutionEvent } from './history/router-event-store';
+import { isSmallTrivialTask } from './classifier/task-classifier';
 import { computeCostUsd } from './pricing/model-pricing';
 import { runStatsCli } from './scripts/stats-display';
 import type { Optimizer, RouterEvent } from './types';
@@ -284,6 +285,7 @@ Para registrar metricas reales, ejecuta la tarea y usa --record-id,
       hasTerminalCommands: ctx.signals.hasTerminalCommands,
       isRefactor: ctx.signals.isRefactor,
       isRepositorySearch: ctx.signals.isRepositorySearch,
+      isPackaging: ctx.signals.isPackaging,
       isMultistep: ctx.signals.isMultistep,
     },
     decision: {
@@ -291,11 +293,35 @@ Para registrar metricas reales, ejecuta la tarea y usa --record-id,
       version: decision.version,
       confidence: decision.confidence,
       reason: decision.reason,
+      explored: decision.explored,
+      exploitedOptimizer: decision.exploitedOptimizer,
       alternatives: decision.alternatives,
     },
     source: 'cli',
   });
   await eventStore.add(decisionEvent);
+
+  // Gate de tareas pequenas: sin senal de coste, el router rechaza la tarea
+  // ({refused:true}) y la manda directa a las herramientas nativas. La decision
+  // si se registra (BASELINE) para que el aprendizaje siga disponible.
+  if (isSmallTrivialTask(ctx.signals)) {
+    const refusedPayload = {
+      refused: true,
+      direct: 'NATIVE' as const,
+      taskType: decision.taskType,
+      reason:
+        'Tarea pequena/trivial sin senal de coste: ejecutar directamente con read/grep/glob/shell nativos (el overhead del saver supera el ahorro).',
+      version: decision.version,
+    };
+    console.log(`OPTIMIZER=${decision.optimizer}`);
+    console.log(`REFUSED=true`);
+    console.log(`DIRECT=NATIVE`);
+    console.log(`TASK_TYPE=${decision.taskType}`);
+    console.log(`SESSION_ID=${decisionEvent.sessionId ?? decisionEvent.id}`);
+    console.log(`EVENT_ID=${decisionEvent.id}`);
+    console.log(JSON.stringify(refusedPayload, null, 2));
+    return;
+  }
 
   console.log(`OPTIMIZER=${decision.optimizer}`);
   console.log(`TASK_TYPE=${decision.taskType}`);

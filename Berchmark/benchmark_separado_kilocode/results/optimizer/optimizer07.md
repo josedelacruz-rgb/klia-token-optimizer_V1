@@ -5,30 +5,35 @@
 **TaskType:** LARGE_CONTEXT
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T15:42:53Z
-**Duracion:** 41s
+**Fecha:** 2026-10-21T16:44:12Z
+**Duracion:** 49s
 **Estado:** success
+**Router KLIA:** BASELINE/SMALL_CODE (refused -> native)
 
 ## Respuesta
 
-## Módulo `src/classifier/`
+## `src/classifier/` — Clasificación de tareas
 
-Responsable de **clasificar una tarea** en una de las categorías del router (`TaskType`: `REFACTOR`, `MULTISTEP`, `TERMINAL`, `REPOSITORY_SEARCH`, `LARGE_CONTEXT`, `SMALL_CODE`, `UNKNOWN`) y de **extraer señales heurísticas** a partir de la query de texto, para que el selector pueda decidir el optimizador adecuado sin intervención manual.
+Determina el **tipo de tarea** (`TaskType`) a partir de señales (`TaskSignals`) para que el router pueda elegir el optimizador de contexto adecuado. Es la entrada del pipeline: sin clasificación no hay enrutado.
 
-### Archivo principal
+### Archivos principales
 
-- **`src/classifier/task-classifier.ts`** — Clasifica una tarea a partir de `TaskSignals` aplicando un orden de prioridad (señales explícitas → heurísticas de tamaño/contexto → fallback a `UNKNOWN`); también expone `classifyContextSize` (distingue `LARGE_CONTEXT` vs `LARGE_CONTEXT_EXTREME` para priorizar SEMBLE) y `extractSignalsFromQuery` (detecta patrones en español/inglés para inferir `hasTerminalCommands`, `isMultistep`, `isRefactor`, `isRepositorySearch`).
+- **`task-classifier.ts`** — Único archivo del módulo. Contiene:
+  - `classifyTask`: asigna un `TaskType` (REFACTOR, MULTISTEP, TERMINAL, REPOSITORY_SEARCH, LARGE_CONTEXT, SMALL_CODE, UNKNOWN) aplicando prioridad: señales explícitas → heurísticas de tamaño/archivos → fallback UNKNOWN.
+  - `classifyContextSize`: clasifica el contexto como `LARGE_CONTEXT` o `LARGE_CONTEXT_EXTREME` (umbral 1 MB / 5 MB) para que el selector priorice SEMBLE en casos extremos.
+  - `isSmallTrivialTask`: gate que devuelve `true` cuando la tarea no tiene señales de coste, para ejecutarla con herramientas nativas sin cargar el router/MCP.
+  - `extractSignalsFromQuery`: heurística que inspecciona la query de texto (regex EN/ES) para inferir `hasTerminalCommands`, `isMultistep`, `isRefactor`, `isRepositorySearch` (incluye detección de "empaqueta/compacta/repomix").
 
-Es el único archivo del módulo. Sus umbrales por defecto: contexto grande ≥ 1 MB, extremo ≥ 5 MB, "muchos archivos" ≥ 8.
+Configurable vía `TaskClassifierOptions` (umbrales de bytes y archivos).
 
 ## Metricas
 
-- tokens_input: 24472
-- tokens_output: 393
-- tokens_reasoning: 43
+- tokens_input: 25082
+- tokens_output: 447
+- tokens_reasoning: 41
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 24908
+- tokens_total: 25570
 - cost_usd: 0
 - tool_calls: 2
 - tools_usadas: glob, read

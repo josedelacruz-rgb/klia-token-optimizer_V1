@@ -145,6 +145,31 @@ function selectFromRecords(
 
   const sourceSuffix = sourceLabel ? ` (datos ${sourceLabel})` : '';
 
+  // Cold-start del default (V0): si la celda tiene historial pero el default
+  // de la regla base nunca se ha ejecutado (sin muestras usables), se entrega
+  // el default en vez de BASELINE para que pueda crear evidencia. Sin esto,
+  // un saver recomendado por regla base muere en un bucle: nunca se elige
+  // "hasta tener muestras" y nunca gana muestras porque nunca se elige.
+  // Solo se activa el gate cuando el ganador aprendido es BASELINE; si otro
+  // saver con muestras ganó la celda, se respeta esa evidencia.
+  if (baseline !== 'BASELINE' && bestOptimizer === 'BASELINE') {
+    const baselineScore = scores.get(baseline);
+    const baselineUsable =
+      !!baselineScore &&
+      baselineScore.relativeCost !== null &&
+      baselineScore.relativeCost !== Infinity;
+    if (!baselineUsable) {
+      return {
+        optimizer: baseline,
+        version: 'V0',
+        reason: `Cold-start: sin muestras del default ${baseline} en ${model}/${taskType}${sourceSuffix}; se entrega la regla base para crear evidencia.`,
+        confidence: 0,
+        taskType,
+        alternatives,
+      };
+    }
+  }
+
   if (bestRelativeCost === Infinity) {
     return {
       optimizer: baseline,

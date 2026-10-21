@@ -5,32 +5,33 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T15:39:27Z
-**Duracion:** 58s
+**Fecha:** 2026-10-21T16:40:13Z
+**Duracion:** 55s
 **Estado:** success
+**Router KLIA:** BASELINE/REPOSITORY_SEARCH
 
 ## Respuesta
 
-## Archivos donde se llama o importa `computeCostUsd`
+Archivos de código fuente donde se llama o importa `computeCostUsd`:
 
 **Definición:**
-- `src/pricing/model-pricing.ts:84` — definición de la función
+- `src/pricing/model-pricing.ts:84`
 
-**Importaciones + llamadas (código fuente):**
-- `src/router-cli.ts:12` (import) · `:156` (llamada)
-- `src/mcp-server.ts:27` (import) · `:379` (llamada)
-- `src/scorer/stats-report.ts:8` (import, usada en `buildStatsReport` para `savingsUsd`)
+**Importaciones + llamadas:**
+- `src/mcp-server.ts:28` (import), `:407` (uso en `record_execution`)
+- `src/router-cli.ts:13` (import), `:157` (uso para calcular `costUsd`)
+- `src/scorer/stats-report.ts:8` (import, usado en `buildStatsReport` para `savingsUsd`)
 
-**Solo referencias (documentación, no código):** `dev.md`, `dev_es.md`, además de logs/benchmarks bajo `Berchmark/` y `repo-bundle.md`.
+(Otros matches en `dev.md`, `dev_es.md`, y `Berchmark/` son solo referencias documentales/logs, no código fuente.)
 
 ## Metricas
 
-- tokens_input: 29491
-- tokens_output: 245
-- tokens_reasoning: 481
+- tokens_input: 26257
+- tokens_output: 235
+- tokens_reasoning: 180
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 30217
+- tokens_total: 26672
 - cost_usd: 0
 - tool_calls: 1
 - tools_usadas: grep

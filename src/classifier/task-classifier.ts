@@ -60,6 +60,13 @@ export function classifyTask(
     return 'TERMINAL';
   }
 
+  // Empaquetado completo = territorio REPOMIX (tabla evidencia AGENTS.md:
+  // --compress ~64%; benchmark interno Q05 -89%). El agente debe GENERAR el
+  // paquete, no buscar: va antes que la busqueda de repo.
+  if (signals.isPackaging) {
+    return 'REPO_PACKAGING';
+  }
+
   if (signals.isRepositorySearch) {
     return 'REPOSITORY_SEARCH';
   }
@@ -89,6 +96,39 @@ export function classifyTask(
  * Extrae señales heurísticas a partir de una query de texto.
  * No es perfecto, pero permite enrutar sin intervención manual.
  */
+/**
+ * Gate de tareas pequenas/triviales.
+ *
+ * Devuelve true cuando la tarea no presenta NINGUNA senal de coste (ni
+ * explicita ni heuristica) y el clasificador la resuelve a un tipo nativo
+ * (SMALL_CODE o UNKNOWN). En ese caso el overhead fijo de cualquier saver
+ * (y del propio MCP) supera el ahorro posible y la tarea debe ejecutarse
+ * directamente con las herramientas nativas (read/grep/glob/shell), sin
+ * enrutar por el router ni cargar el MCP.
+ *
+ * Ejemplos del mundo real medidos: "como va", "Responde solo: OK",
+ * "haz commit de todo" (sin senales) -> refused.
+ * No se rechazan TERMINAL (RTK gana incluso en 1 comando) ni
+ * REPOSITORY_SEARCH (SEMBLE pre-computado gana en busquedas puntual).
+ */
+export function isSmallTrivialTask(signals: TaskSignals, opts: TaskClassifierOptions = {}): boolean {
+  const options = { ...DEFAULTS, ...opts };
+
+  const hasCostSignal =
+    signals.isRefactor === true ||
+    signals.isMultistep === true ||
+    signals.hasTerminalCommands === true ||
+    signals.isRepositorySearch === true ||
+    signals.fileCount > 0 ||
+    signals.contextSizeBytes > 0 ||
+    (signals.toolCallsExpected != null && signals.toolCallsExpected !== 'low');
+
+  if (hasCostSignal) return false;
+
+  const taskType = classifyTask(signals, options);
+  return taskType === 'UNKNOWN' || taskType === 'SMALL_CODE';
+}
+
 export function extractSignalsFromQuery(
   query: string,
   base: Partial<TaskSignals> = {},
@@ -119,12 +159,35 @@ export function extractSignalsFromQuery(
       lower.includes('restructura') ||
       lower.includes('reorganiza'));
 
+  // Empaquetado vs vision global (tabla de evidencia AGENTS.md): empaquetar
+  // el repo es GENERAR un paquete (REPOMIX); "vision global"/"resumen del
+  // modulo" es recuperar fragmentos (SEMBLE) y se queda en busqueda.
+  const isPackaging =
+    base.isPackaging ??
+    /\b(empaquet\w*|compactar?|comprim[a-z]*|bundle|pack the (repo|project)|whole (repo|codebase)|repomix)\b/.test(
+      lower,
+    );
+  const isOverview =
+    /\b(vision global|panorama|overview)\b/.test(lower) ||
+    /\bresumen del (repo|proyecto|m[oó]dulo)\b/.test(lower);
+
+  // Intenciones de documentacion/onboarding (fila SEMBLE ~98% de la tabla:
+  // "buscar donde se implementa algo"): explicar modulos, que hace una
+  // funcion, donde esta definida, como se usa. Sin esto caian a UNKNOWN/
+  // SMALL_CODE -> BASELINE puro (~25-47k medidos en Q07/Q08).
+  const isDocOrExplain =
+    /\b(explica\w*|ens[eé]\w*m\w*|muestra|como funciona|como se usa|que hace|donde est[aá]|estructura de|implementa\w*|defini[cdr]\w*|how does|what does|explain|show me|where is)\b/.test(
+      lower,
+    );
+
   const isRepositorySearch =
     base.isRepositorySearch ??
     (/\b(search|find|where is|locate|all files|across the repo|grep|who calls|references)\b/.test(
       lower,
     ) ||
-      /\b(busca|buscar|encuentra|localiza|referencias|llamadas|usos|d[oó]nde)\b/.test(lower));
+      /\b(busca|buscar|encuentra|localiza|referencias|llamadas|usos|d[oó]nde)\b/.test(lower) ||
+      isOverview ||
+      isDocOrExplain);
 
   return {
     query,
@@ -135,5 +198,6 @@ export function extractSignalsFromQuery(
     isRefactor,
     isMultistep,
     isRepositorySearch,
+    isPackaging,
   };
 }

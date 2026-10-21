@@ -5,37 +5,40 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T15:40:24Z
-**Duracion:** 37s
+**Fecha:** 2026-10-21T16:41:09Z
+**Duracion:** 45s
 **Estado:** success
+**Router KLIA:** BASELINE/SMALL_CODE (refused -> native)
 
 ## Respuesta
 
-`RouterEvent` se usa en 8 archivos:
+`RouterEvent` se usa en los siguientes archivos:
 
-**Fuente (src/):**
-- `src/types.ts:203` — definición del tipo
-- `src/history/router-event-store.ts` — store unificado v2
-- `src/history/migrate.ts` — migrador v1→v2
-- `src/scorer/stats-report.ts` — reporting enriquecido
-- `src/mcp-server.ts` — servidor MCP
-- `src/router-cli.ts` — CLI unificado
-- `src/scripts/migrate-history.ts` — script de migración
-- `src/scripts/stats-display.ts` — visualización de stats
+**Definición del tipo** (`src/types.ts:203`):
+- `src/types.ts` — define `RouterEvent`, `RouterEventSource`, `RouterEventSignals`, `RouterEventDecision`, `RouterEventExecution`.
 
-**Tests (tests/):**
-- `tests/history/router-event-store.test.ts`
-- `tests/history/migrate-v1-to-v2.test.ts`
-- `tests/scorer/stats-report.test.ts`
+**Fuente (src/)**:
+- `src/history/router-event-store.ts` — store v2 (`RouterEventStore`) + fábricas `createDecisionEvent` / `createExecutionEvent`.
+- `src/history/migrate.ts` — conversión v1 (ExecutionRecord / métrica MCP) → `RouterEvent`.
+- `src/scorer/stats-report.ts` — cálculo de coste y reporting sobre `RouterEvent`.
+- `src/scripts/migrate-history.ts` — script de migración que usa `RouterEventStore`.
+- `src/scripts/stats-display.ts` — reporting que instancia `RouterEventStore`.
+- `src/router-cli.ts` — CLI v2 que registra decisiones.
+- `src/mcp-server.ts` — servidor MCP (`route_task`, `record_execution`, `migrate_history`).
+
+**Tests**:
+- `tests/scorer/stats-report.test.ts` — fábrica de eventos y casos de reporting.
+- `tests/history/router-event-store.test.ts` — tests del store v2.
+- `tests/history/migrate-v1-to-v2.test.ts` — tests de migración v1→v2.
 
 ## Metricas
 
-- tokens_input: 17232
-- tokens_output: 258
-- tokens_reasoning: 21
+- tokens_input: 17229
+- tokens_output: 376
+- tokens_reasoning: 19
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 17511
+- tokens_total: 17624
 - cost_usd: 0
 - tool_calls: 1
 - tools_usadas: grep

@@ -80,6 +80,30 @@ Este proyecto implementa un router que decide qué optimizador de contexto debe 
 - No usar emojis en archivos de código ni documentación.
 - Mantener los módulos pequeños y con una única responsabilidad.
 
+## Evidencia de ahorro por aplicativo (priors de las reglas base)
+
+Tabla sintetizada de benchmarks propios y documentacion anterior (RTK.md, PLAN_TESTS). La regla base de cada tipo de tarea se ordena con estos priors; el aprendizado historico siempre puede reemplazarlos cuando haya muestras reales.
+
+| Aplicativo | Territorio donde ahorra | Ahorro de referencia | Codigo fuente del dato |
+|---|---|---|---|
+| Semble | Busqueda semantica de codigo (devuelve fragmento, no archivos completos) | ~98% (4735 vs 214374 tokens) | Benchmark AGENTS.md |
+| RTK | Compresion de salida de comandos CLI (git, npm, pytest, docker) | ~92% (10.6M tokens / 684 comandos) | RTK.md |
+| Repomix --compress | Empaquetado del repo en firmas tree-sitter | ~64% | Benchmark AGENTS.md |
+| Repomix sin --compress | Repo completo para LLM externo | ~52.6% | Benchmark AGENTS.md |
+| Context Mode | Recuperacion repetida de docs/APIs indexadas (FTS5) | Variable | AGENTS.md + README.md |
+| Serena | Operaciones estructurales LSP (find_references, rename) | Indirecto | AGENTS.md |
+| Headroom | Compresion de contexto a nivel de proxy | Variable (manual de 25 pruebas) | Manual_pruebas_Headroom |
+
+Mapeo a tipo de tarea implementado en `src/rules/base-rules.ts`:
+- BUSQUEDA (REPOSITORY_SEARCH) -> SEMBLE (~98%; REPOMIX prohibido en busquedas: gasto +17k medido en Q01/Q03).
+- EMPAQUETADO (REPO_PACKAGING) -> REPOMIX --compress (~64% tabla; -89% Q05 medido).
+- VISION GLOBAL / resumen de modulos (REPOSITORY_SEARCH) -> SEMBLE.
+- TERMINAL / REFACTOR -> RTK (~92% en su ruta; banner "[rtk] No hook installed" inocuo).
+- MULTISTEP -> DCP (solo ahi: requiere contexto acumulado que podar).
+- LARGE_CONTEXT generico -> SEMBLE > CONTEXT_MODE > REPOMIX.
+
+Hallazgo clave: Semble y RTK NO compiten (rutas nativa vs shell del agente): la combinacion Semble MCP + RTK es aditiva y no tiene conflicto; la pre-busqueda de Semble del plugin corre por fuera de bash, por lo que RTK no la truncar.
+
 ## Contacto / contexto
 
 Este router nace de la necesidad de evitar benchmarks exhaustivos por cada modelo nuevo. La arquitectura defiende la idea de que las reglas universales son peligrosas y que la evidencia histórica debe guiar la selección de optimizadores.
