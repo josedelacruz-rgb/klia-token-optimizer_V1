@@ -1,33 +1,36 @@
 # Instalador unificado todo-en-uno del servidor MCP klia-token-optimizer
-# mas el stack completo de optimizadores de contexto para OpenCode.
+# mas el stack completo de optimizadores de contexto para OpenCode y KiloCode.
 #
 # Sustituye a:
 #   - install.ps1 (raiz): instalaba klia-token-optimizer e invocaba el
 #     instalador externo por stdin para instalar los optimizadores.
 #   - instaladores/install.ps1: instalaba OpenCode + Semble + Context Mode +
-#     RTK + Repomix + Serena con menu interactivo.
+#     RTK + Repomix con menu interactivo.
 #
 # Este script unifica ambos en uno solo, desatendido por defecto.
 #
+# Nota: Serena esta EXCLUIDA del stack. El instalador nunca la instala ni
+# escribe su configuracion (ni en OpenCode ni en KiloCode). Si existia de una
+# instalacion previa, su configuracion residual se limpia automaticamente.
+#
 # Uso:
-#   .\install_v2.ps1                          # Desatendido. Instala los 5 optimizadores + router.
+#   .\install_v2.ps1                          # Desatendido. Instala los 4 optimizadores + router.
 #   .\install_v2.ps1 -StackOnly -StackProfile repomix
-#   .\install_v2.ps1 -StackOnly -StackProfile serena
 #   .\install_v2.ps1 -StackOnly -StackProfile minimo
 #   .\install_v2.ps1 -Interactive             # Menu interactivo (8 opciones)
 #   .\install_v2.ps1 -DryRun                  # Simula sin tocar nada
 #   .\install_v2.ps1 -SkipBackup              # No genera .bak-* antes de modificar
 #   .\install_v2.ps1 -Force                   # Reinstala sin pedir confirmacion
-#   .\install_v2.ps1 -Uninstall              # Desinstala el router + los 5 optimizadores
+#   .\install_v2.ps1 -Uninstall              # Desinstala el router + los optimizadores
 #
 # Requisitos:
 #   - Node.js >= 22.5 (requerido por Context Mode)
 #   - npm
-#   - uv (instalado automaticamente si falta, lo necesita Semble y Serena)
+#   - uv (instalado automaticamente si falta, lo necesita Semble)
 #   - opencode (instalado automaticamente si falta via npm install -g opencode-ai)
 #
 # Idempotente: re-ejecutable sin romper nada. Genera backups .bak-<fase>-<ts>
-# antes de modificar opencode.jsonc, AGENTS.md y archivos del router.
+# antes de modificar opencode.jsonc, kilo.jsonc, AGENTS.md y archivos del router.
 
 [CmdletBinding()]
 param(
@@ -37,7 +40,7 @@ param(
     [switch]$Uninstall,
     [switch]$StackOnly,
     [switch]$Interactive,
-    [ValidateSet('','minimo','repomix','serena','all')]
+    [ValidateSet('','minimo','repomix','all')]
     [string]$StackProfile = ''
 )
 
@@ -51,11 +54,10 @@ $PythonVersion      = "3.11"
 $RtkVersion         = "0.50.0"
 $RtkRepo            = "rtk-ai/rtk"
 $RtkInstallDir      = Join-Path $env:USERPROFILE ".local\bin"
-$SerenaPythonVersion = "3.13"
 $DcpVersion         = "3.2.0"
 $DcpPackage         = "@tarquinen/opencode-dcp"
 
-# Si no se especifica -StackProfile, instalar los 5 optimizadores (sin exclusividad).
+# Si no se especifica -StackProfile, instalar los 4 optimizadores (sin exclusividad).
 if (-not $StackProfile) { $StackProfile = 'all' }
 
 # === HELPERS ===
@@ -166,6 +168,40 @@ function Test-PluginExists {
     return $false
 }
 
+# --- HELPERS KILOCODE ---
+
+function Get-KiloConfigFiles {
+    # Devuelve los ficheros de config global de KiloCode que existen.
+    # Si no existe ninguno, devuelve el canonico (kilo.jsonc) para crearlo.
+    $existing = @($kiloConfigFiles | Where-Object { Test-Path -LiteralPath $_ })
+    if ($existing.Count -eq 0) { return @($kiloConfigMain) }
+    return $existing
+}
+
+function Add-KiloPluginEntry {
+    param([object]$Config, [string]$Plugin)
+    # Igual que Add-PluginEntry pero tolerante a configs sin array plugin.
+    if (-not ($Config.PSObject.Properties.Name -contains 'plugin') -or $null -eq $Config.plugin) {
+        $Config | Add-Member -NotePropertyName 'plugin' -NotePropertyValue @($Plugin) -Force
+        return
+    }
+    Add-PluginEntry $Config $Plugin
+}
+
+function Remove-KiloPluginEntry {
+    param([object]$Config, [string]$Plugin)
+    if ($Config.PSObject.Properties.Name -contains 'plugin' -and $null -ne $Config.plugin) {
+        Remove-PluginEntry $Config $Plugin
+    }
+}
+
+function Remove-KiloMcpEntry {
+    param([object]$Config, [string]$Name)
+    if ($Config.mcp -and ($Config.mcp.PSObject.Properties.Name -contains $Name)) {
+        $Config.mcp.PSObject.Properties.Remove($Name)
+    }
+}
+
 function Set-OpencodeJsonFlag {
     param([object]$Config, [string]$Path, [object]$Value)
     $parts = $Path.Split('.')
@@ -229,6 +265,18 @@ $RtkLogPath    = Join-Path $ocDir ("rtk-install-{0}.log" -f (Get-Date -Format "y
 # === RUTAS REPOMIX ===
 $RepomixConfigPath = Join-Path $ocDir "repomix.config.json"
 $RepomixIgnorePath = Join-Path $ocDir ".repomixignore"
+
+# === RUTAS KILOCODE ===
+# KiloCode lee varios ficheros globales y los deep-mergea. El canonico es
+# kilo.jsonc; config.json es legacy pero tiene precedencia en instalaciones
+# existentes, por eso el instalador actualiza los que existan.
+$kiloConfigDir  = Join-Path $env:USERPROFILE ".config/kilo"
+$kiloConfigMain = Join-Path $kiloConfigDir "kilo.jsonc"
+$kiloConfigFiles = @(
+    (Join-Path $kiloConfigDir "kilo.jsonc"),
+    (Join-Path $kiloConfigDir "kilo.json"),
+    (Join-Path $kiloConfigDir "config.json")
+)
 
 # === CONTENIDO EMBEDIDO: AGENTS.md (reglas minimas) ===
 $AGENTS_MD_CONTENT = @'
@@ -954,59 +1002,8 @@ pnpm-lock.yaml
 yarn.lock
 '@
 
-# === CONTENIDO EMBEDIDO: Bloque de routing SERENA en AGENTS.md ===
-$SERENA_ROUTING_BLOCK = @'
-<!-- SERENA_START -->
-## Serena - IDE semantico para codigo (MCP)
-
-### Que es Serena
-Serena es un MCP toolkit que provee operaciones estructurales tipo IDE
-sobre el codigo: find_symbol, find_references, rename_symbol, get_document_symbols.
-Usa language servers (LSP) para entender la estructura del codigo.
-
-### Cuando USAR Serena
-- Encontrar la definicion de un simbolo (clase, funcion, metodo) -> find_symbol
-- Listar todas las referencias a un simbolo -> find_references
-- Renombrar un simbolo en todo el codebase -> rename_symbol
-- Obtener la estructura de un archivo (clases, metodos, campos) -> get_document_symbols
-- Obtener detalles de un simbolo (parametros, retorno, docstring) -> get_symbol_details
-
-### Cuando NO usar Serena (usar otra herramienta)
-- Buscar donde se implementa algo (pregunta en lenguaje natural) -> parece (97.8% ahorro)
-- Vision global del repo (estructura completa en signatures) -> repomix --compress
-- Empaquetar el repo para un LLM externo -> repomix sin compress
-- Buscar todas las ocurrencias de un literal exacto -> grep
-- Leer un archivo ya localizado -> Read directo
-- Recordar decisiones/erroles de sesion -> ctx_search (context-mode)
-
-### Routing anti-solapamiento (Serena vs Semble)
-- Serena = IDE estructural: "dame la definicion de Foo", "quien llama a bar()"
-  Devuelve el simbolo exacto y sus referencias (preciso, LSP-grade).
-- Semble = buscador semantico: "donde se maneja la autenticacion?"
-  Devuelve solo el chunk relevante (97.8% ahorro vs lectura completa).
-- NO compiten: Serena para operaciones estructurales, Semble para descubrimiento
-  en lenguaje natural.
-
-### Jerarquia de herramientas (resumen actualizado)
-| Pregunta | Herramienta |
-|---|---|
-| Donde se implementa X? (NL) | parece |
-| Dame la definicion de la clase Foo | serena find_symbol |
-| Quien llama a la funcion bar? | serena find_references |
-| Renombrar X a Y en todo el repo | serena rename_symbol |
-| Como es el repo entero? | repomix --compress |
-| Dame todo el codigo | repomix sin compress |
-| Lee este archivo | Read |
-| Encuentra todas las ocurrencias de 'fooBar' | grep |
-| Que decidimos antes? | ctx_search (context-mode) |
-
-### Configuracion
-- MCP server: `serena start-mcp-server --context ide`
-- Context: `ide` (cliente terminal, no plugin JetBrains)
-- El server se inicia como subprocess del cliente (stdio)
-<!-- SERENA_END -->
-'@
-
+# ====================================================================
+# FUNCIONES INSTALL/UNINSTALL SEMBLE
 # ====================================================================
 # FUNCIONES INSTALL/UNINSTALL SEMBLE
 # ====================================================================
@@ -1015,8 +1012,11 @@ function Install-Semble {
     Write-Step "SEMBLE" "Instalando Semble (configuracion global)"
 
     if (-not (Test-Command "uv")) {
-        Write-Err "uv no encontrado. Asegurate de tener uv instalado (lo instala la fase de Serena o manualmente)."
-        return $false
+        Write-Warn "uv no encontrado. Instalando uv (necesario para Semble)..."
+        if (-not (Ensure-Uv)) {
+            Write-Err "uv es obligatorio para instalar Semble. Abortando."
+            return $false
+        }
     }
     Write-Ok "uv detectado"
     try {
@@ -1227,6 +1227,9 @@ function Install-ContextMode {
         Write-Ok "context-mode registrado como plugin en opencode.jsonc"
     }
 
+    # Registrar como plugin tambien en KiloCode
+    Install-ContextModeKilo
+
     # Ejecutar context-mode upgrade para limpiar residuos legacy
     if (-not $DryRun -and (Test-Command "context-mode")) {
         Write-Step "CTX" "Ejecutando context-mode upgrade (limpieza legacy)"
@@ -1262,9 +1265,6 @@ function Install-ContextMode {
             if ($currentContent -match '(?s)(<!-- REPOMIX_START -->.*?<!-- REPOMIX_END -->)') {
                 $newContent = $newContent + "`n`n" + $Matches[1]
             }
-            if ($currentContent -match '(?s)(<!-- SERENA_START -->.*?<!-- SERENA_END -->)') {
-                $newContent = $newContent + "`n`n" + $Matches[1]
-            }
         }
         $newContent | Out-File $agentsMd -Encoding UTF8
         Write-Ok "AGENTS.md escrito en $agentsMd"
@@ -1297,7 +1297,81 @@ function Uninstall-ContextMode {
         Save-Config $ocConfig $cfg
         Write-Ok "context-mode removido de opencode.jsonc"
     }
+    Uninstall-ContextModeKilo
     Write-Warn "Conservando docs/context-mode.md y AGENTS.md (revisar manualmente)"
+}
+
+# ====================================================================
+# CONTEXT MODE EN KILOCODE
+# ====================================================================
+# KiloCode carga los plugins desde el array 'plugin' de su config global
+# (kilo.jsonc / kilo.json / config.json legacy). El paquete context-mode
+# expone el adaptador OpenCode/KiloCode, por lo que el mismo specifier
+# 'context-mode' sirve para ambos clientes.
+
+function Install-ContextModeKilo {
+    Write-Step "CTX-KILO" "Configurando Context Mode en KiloCode"
+
+    $files = Get-KiloConfigFiles
+    if ($DryRun) {
+        Write-Warn "[DryRun] Se registraria context-mode como plugin en: $($files -join ', ')"
+        return $true
+    }
+
+    if (-not (Test-Path -LiteralPath $kiloConfigDir)) {
+        New-Item -ItemType Directory -Path $kiloConfigDir -Force | Out-Null
+    }
+
+    $ok = $true
+    foreach ($file in $files) {
+        $cfg = Load-Config $file
+        if ($null -eq $cfg -or ($cfg.PSObject.Properties.Name -eq $null -and $cfg.PSObject.Properties.Count -eq 0)) {
+            $cfg = [PSCustomObject]@{}
+        }
+
+        # Limpiar configuracion MCP legacy (context-mode va como plugin)
+        $removedLegacy = $false
+        foreach ($legacy in @('context_mode', 'context-mode')) {
+            if ($cfg.mcp -and ($cfg.mcp.PSObject.Properties.Name -contains $legacy)) {
+                Remove-KiloMcpEntry $cfg $legacy
+                $removedLegacy = $true
+            }
+        }
+
+        # Serena jamas se configura en KiloCode
+        if ($cfg.mcp -and ($cfg.mcp.PSObject.Properties.Name -contains 'serena')) {
+            Remove-KiloMcpEntry $cfg 'serena'
+            Write-Warn "MCP serena removido de $file (Serena esta excluida del stack)"
+        }
+
+        if (Test-PluginExists $cfg "context-mode") {
+            Write-Ok "context-mode ya registrado como plugin en: $file"
+        } else {
+            Add-KiloPluginEntry $cfg "context-mode"
+            Write-Ok "context-mode registrado como plugin en: $file"
+        }
+
+        New-FileBackup -Path $file -Phase 'ctx-kilo' | Out-Null
+        Save-Config $file $cfg
+        if ($removedLegacy) { Write-Ok "Entradas MCP legacy de context-mode eliminadas de $file" }
+    }
+    return $ok
+}
+
+function Uninstall-ContextModeKilo {
+    Write-Step "CTX-KILO" "Quitando Context Mode de KiloCode"
+    $files = Get-KiloConfigFiles
+    foreach ($file in $files) {
+        if (-not (Test-Path -LiteralPath $file)) { continue }
+        if ($DryRun) { Write-Warn "[DryRun] Se removeria context-mode de $file"; continue }
+        $cfg = Load-Config $file
+        if (Test-PluginExists $cfg "context-mode") {
+            Remove-KiloPluginEntry $cfg "context-mode"
+            New-FileBackup -Path $file -Phase 'ctx-kilo' | Out-Null
+            Save-Config $file $cfg
+            Write-Ok "context-mode removido de $file"
+        }
+    }
 }
 
 # ====================================================================
@@ -1851,26 +1925,8 @@ function Uninstall-Repomix {
 }
 
 # ====================================================================
-# HELPERS SERENA
+# HELPERS UV
 # ====================================================================
-
-function New-SerenaBackup { param([Parameter(Mandatory)][string]$Path) return New-FileBackup -Path $Path -Phase 'serena' }
-
-function Test-SerenaMcpEntry {
-    param([object]$Config)
-    if (-not $Config.mcp) { return $false }
-    if (-not ($Config.mcp.PSObject.Properties.Name -contains 'serena')) { return $false }
-    $entry = $Config.mcp.serena
-    if ($entry.type -ne 'local') { return $false }
-    if (-not $entry.command) { return $false }
-    $cmd = $entry.command -join ' '
-    if ($cmd -notmatch 'serena') { return $false }
-    if ($cmd -notmatch 'start-mcp-server') { return $false }
-    if ($cmd -notmatch 'ide') { return $false }
-    return $true
-}
-
-function Test-SerenaInstalled { return [bool](Test-Command "serena") }
 
 function Ensure-Uv {
     if (Test-Command "uv") { Write-Ok "uv detectado en PATH"; return $true }
@@ -1887,148 +1943,74 @@ function Ensure-Uv {
     return $false
 }
 
-function Inject-SerenaRoutingBlock {
-    Write-Step "SERENA" "Fase 4b: Inyectando bloque SERENA en AGENTS.md"
-    if ($DryRun) { Write-Warn "[DryRun] Se inyectaria bloque SERENA_START/END en $agentsMd"; return $true }
-    if (-not (Test-Path -LiteralPath $agentsMd)) { Write-Err "AGENTS.md no encontrado: $agentsMd"; return $false }
-    New-SerenaBackup -Path $agentsMd | Out-Null
-    $content = Get-Content -LiteralPath $agentsMd -Raw
-    $pattern = '(?s)<!-- SERENA_START -->.*?<!-- SERENA_END -->\r?\n?'
-    $block = $SERENA_ROUTING_BLOCK.TrimEnd() + "`r`n`r`n"
-    if ([regex]::IsMatch($content, $pattern)) {
-        $newContent = [regex]::Replace($content, $pattern, $block)
-        Write-Ok "Bloque SERENA actualizado en AGENTS.md (idempotente)"
-    } else {
-        $newContent = $content.TrimEnd() + "`r`n`r`n" + $block
-        Write-Ok "Bloque SERENA anadido a AGENTS.md"
-    }
-    Set-Content -LiteralPath $agentsMd -Value $newContent -Encoding UTF8 -NoNewline
-    return $true
-}
-
 # ====================================================================
-# INSTALL SERENA (5 fases, idempotente)
+# SERENA: EXCLUIDA DEL STACK
 # ====================================================================
+# Serena no se instala ni se configura (ni en OpenCode ni en KiloCode).
+# Esta funcion solo limpia los restos de una instalacion anterior.
 
-function Install-Serena {
-    Write-Step "SERENA" "Instalando Serena (5 fases)"
+function Remove-SerenaArtifacts {
+    param([switch]$RemovePackage)
+    Write-Step "SERENA" "Limpiando configuracion residual de Serena (no se instala)"
 
-    Write-Step "SERENA" "Fase 1: Verificando uv (prerequisito)"
-    $uvOk = Ensure-Uv
-    if (-not $uvOk) { Write-Err "uv es obligatorio para instalar Serena. Abortando."; return $false }
-
-    Write-Step "SERENA" "Fase 2: Instalando serena-agent con uv tool install -p $SerenaPythonVersion"
-    if ($DryRun) { Write-Warn "[DryRun] Se instalaria serena-agent via uv tool install" }
-    else {
-        & uv tool install -p $SerenaPythonVersion serena-agent
-        if ($LASTEXITCODE -ne 0) {
-            Write-Err "Fallo al instalar serena-agent via uv tool. Intentando con --force..."
-            & uv tool install -p $SerenaPythonVersion serena-agent --force
-            if ($LASTEXITCODE -ne 0) { Write-Err "Fallo definitivo al instalar serena-agent"; return $false }
-        }
-        Write-Ok "serena-agent instalado globalmente"
-    }
-
-    Write-Step "SERENA" "Fase 3: Verificando serena en PATH"
-    if ($DryRun) { Write-Warn "[DryRun] (skip) verificacion serena --help" }
-    else {
-        if (-not (Test-SerenaInstalled)) {
-            $uvBin = Join-Path $env:USERPROFILE ".local\bin"
-            if ($env:Path -notlike "*$uvBin*") { $env:Path = $env:Path.TrimEnd(';') + ";" + $uvBin }
-        }
-        if (-not (Test-SerenaInstalled)) {
-            Write-Err "serena instalado pero no esta en PATH. Reinicia la terminal y re-ejecuta."
-            return $false
-        }
-        try {
-            $helpOut = & serena --help 2>&1 | Select-Object -First 1
-            Write-Ok "serena en PATH: $helpOut"
-        } catch { Write-Warn "serena en PATH pero --help no respondio (no critico)" }
-    }
-
-    Write-Step "SERENA" "Fase 4a: Verificando entrada MCP mcp.serena en opencode.jsonc"
+    # 1. OpenCode: entrada MCP mcp.serena
     $cfg = Load-Config $ocConfig
-    if (Test-SerenaMcpEntry $cfg) {
-        Write-Ok "Entrada MCP mcp.serena ya presente y correcta"
-    } else {
-        if ($DryRun) { Write-Warn "[DryRun] Se inyectaria entrada mcp.serena en $ocConfig" }
-        else {
-            New-SerenaBackup $ocConfig | Out-Null
-            $entry = [PSCustomObject]@{
-                type    = 'local'
-                command = @('serena', 'start-mcp-server', '--context', 'ide')
-                enabled = $true
-            }
-            Set-McpEntry $cfg "serena" $entry
-            Save-Config $ocConfig $cfg
-            Write-Ok "Entrada MCP mcp.serena inyectada en $ocConfig"
-        }
-    }
-    Inject-SerenaRoutingBlock | Out-Null
-
-    Write-Step "SERENA" "Fase 5: Verificacion final"
-    $checksOk = 0; $checksTotal = 3
-    if ($DryRun) { Write-Warn "[DryRun] (skip) serena --help"; $checksOk++ }
-    else {
-        $binOk = $false
-        try { $h = & serena --help 2>&1; if ($LASTEXITCODE -eq 0 -and $h) { $binOk = $true } } catch {}
-        if ($binOk) { Write-Ok "serena binario responde"; $checksOk++ }
-        else { Write-Err "serena binario no responde" }
-    }
-    $cfg2 = Load-Config $ocConfig
-    if (Test-SerenaMcpEntry $cfg2) { Write-Ok "MCP entry mcp.serena presente en opencode.jsonc"; $checksOk++ }
-    else { Write-Err "MCP entry mcp.serena ausente en opencode.jsonc" }
-    if (-not $DryRun -and (Test-Path $agentsMd)) {
-        $agentsContent = Get-Content -LiteralPath $agentsMd -Raw
-        if ($agentsContent -match 'SERENA_START' -and $agentsContent -match 'SERENA_END') {
-            Write-Ok "Bloque SERENA_START/END presente en AGENTS.md"; $checksOk++
-        } else { Write-Err "Bloque SERENA_START/END ausente en AGENTS.md" }
-    } elseif ($DryRun) { Write-Warn "[DryRun] (skip) bloque SERENA en AGENTS.md"; $checksOk++ }
-    else { Write-Err "AGENTS.md no encontrado: $agentsMd" }
-    if ($checksOk -eq $checksTotal) { Write-Ok "Verificacion final: $checksOk/$checksTotal checks OK" }
-    else { Write-Warn "Verificacion final: $checksOk/$checksTotal checks OK" }
-
-    Write-Ok "Serena instalado y configurado"
-    return $true
-}
-
-function Uninstall-Serena {
-    Write-Step "SERENA" "Desinstalando Serena"
-    if ($DryRun) { Write-Warn "[DryRun] Se ejecutaria uv tool uninstall serena-agent" }
-    else {
-        try { & uv tool uninstall serena-agent 2>$null | Out-Null } catch {}
-        Write-Ok "serena-agent desinstalado de uv tool"
-    }
-    $cfg = Load-Config $ocConfig
-    if ($cfg.mcp -and $cfg.mcp.PSObject.Properties.Name -contains 'serena') {
+    if ($cfg.mcp -and ($cfg.mcp.PSObject.Properties.Name -contains 'serena')) {
         if ($DryRun) { Write-Warn "[DryRun] Se removeria entrada mcp.serena de $ocConfig" }
         else {
-            New-SerenaBackup $ocConfig | Out-Null
-            Remove-McpEntry $cfg "serena"
+            New-FileBackup -Path $ocConfig -Phase 'serena' | Out-Null
+            Remove-McpEntry $cfg 'serena'
             Save-Config $ocConfig $cfg
             Write-Ok "Entrada mcp.serena removida de opencode.jsonc"
         }
-    } else { Write-Warn "Entrada mcp.serena no encontrada en opencode.jsonc" }
+    } else { Write-Ok "Sin entrada mcp.serena en opencode.jsonc" }
+
+    # 2. KiloCode: entrada MCP mcp.serena
+    foreach ($file in (Get-KiloConfigFiles)) {
+        if (-not (Test-Path -LiteralPath $file)) { continue }
+        $kcfg = Load-Config $file
+        if ($kcfg.mcp -and ($kcfg.mcp.PSObject.Properties.Name -contains 'serena')) {
+            if ($DryRun) { Write-Warn "[DryRun] Se removeria entrada mcp.serena de $file" }
+            else {
+                New-FileBackup -Path $file -Phase 'serena' | Out-Null
+                Remove-KiloMcpEntry $kcfg 'serena'
+                Save-Config $file $kcfg
+                Write-Ok "Entrada mcp.serena removida de $file"
+            }
+        }
+    }
+
+    # 3. Bloque de routing SERENA en AGENTS.md
     if (Test-Path -LiteralPath $agentsMd) {
         if ($DryRun) { Write-Warn "[DryRun] Se removeria bloque SERENA de $agentsMd" }
         else {
-            New-SerenaBackup $agentsMd | Out-Null
             $content = Get-Content -LiteralPath $agentsMd -Raw
             $pattern = '(?s)<!-- SERENA_START -->.*?<!-- SERENA_END -->\r?\n?\r?\n?'
             if ([regex]::IsMatch($content, $pattern)) {
+                New-FileBackup -Path $agentsMd -Phase 'serena' | Out-Null
                 $newContent = [regex]::Replace($content, $pattern, '')
                 Set-Content -LiteralPath $agentsMd -Value $newContent -Encoding UTF8 -NoNewline
                 Write-Ok "Bloque SERENA removido de AGENTS.md"
-            } else { Write-Warn "Bloque SERENA no encontrado en AGENTS.md" }
+            } else { Write-Ok "Sin bloque SERENA en AGENTS.md" }
         }
-    } else { Write-Warn "AGENTS.md no encontrado (nada que limpiar)" }
+    }
+
+    # 4. Paquete serena-agent (solo en desinstalacion explicita)
+    if ($RemovePackage) {
+        if ($DryRun) { Write-Warn "[DryRun] Se ejecutaria uv tool uninstall serena-agent" }
+        elseif (Test-Command "uv") {
+            try { & uv tool uninstall serena-agent 2>$null | Out-Null; Write-Ok "serena-agent desinstalado de uv tool" }
+            catch { Write-Warn "serena-agent no estaba instalado (continuando)" }
+        }
+    }
 }
 
 # ====================================================================
 # PRESET OPTIMO (stack recomendado)
 # ====================================================================
-# MODIFICADO: en modo 'all' NO elimina repomix ni serena (sin exclusividad).
-# En modos 'minimo'/'repomix'/'serena' mantiene la exclusividad original.
+# En modo 'all' NO se elimina repomix (sin exclusividad).
+# En modos 'minimo'/'repomix' mantiene la exclusividad original.
+# Serena esta excluida del stack: su configuracion siempre se elimina.
 
 function Set-OptimalPluginList {
     Write-Step "OPT" "Normalizando array plugin (context-mode + DCP + openrtk)"
@@ -2053,31 +2035,42 @@ function Set-OptimalPluginList {
     Write-Ok "plugin = [$($kept -join ', ')]"
 }
 
-function Set-OptimalContextFlags {
-    Write-Step "OPT" "Apagando 8 flags que se solapan entre si"
-    if ($DryRun) { Write-Warn "[DryRun] Se apagarian 8 flags + 2 sintonizadas"; return }
+# La configuracion de "ahorro" de OpenCode (truncacion, compaction, pruning,
+# deduplicacion, supersede_writes, purge_errors, context_protection) ya no la
+# escribe el instalador. Aqui se elimina la que hubiera de instalaciones
+# previas para que OpenCode vuelva a sus valores por defecto.
+function Remove-OpenCodeSavingsConfig {
+    Write-Step "OPT" "Eliminando la configuracion de ahorro de OpenCode"
+    $keys = @(
+        'aggressive_truncation',
+        'preemptive_compaction',
+        'truncate_all_tool_outputs',
+        'dynamic_context_pruning',
+        'deduplication',
+        'supersede_writes',
+        'purge_errors',
+        'context_protection'
+    )
+    if ($DryRun) { Write-Warn "[DryRun] Se eliminarian de opencode.jsonc: $($keys -join ', ')"; return }
     $cfg = Load-Config $ocConfig
-    Set-OpencodeJsonFlag $cfg 'aggressive_truncation'           $false | Out-Null
-    Set-OpencodeJsonFlag $cfg 'preemptive_compaction'           $false | Out-Null
-    Set-OpencodeJsonFlag $cfg 'truncate_all_tool_outputs'       $false | Out-Null
-    Set-OpencodeJsonFlag $cfg 'dynamic_context_pruning.enabled' $false | Out-Null
-    Set-OpencodeJsonFlag $cfg 'deduplication.enabled'           $true  | Out-Null
-    Set-OpencodeJsonFlag $cfg 'supersede_writes.enabled'        $false | Out-Null
-    Set-OpencodeJsonFlag $cfg 'supersede_writes.aggressive'     $false | Out-Null
-    Set-OpencodeJsonFlag $cfg 'purge_errors.enabled'            $false | Out-Null
-    Set-OpencodeJsonFlag $cfg 'purge_errors.turns'              1 | Out-Null
-    Set-OpencodeJsonFlag $cfg 'context_protection.turns'         3 | Out-Null
-    New-FileBackup -Path $ocConfig -Phase 'opt' | Out-Null
-    Save-Config $ocConfig $cfg
-    Write-Ok "Flags apagadas: aggressive_truncation, preemptive_compaction, truncate_all_tool_outputs"
-    Write-Ok "                dynamic_context_pruning.enabled, supersede_writes.enabled, supersede_writes.aggressive"
-    Write-Ok "                purge_errors.enabled"
-    Write-Ok "Flag encendida: deduplication.enabled (complementaria, no solapa con context-mode)"
-    Write-Ok "Sintonizadas:    purge_errors.turns=1, context_protection.turns=3"
+    $removed = @()
+    foreach ($key in $keys) {
+        if ($cfg.PSObject.Properties.Name -contains $key) {
+            $cfg.PSObject.Properties.Remove($key)
+            $removed += $key
+        }
+    }
+    if ($removed.Count -gt 0) {
+        New-FileBackup -Path $ocConfig -Phase 'opt' | Out-Null
+        Save-Config $ocConfig $cfg
+        Write-Ok "Claves de ahorro eliminadas: $($removed -join ', ')"
+    } else {
+        Write-Ok "No habia configuracion de ahorro en opencode.jsonc"
+    }
 }
 
 function Set-OptimalMcpList {
-    param([string]$Profile)  # 'all' | 'minimo' | 'repomix' | 'serena'
+    param([string]$Profile)  # 'all' | 'minimo' | 'repomix'
     Write-Step "OPT" "Normalizando MCPs (perfil: $Profile)"
     if ($DryRun) { Write-Warn "[DryRun] Perfil=$Profile"; return }
     $cfg = Load-Config $ocConfig
@@ -2085,15 +2078,16 @@ function Set-OptimalMcpList {
         $cfg | Add-Member -NotePropertyName 'mcp' -NotePropertyValue ([PSCustomObject]@{}) -Force
     }
 
-    # En modo 'all' NO eliminamos repomix ni serena (sin exclusividad)
+    # En modo 'all' NO eliminamos repomix (sin exclusividad)
     if ($Profile -ne 'all') {
-        # Quitar la vision que NO toca (comportamiento original)
         if ($Profile -ne 'repomix' -and (Test-McpExists $cfg 'repomix')) {
             Remove-McpEntry $cfg 'repomix'; Write-Warn "MCP repomix removido (Perfil=$Profile)"
         }
-        if ($Profile -ne 'serena' -and (Test-McpExists $cfg 'serena')) {
-            Remove-McpEntry $cfg 'serena'; Write-Warn "MCP serena removido (Perfil=$Profile)"
-        }
+    }
+
+    # Serena esta excluida del stack: su MCP nunca debe existir
+    if (Test-McpExists $cfg 'serena') {
+        Remove-McpEntry $cfg 'serena'; Write-Warn "MCP serena removido (Serena esta excluida del stack)"
     }
 
     # Asegurar los MCP fijos del router (no se tocan si existen)
@@ -2294,7 +2288,7 @@ function Show-Help {
     Write-Host "================================================================" -ForegroundColor Cyan
     Write-Host "  install_klia_token_optimizer.ps1" -ForegroundColor Cyan
     Write-Host "  Instalador unificado: klia-token-optimizer (router MCP)" -ForegroundColor Cyan
-    Write-Host "  + Semble + Context Mode + RTK + Repomix + Serena" -ForegroundColor Cyan
+    Write-Host "  + Semble + Context Mode + RTK + Repomix (OpenCode y KiloCode)" -ForegroundColor Cyan
     Write-Host "================================================================" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "QUE HACE" -ForegroundColor Yellow
@@ -2309,19 +2303,19 @@ function Show-Help {
     Write-Host "    - Context Mode    Indexacion FTS5 + recuperacion (~42% ahorro)"
     Write-Host "    - RTK              Compresion de salida CLI (92% ahorro)"
     Write-Host "    - Repomix          Empaquetador de repos (52-64% ahorro)"
-    Write-Host "    - Serena           IDE semantico via LSP (simbolos exactos)"
     Write-Host "    - klia-token-optimizer  Router MCP que decide el optimizador"
     Write-Host ""
+    Write-Host "  Serena esta EXCLUIDA del stack: no se instala ni se configura."
+    Write-Host ""
     Write-Host "PARAMETROS" -ForegroundColor Yellow
-    Write-Host "  .\install_klia_token_optimizer.ps1                          Desatendido. Instala los 5 optimizadores + router."
+    Write-Host "  .\install_klia_token_optimizer.ps1                          Desatendido. Instala los 4 optimizadores + router."
     Write-Host "  .\install_klia_token_optimizer.ps1 -StackOnly -StackProfile repomix   Solo stack con perfil repomix."
-    Write-Host "  .\install_klia_token_optimizer.ps1 -StackOnly -StackProfile serena    Solo stack con perfil serena."
     Write-Host "  .\install_klia_token_optimizer.ps1 -StackOnly -StackProfile minimo    Stack minimo."
     Write-Host "  .\install_klia_token_optimizer.ps1 -Interactive             Menu interactivo (8 opciones)."
     Write-Host "  .\install_klia_token_optimizer.ps1 -DryRun                  Simula sin tocar nada."
     Write-Host "  .\install_klia_token_optimizer.ps1 -SkipBackup              No genera .bak-* antes de modificar."
     Write-Host "  .\install_klia_token_optimizer.ps1 -Force                   Reinstala sin pedir confirmacion."
-    Write-Host "  .\install_klia_token_optimizer.ps1 -Uninstall               Desinstala el router + los 5 optimizadores."
+    Write-Host "  .\install_klia_token_optimizer.ps1 -Uninstall               Desinstala el router + los 4 optimizadores."
     Write-Host ""
     Write-Host "REQUISITOS" -ForegroundColor Yellow
     Write-Host "    - Node.js >= 22.5 (requerido por Context Mode)"
@@ -2373,11 +2367,24 @@ if ($Uninstall) {
     Uninstall-Dcp
     Uninstall-Rtk
     Uninstall-Repomix
-    Uninstall-Serena
+    # Serena no se instala: solo se limpian restos (config + paquete)
+    Remove-SerenaArtifacts -RemovePackage
     # Remover MCP klia-token-optimizer de opencode.jsonc
     $cfg = Load-Config $ocConfig
     Remove-McpEntry $cfg 'klia-token-optimizer'
     if (-not $DryRun) { Save-Config $ocConfig $cfg; Write-Ok "MCP klia-token-optimizer removido de opencode.jsonc" }
+    # Remover MCP klia-token-optimizer de la config de KiloCode
+    foreach ($file in (Get-KiloConfigFiles)) {
+        if (-not (Test-Path -LiteralPath $file)) { continue }
+        $kcfg = Load-Config $file
+        if ($kcfg.mcp -and ($kcfg.mcp.PSObject.Properties.Name -contains 'klia-token-optimizer')) {
+            if (-not $DryRun) {
+                Remove-KiloMcpEntry $kcfg 'klia-token-optimizer'
+                Save-Config $file $kcfg
+                Write-Ok "MCP klia-token-optimizer removido de $file"
+            }
+        }
+    }
     # Remover plugin klia-auto-record.ts
     $kliaPluginPath = Join-Path $RtkPluginDir "klia-auto-record.ts"
     if (Test-Path -LiteralPath $kliaPluginPath) {
