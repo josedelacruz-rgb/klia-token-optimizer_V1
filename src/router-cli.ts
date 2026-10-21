@@ -286,6 +286,7 @@ Para registrar metricas reales, ejecuta la tarea y usa --record-id,
       isRefactor: ctx.signals.isRefactor,
       isRepositorySearch: ctx.signals.isRepositorySearch,
       isPackaging: ctx.signals.isPackaging,
+      isLiteralSearch: ctx.signals.isLiteralSearch,
       isMultistep: ctx.signals.isMultistep,
     },
     decision: {

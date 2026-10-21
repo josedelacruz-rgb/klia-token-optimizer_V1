@@ -17,6 +17,11 @@ describe('base-rules', () => {
     expect(defaultOptimizerForTask('REPOSITORY_SEARCH')).toBe('SEMBLE');
   });
 
+  it('LITERAL_SEARCH → BASELINE (grep nativo con precision exacta, sin savers)', () => {
+    expect(candidatesForTask('LITERAL_SEARCH')).toEqual(['BASELINE']);
+    expect(defaultOptimizerForTask('LITERAL_SEARCH')).toBe('BASELINE');
+  });
+
   it('REPO_PACKAGING → REPOMIX primero (territorio propio: ~64%% tabla AGENTS.md, -89%% Q05)', () => {
     expect(candidatesForTask('REPO_PACKAGING')).toEqual(['REPOMIX', 'SEMBLE', 'CONTEXT_MODE']);
     expect(defaultOptimizerForTask('REPO_PACKAGING')).toBe('REPOMIX');

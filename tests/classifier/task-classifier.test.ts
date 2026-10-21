@@ -85,4 +85,25 @@ describe('extractSignalsFromQuery', () => {
     expect(signals.hasTerminalCommands).toBe(false);
     expect(signals.fileCount).toBe(3);
   });
+
+  it('clasifica LITERAL_SEARCH: busqueda de texto plano sin identificador', () => {
+    const signals = extractSignalsFromQuery(
+      'Busca la palabra timeout en el README y lista las lineas donde aparece.',
+    );
+    expect(classifyTask(signals)).toBe('LITERAL_SEARCH');
+  });
+
+  it('busqueda semantica con identificador NO es LITERAL_SEARCH', () => {
+    const signals = extractSignalsFromQuery(
+      'Busca donde se implementa extractSignalsFromQuery dentro del repo.',
+    );
+    expect(classifyTask(signals)).toBe('REPOSITORY_SEARCH');
+  });
+
+  it('busca la funcion classifyTask cae en REPOSITORY_SEARCH (snippets, semantica)', () => {
+    const signals = extractSignalsFromQuery(
+      'Busca la funcion classifyTask en este codigo y muestrame donde esta y que hace.',
+    );
+    expect(classifyTask(signals)).toBe('REPOSITORY_SEARCH');
+  });
 });

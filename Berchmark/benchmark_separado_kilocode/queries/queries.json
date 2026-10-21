@@ -1,11 +1,11 @@
 {
   "$schema": "benchmark-separado-queries-v1.json",
-  "version": "1.0.0",
-  "description": "Bateria de 18 consultas realistas para benchmark baseline vs optimizer. Las consultas no mencionan herramientas MCP ni palabras clave del router. El modelo decide como resolverlas.",
+  "version": "1.1.0",
+  "description": "Bateria de 32 consultas realistas para benchmark baseline vs optimizer (Q01-Q08 canonica, Q09-Q32 bateria v2 de variedad con pareados semantico/literal). Las consultas no mencionan herramientas MCP ni palabras clave del router. El modelo decide como resolverlas.",
   "project_context": "klia-token-optimizer",
   "model": "klia/GLM-5.2",
   "metadata": {
-    "total_queries": 18,
+    "total_queries": 32,
     "categories_covered": [
       "BUSQUEDA_FUNCION",
       "BUSQUEDA_REFERENCIAS",
@@ -20,6 +20,8 @@
     ],
     "task_types_covered": [
       "REPOSITORY_SEARCH",
+      "LITERAL_SEARCH",
+      "REPO_PACKAGING",
       "LARGE_CONTEXT",
       "TERMINAL",
       "SMALL_CODE",
@@ -33,7 +35,10 @@
       "Las consultas son identicas en ambos scripts (baseline y optimizer).",
       "Q01-Q12: tareas de lectura y analisis (read-only).",
       "Q13-Q18: tareas de modificacion (refactor, fix, test, multistep).",
-      "El numero de archivo (.md) coincide entre scripts: baseline07.md vs optimizer07.md = mismo prompt."
+      "El numero de archivo (.md) coincide entre scripts: baseline07.md vs optimizer07.md = mismo prompt.",
+      "Q09-Q32: bateria v2 con 6 nuevas por categoria y formulacion variada.",
+      "Pareados semantico/literal (Q12-Q14, Q20): busqueda con identificador CamelCase vs texto plano para medir el discriminador LITERAL_SEARCH.",
+      "Q21-Q26 separa empaquetado generativo (REPO_PACKAGING -> REPOMIX) de vision de modulo (REPOSITORY_SEARCH -> SEMBLE)."
     ]
   },
   "queries": [
@@ -108,6 +113,222 @@
       "prompt": "Que hace extractModelFamily y donde se usa? Incluye un ejemplo de como se llama.",
       "expected_behavior": "Busca la funcion, explica su proposito y muestra un ejemplo de uso.",
       "quality_criteria": "Ubicacion correcta; Explicacion del proposito; Ejemplo de llamada o uso"
+    },
+    {
+      "id": "Q09",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "localizar_codigo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Localiza la implementacion de buildCostMatrix y dime en que archivo y linea vive.",
+      "expected_behavior": "Busqueda semantica puntual de una funcion interna del scorer.",
+      "quality_criteria": "Ubicacion correcta (archivo y linea); contexto breve de la firma"
+    },
+    {
+      "id": "Q10",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "localizar_codigo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Encontrame donde se instancia el McpMetricsStore dentro del codigo fuente.",
+      "expected_behavior": "Busqueda de instanciacion de una clase.",
+      "quality_criteria": "Archivo y linea de la instanciacion; contexto"
+    },
+    {
+      "id": "Q11",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "localizar_codigo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Que archivos contienen la definicion del tipo TaskSignals? Dime el path exacto.",
+      "expected_behavior": "Busqueda de definicion de un tipo.",
+      "quality_criteria": "Path correcto; linea de definicion"
+    },
+    {
+      "id": "Q12",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "buscar_texto",
+      "task_type": "LITERAL_SEARCH",
+      "prompt": "Busca la palabra timeout en el codigo del router y lista las lineas donde aparece.",
+      "expected_behavior": "Grep literal nativo. No deberia gastar savers semanticos.",
+      "quality_criteria": "Lista de lineas coincidentes; archivo correcto"
+    },
+    {
+      "id": "Q13",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "buscar_texto",
+      "task_type": "LITERAL_SEARCH",
+      "prompt": "Busca la cadena REMOTE entre los ficheros del plugin y muestra el contexto de cada aparicion.",
+      "expected_behavior": "Grep literal con contexto.",
+      "quality_criteria": "Apariciones con contexto; sin exploracion innecesaria"
+    },
+    {
+      "id": "Q14",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "buscar_texto",
+      "task_type": "LITERAL_SEARCH",
+      "prompt": "Quiero saber donde aparece el texto 'version: V0' en src/. Lista las lineas.",
+      "expected_behavior": "Grep literal exacto.",
+      "quality_criteria": "Coincidencias listadas; pocas tool calls"
+    },
+    {
+      "id": "Q15",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_funcion",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Hazme un listado de los sitios que importan JsonHistoryStore.",
+      "expected_behavior": "Busqueda de imports de una clase.",
+      "quality_criteria": "Lista de archivos importadores; incluye tests si aplica"
+    },
+    {
+      "id": "Q16",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_tipo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Que modulos dependen del tipo RouterOptions? Lista los ficheros.",
+      "expected_behavior": "Busqueda de dependencias de un tipo.",
+      "quality_criteria": "Lista correcta; sin node_modules"
+    },
+    {
+      "id": "Q17",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_funcion",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Encuentra los usos reales de computePrunedContext fuera de su archivo de definicion.",
+      "expected_behavior": "Busqueda de usos externos de funcion.",
+      "quality_criteria": "Usos identificados; excluye la definicion"
+    },
+    {
+      "id": "Q18",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_constante",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Donde se referencia ROUTER_EVENT_SCHEMA_VERSION? Muestra los usos.",
+      "expected_behavior": "Busqueda de referencias a constante exportada.",
+      "quality_criteria": "Referencias listadas; archivos correctos"
+    },
+    {
+      "id": "Q19",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_clase",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Que ficheros consumen la clase McpMetricsStore? Quiero la lista completa.",
+      "expected_behavior": "Busqueda de consumidores en el repo.",
+      "quality_criteria": "Lista completa; formato claro"
+    },
+    {
+      "id": "Q20",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "buscar_texto",
+      "task_type": "LITERAL_SEARCH",
+      "prompt": "Busca apariciones del texto synthetic solo en src/ y resumeme en que contextos se usa.",
+      "expected_behavior": "Grep literal acotado a src/, seguido de sintesis breve.",
+      "quality_criteria": "Apariciones en src/; resumen correcto de contextos"
+    },
+    {
+      "id": "Q21",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "task_type": "REPO_PACKAGING",
+      "prompt": "Prepara un paquete del repositorio completo en formato markdown para compartirlo con un LLM externo.",
+      "expected_behavior": "Empaquetado completo del repo (firma de repomix: pack + metricas).",
+      "quality_criteria": "Fichero consolidado generado; metricas visibles"
+    },
+    {
+      "id": "Q22",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "task_type": "REPO_PACKAGING",
+      "prompt": "Quiero un snapshot compacto del proyecto: empaquetalo y pasame las firmas principales.",
+      "expected_behavior": "Empaquetado en modo compacto (firmas).",
+      "quality_criteria": "Paquete con firmas; tamano contenido"
+    },
+    {
+      "id": "Q23",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_modulo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Dame una vision global del modulo src/scorer/ con sus archivos y su responsabilidad.",
+      "expected_behavior": "Vision de modulo (busqueda/fragmentos, no empaquetado completo).",
+      "quality_criteria": "Archivos listados; responsabilidad explicada"
+    },
+    {
+      "id": "Q24",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "task_type": "REPO_PACKAGING",
+      "prompt": "Compacta este proyecto en un fichero unico y muestrame los top 10 ficheros por tamano.",
+      "expected_behavior": "Empaquetado + ranking por tamano de las metricas.",
+      "quality_criteria": "Fichero unico; top 10 correcto"
+    },
+    {
+      "id": "Q25",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_modulo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Resumen del modulo src/history/: archivos, funciones principales y como se relacionan los stores.",
+      "expected_behavior": "Vision de modulo con relaciones internas.",
+      "quality_criteria": "Stores identificados; relaciones explicadas"
+    },
+    {
+      "id": "Q26",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "task_type": "REPO_PACKAGING",
+      "prompt": "Empaqueta solo la carpeta src/selector/ y muestrame cuantas lineas tiene cada fichero.",
+      "expected_behavior": "Empaquetado de una carpeta concreta con lineas por fichero.",
+      "quality_criteria": "Paquete acotado a la carpeta; conteo por fichero"
+    },
+    {
+      "id": "Q27",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_modulo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Explica la arquitectura del router: como interactuan el clasificador, las reglas y el selector.",
+      "expected_behavior": "Explicacion arquitectonica con fragmentos verificados del codigo.",
+      "quality_criteria": "Los 3 componentes cubiertos; interaccion explicada"
+    },
+    {
+      "id": "Q28",
+      "category": "DOCUMENTACION",
+      "subcategory": "documentar_api",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Documenta el API publica de src/index.ts: funciones exportadas y para que sirve cada una.",
+      "expected_behavior": "Inventario del API de entrada del router.",
+      "quality_criteria": "Funciones exportadas listadas; descripcion de cada una"
+    },
+    {
+      "id": "Q29",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_tipos",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Que diferencia hay entre RouterEvent y ExecutionRecord? Ensename sus definiciones.",
+      "expected_behavior": "Comparacion de dos esquemas con fragmentos.",
+      "quality_criteria": "Ambas definiciones; diferencias clave"
+    },
+    {
+      "id": "Q30",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_logica",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Como funciona el coste relativo? Explicame computeRelativeCost con un ejemplo.",
+      "expected_behavior": "Explicacion de la normalizacion de costes con ejemplo.",
+      "quality_criteria": "Formula o logica explicada; ejemplo coherente"
+    },
+    {
+      "id": "Q31",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_modulo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Ensename la estructura de src/history/ y explica que guarda cada store.",
+      "expected_behavior": "Estructura del modulo de stores con proposito de cada uno.",
+      "quality_criteria": "Los 3 stores cubiertos; proposito de cada uno"
+    },
+    {
+      "id": "Q32",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_flujo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Que hace el hook chat.message del plugin? Explica el flujo completo paso a paso.",
+      "expected_behavior": "Explicacion del flujo del hook con fragmentos del codigo.",
+      "quality_criteria": "Pasos del flujo ordenados; fragmentos de codigo citados"
     }
   ]
 }

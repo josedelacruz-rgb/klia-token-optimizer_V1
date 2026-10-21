@@ -67,6 +67,15 @@ export function classifyTask(
     return 'REPO_PACKAGING';
   }
 
+  // Búsqueda de TEXTO literal ("busca la palabra insert", "la cadena RETRY"):
+  // un grep nativo la resuelve con precision exacta y coste minimo; mandarla
+  // a un savers semantico es sobrecoste sin ganancia. Intencion de busqueda
+  // con cue de literalidad y SIN identificador de codigo (CamelCase/
+  // snake_case/nombre de funcion) -> LITERAL_SEARCH.
+  if (signals.isRepositorySearch && signals.isLiteralSearch) {
+    return 'LITERAL_SEARCH';
+  }
+
   if (signals.isRepositorySearch) {
     return 'REPOSITORY_SEARCH';
   }
@@ -167,6 +176,20 @@ export function extractSignalsFromQuery(
     /\b(empaquet\w*|compactar?|comprim[a-z]*|bundle|pack the (repo|project)|whole (repo|codebase)|repomix)\b/.test(
       lower,
     );
+  // Discriminador semantico vs literal: un identificador de codigo en la
+  // query (CamelCase con 2+ jorobas, snake_case o firma con parentesis)
+  // apunta a busqueda semantica de codigo (SEMBLE/fragmentos); buscar una
+  // palabra/texto plano es un grep literal que las herramientas nativas
+  // resuelven mas barato y con precision exacta.
+  const hasCodeIdentifier =
+    /\b[A-Z][a-z]+(?:[A-Z][A-Za-z0-9]+)+\b/.test(query) ||
+    /\b[a-z]+[A-Z][A-Za-z0-9]*\b/.test(query) ||
+    /\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/.test(lower) ||
+    /\b[a-zA-Z]\w*\(\)/.test(query);
+  const literalCueFound = /\b(palabra|texto|literal|cadena|string|caracter(?:es)?|linea|lineas|aparicion(?:es)?|ocurrencia(?:s)?|grep)\b/.test(
+    lower,
+  );
+
   const isOverview =
     /\b(vision global|panorama|overview)\b/.test(lower) ||
     /\bresumen del (repo|proyecto|m[oó]dulo)\b/.test(lower);
@@ -189,6 +212,9 @@ export function extractSignalsFromQuery(
       isOverview ||
       isDocOrExplain);
 
+  const isLiteralSearch =
+    base.isLiteralSearch ?? (isRepositorySearch && literalCueFound && !hasCodeIdentifier);
+
   return {
     query,
     fileCount: base.fileCount ?? 0,
@@ -199,5 +225,6 @@ export function extractSignalsFromQuery(
     isMultistep,
     isRepositorySearch,
     isPackaging,
+    isLiteralSearch,
   };
 }

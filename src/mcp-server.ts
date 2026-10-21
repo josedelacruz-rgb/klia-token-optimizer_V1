@@ -42,6 +42,10 @@ const RouteTaskSchema = z.object({
     .boolean()
     .optional()
     .describe('true si la tarea pide empaquetar/comprimir el repo completo (REPOMIX)'),
+  isLiteralSearch: z
+    .boolean()
+    .optional()
+    .describe('true si la query busca texto literal (grep nativo) en vez de semantica de codigo'),
   isMultistep: z.boolean().optional(),
   explore: z.boolean().default(false).describe('Si es true, permite exploración controlada'),
   sessionId: z.string().optional().describe('Identificador de sesión para emparejar decision+execution'),
@@ -79,7 +83,16 @@ const RecordExecutionSchema = z.object({
 const GetStatsSchema = z.object({
   model: z.string().optional().describe('Filtrar por modelo exacto'),
     taskType: z
-      .enum(['SMALL_CODE', 'TERMINAL', 'LARGE_CONTEXT', 'REPOSITORY_SEARCH', 'REPO_PACKAGING', 'MULTISTEP', 'REFACTOR'])
+      .enum([
+        'SMALL_CODE',
+        'TERMINAL',
+        'LARGE_CONTEXT',
+        'REPOSITORY_SEARCH',
+        'REPO_PACKAGING',
+        'LITERAL_SEARCH',
+        'MULTISTEP',
+        'REFACTOR',
+      ])
       .optional()
       .describe('Filtrar por tipo de tarea'),
   excludeSynthetic: z
@@ -107,6 +120,7 @@ const tools: Tool[] = [
         isRefactor: { type: 'boolean' },
         isRepositorySearch: { type: 'boolean' },
         isPackaging: { type: 'boolean', description: 'true si la tarea pide empaquetar/comprimir el repo completo' },
+        isLiteralSearch: { type: 'boolean', description: 'true si busca texto literal (grep nativo)' },
         isMultistep: { type: 'boolean' },
         explore: { type: 'boolean', default: false, description: 'Permitir exploración controlada' },
         sessionId: { type: 'string', description: 'Identificador de sesión' },
@@ -311,6 +325,7 @@ async function main() {
           isRefactor: args.isRefactor,
           isRepositorySearch: args.isRepositorySearch,
           isPackaging: args.isPackaging,
+          isLiteralSearch: args.isLiteralSearch,
           isMultistep: args.isMultistep,
         });
 
@@ -335,6 +350,7 @@ async function main() {
             isRefactor: ctx.signals.isRefactor,
             isRepositorySearch: ctx.signals.isRepositorySearch,
             isPackaging: ctx.signals.isPackaging,
+            isLiteralSearch: ctx.signals.isLiteralSearch,
             isMultistep: ctx.signals.isMultistep,
           },
           decision: {

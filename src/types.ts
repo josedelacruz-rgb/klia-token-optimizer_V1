@@ -6,6 +6,7 @@ export type TaskType =
   | 'LARGE_CONTEXT'
   | 'REPOSITORY_SEARCH'
   | 'REPO_PACKAGING'
+  | 'LITERAL_SEARCH'
   | 'MULTISTEP'
   | 'REFACTOR'
   | 'UNKNOWN';
@@ -27,6 +28,13 @@ export interface TaskSignals {
   isRepositorySearch?: boolean;
   /** Indica que la tarea pide empaquetar/comprimir el repo completo (REPOMIX). */
   isPackaging?: boolean;
+  /**
+   * true si la busqueda es de texto literal (palabra/cadena): un grep nativo
+   * la resuelve mas barato que un savers semantico. Se deduce cuando la query
+   * tiene intencion de busqueda, cue de literalidad y SIN identificador de
+   * codigo (CamelCase/snake_case/funcion).
+   */
+  isLiteralSearch?: boolean;
   /** Indica si la tarea implica muchos pasos o decisiones secuenciales. */
   isMultistep?: boolean;
 }
@@ -150,6 +158,7 @@ export interface RouterEventSignals {
   isRefactor?: boolean;
   isRepositorySearch?: boolean;
   isPackaging?: boolean;
+  isLiteralSearch?: boolean;
   isMultistep?: boolean;
 }
 

@@ -19,6 +19,9 @@ export const BASE_RULES: Record<TaskType, Optimizer[]> = {
   TERMINAL: ['RTK'],
   LARGE_CONTEXT: ['SEMBLE', 'CONTEXT_MODE', 'REPOMIX'],
   REPOSITORY_SEARCH: ['SEMBLE'],
+  // "Busca la palabra X" / "la cadena Y": grep nativo con precision exacta;
+  // mandarlo a un savers semantico es sobrecoste sin ganancia.
+  LITERAL_SEARCH: ['BASELINE'],
   REPO_PACKAGING: ['REPOMIX', 'SEMBLE', 'CONTEXT_MODE'],
   MULTISTEP: ['DCP'],
   REFACTOR: ['RTK'],
