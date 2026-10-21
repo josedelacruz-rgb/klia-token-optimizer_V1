@@ -1,0 +1,31 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "_comment": "Configuracion BASELINE: todos los servidores MCP y plugins deshabilitados. Solo OpenAI directo.",
+  "plugin": [],
+  "mcp": {
+    "klia-token-optimizer": {
+      "type": "local",
+      "command": ["node", "./dist/mcp-server.js"],
+      "enabled": false,
+      "environment": {}
+    },
+    "semble": {
+      "type": "local",
+      "command": ["uvx", "--from", "semble[mcp]==0.5.5", "semble"],
+      "enabled": false,
+      "environment": {}
+    },
+    "repomix": {
+      "type": "local",
+      "command": ["npx", "-y", "repomix", "--mcp"],
+      "enabled": false,
+      "environment": {}
+    },
+    "serena": {
+      "type": "local",
+      "command": ["serena", "start-mcp-server", "--context", "ide"],
+      "enabled": false,
+      "environment": {}
+    }
+  }
+}

@@ -1,0 +1,74 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "_comment": "Override generado por benchmark-mcp para el modo 'mcp'. Se inyecta con KILO_CONFIG; no modifica la config global.",
+  "mcp": {
+    "dalle-image": {
+      "type": "local",
+      "command": [
+        "npx",
+        "-y",
+        "github:waimakers/gpt-image"
+      ],
+      "environment": {
+        "OPENAI_API_KEY": ""
+      },
+      "timeout": 30000,
+      "enabled": true
+    },
+    "klia-token-optimizer": {
+      "type": "local",
+      "command": [
+        "node",
+        "C:/Users/delac/AppData/Local/klia-token-optimizer/dist/mcp-server.js"
+      ],
+      "environment": {
+        "ROUTER_HISTORY_PATH": "C:/Users/delac/.klia/data/history.json",
+        "ROUTER_METRICS_PATH": "C:/Users/delac/.klia/data/mcp-metrics.json",
+        "ROUTER_EVENTS_PATH": "C:/Users/delac/.klia/data/events.json",
+        "ROUTER_MIN_CONFIDENCE": "0.6",
+        "ROUTER_EXPLORATION_RATE": "0.1",
+        "ROUTER_MIN_SAMPLES": "3",
+        "DOTENV_CONFIG_QUIET": "true",
+        "ROUTER_LOG_PATH": "C:/Users/delac/.klia/logs/mcp-server.log.json"
+      },
+      "timeout": 10000,
+      "enabled": true
+    },
+    "semble": {
+      "type": "local",
+      "command": [
+        "uvx",
+        "--from",
+        "semble[mcp]==0.6.1",
+        "semble"
+      ],
+      "enabled": true
+    },
+    "context-mode": {
+      "type": "local",
+      "command": [
+        "node",
+        "C:/nvm4w/nodejs_v18/nodejs/node_modules/context-mode/cli.bundle.mjs"
+      ],
+      "enabled": true
+    },
+    "repomix": {
+      "type": "local",
+      "command": [
+        "repomix",
+        "--mcp"
+      ],
+      "enabled": true
+    },
+    "serena": {
+      "type": "local",
+      "command": [
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide"
+      ],
+      "enabled": true
+    }
+  }
+}

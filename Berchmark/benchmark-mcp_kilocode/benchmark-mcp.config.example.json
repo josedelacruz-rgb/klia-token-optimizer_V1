@@ -1,0 +1,38 @@
+{
+  "_comment": "Configuracion del benchmark MCP vs Baseline para KiloCode. Copia este fichero a benchmark-mcp.config.json en benchmark-mcp/ (el script lo lee de ahi).",
+  "project_dir": "C:\\ruta\\al\\repo",
+  "use_workspace": true,
+  "workspace_dir": "C:\\Users\\<usuario>\\AppData\\Local\\Temp\\klia-benchmark-workspace",
+  "model": "kilo/kilo-auto/free",
+  "repetitions": 1,
+  "query_timeout": 180,
+  "max_minutes": 10,
+  "estimate_seconds": {
+    "baseline": 60,
+    "mcp": 90
+  },
+  "auto_approve": true,
+  "kilo_config_path": "C:\\Users\\<usuario>\\.config\\kilo\\kilo.jsonc",
+  "baseline_template": "benchmark-mcp\\configs\\kilo.baseline.json",
+  "mcp_template": "benchmark-mcp\\configs\\kilo.mcp.json",
+  "results_dir": "benchmark-mcp\\results",
+  "logs_dir": "benchmark-mcp\\logs",
+  "reports_dir": "benchmark-mcp\\reports",
+  "sandbox_dir": "benchmark-mcp\\sandbox",
+  "isolation": {
+    "_comment": "Fase baseline: HOME/config aislados y directorios con binarios de optimizadores retirados del PATH.",
+    "blocked_path_dirs": [
+      "C:\\Users\\<usuario>\\.cargo\\bin",
+      "C:\\Users\\<usuario>\\AppData\\Roaming\\Python\\Python314\\Scripts",
+      "C:\\Users\\<usuario>\\.local\\bin",
+      "C:\\Users\\<usuario>\\AppData\\Roaming\\npm"
+    ],
+    "blocked_binaries": [
+      "rtk",
+      "semble",
+      "serena",
+      "tokenade",
+      "repomix"
+    ]
+  }
+}

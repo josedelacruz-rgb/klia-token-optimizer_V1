@@ -1,0 +1,23 @@
+{
+  "model": "kilo/kilo-auto/free",
+  "started_at": "2026-10-19T18:50:15.3908603+02:00",
+  "max_minutes": 10.0,
+  "modes": [
+    "baseline",
+    "mcp"
+  ],
+  "queries": [
+    "Q03",
+    "Q04",
+    "Q12",
+    "Q07",
+    "Q05",
+    "Q06",
+    "Q08",
+    "Q01",
+    "Q02",
+    "Q09",
+    "Q10",
+    "Q11"
+  ]
+}

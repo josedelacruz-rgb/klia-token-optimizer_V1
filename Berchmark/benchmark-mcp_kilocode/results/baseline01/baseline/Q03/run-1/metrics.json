@@ -1,0 +1,59 @@
+{
+    "query_id":  "Q03",
+    "mode":  "baseline",
+    "run":  "run-1",
+    "category":  "SEARCH_RETRIEVAL",
+    "subcategory":  "busqueda_codigo",
+    "prompt":  "Busca la funcion classifyTask en este repositorio y muestra su firma y ubicacion.",
+    "expected_mcp_usage":  "optional",
+    "model":  "kilo/kilo-auto/free",
+    "session_id":  "ses_ea59ce520ffeCK6n5fd4RQw0QD",
+    "status":  "failed",
+    "exit_code":  null,
+    "tokens_input":  21164,
+    "tokens_output":  112,
+    "tokens_reasoning":  91,
+    "tokens_cache_read":  8889,
+    "tokens_cache_write":  0,
+    "tokens_total":  21367,
+    "cost_usd":  0,
+    "latency_seconds":  176.06,
+    "assistant_messages":  0,
+    "tool_calls_count":  2,
+    "tool_calls_by_server":  {
+                                 "unknown":  [
+                                                 "grep",
+                                                 "read"
+                                             ]
+                             },
+    "tool_calls_list":  [
+                            {
+                                "tool":  "grep",
+                                "server":  null,
+                                "args":  {
+                                             "pattern":  "classifyTask",
+                                             "path":  "C:\\Users\\JoseEstebandelaCruz\\AppData\\Local\\Temp\\klia-benchmark-workspace"
+                                         },
+                                "status":  "completed",
+                                "time":  1792517943863
+                            },
+                            {
+                                "tool":  "read",
+                                "server":  null,
+                                "args":  {
+                                             "filePath":  "C:\\Users\\JoseEstebandelaCruz\\AppData\\Local\\Temp\\klia-benchmark-workspace\\src\\classifier\\task-classifier.ts",
+                                             "offset":  410,
+                                             "limit":  30
+                                         },
+                                "status":  "completed",
+                                "time":  1792517949754
+                            }
+                        ],
+    "errors":  [
+
+               ],
+    "response_chars":  0,
+    "started_at":  "2026-10-20T19:36:28.3122891+02:00",
+    "ended_at":  "2026-10-20T19:39:24.3680149+02:00",
+    "raw_file":  ".\\benchmark-mcp\\results\\baseline01\\baseline\\Q03\\run-1\\raw.jsonl"
+}

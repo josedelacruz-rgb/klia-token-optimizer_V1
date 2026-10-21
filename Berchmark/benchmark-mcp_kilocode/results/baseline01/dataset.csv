@@ -1,0 +1,6 @@
+﻿"query_id","mode","run","category","subcategory","status","tokens_input","tokens_output","tokens_reasoning","tokens_cache_read","tokens_cache_write","tokens_total","cost_usd","latency_seconds","tool_calls_count","servers_used","assistant_messages","errors_count","response_chars","started_at","ended_at"
+"Q03","baseline","run-1","SEARCH_RETRIEVAL","busqueda_codigo","success","7649","527","98","12189","0","8274","0","179,27","5","","1","0","0","",""
+"Q04","baseline","run-1","SEARCH_RETRIEVAL","busqueda_codigo","success","11045","402","103","0","0","11550","0","77,32","1","","1","0","0","",""
+"Q05","baseline","run-1","MCP_TOOL_SELECTION","empaquetado_repo","timeout",,,,,"0",,"0","144",,"","1","0","0","",""
+"Q07","baseline","run-1","COMPLEX_ANALYSIS","conceptual","success","6617","141","33","0","0","6791","0","51,19","0","","1","0","0","",""
+"Q12","baseline","run-1","AMBIGUOUS_ERROR","comando_fallido","success","6832","213","50","0","0","7095","0","51,09","1","","1","0","0","",""

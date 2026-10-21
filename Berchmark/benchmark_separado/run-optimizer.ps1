@@ -1,0 +1,59 @@
+<#
+.SYNOPSIS
+    Benchmark optimizer: ejecuta las queries con opencode con optimizadores activados.
+
+.DESCRIPTION
+    Lanza `opencode run` para cada query en queries/queries.json y genera
+    results/optimizer/optimizerNN.md con la respuesta y las metricas.
+
+    Tu activas/desactivas los optimizadores en opencode.json antes de ejecutar.
+    Este script no toca la configuracion de opencode.
+
+    El numero de archivo coincide con run-baseline.ps1:
+    optimizer07.md corresponde a la misma query que baseline07.md (Q07).
+
+.PARAMETER TimeoutMinutes
+    Minutos maximos por query (default: 5).
+
+.PARAMETER Queries
+    Lista de numeros de query separados por coma (ej: "1,5,13").
+    Default: todas (18).
+
+.PARAMETER ProjectDir
+    Ruta al proyecto sobre el que se ejecutan las queries.
+    Default: el repo padre (klia-token-optimizer).
+
+.PARAMETER Model
+    Modelo a usar (ej: klia/GLM-5.2).
+    Default: el definido en queries.json.
+
+.EXAMPLE
+    .\run-optimizer.ps1
+    Ejecuta las 18 queries con timeout de 5 minutos cada una.
+
+.EXAMPLE
+    .\run-optimizer.ps1 -TimeoutMinutes 25
+    Ejecuta las 18 queries con timeout de 25 minutos cada una.
+
+.EXAMPLE
+    .\run-optimizer.ps1 -Queries 1,5,13 -TimeoutMinutes 10
+    Ejecuta solo Q01, Q05 y Q13 con timeout de 10 minutos.
+#>
+param(
+    [int]$TimeoutMinutes = 5,
+    [string]$Queries,
+    [string]$ProjectDir,
+    [string]$Model
+)
+
+$ErrorActionPreference = "Stop"
+$benchDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+. (Join-Path $benchDir "benchmark-common.ps1")
+
+Invoke-Benchmark -Mode "optimizer" `
+    -TimeoutMinutes $TimeoutMinutes `
+    -Queries $Queries `
+    -ProjectDir $ProjectDir `
+    -Model $Model `
+    -BenchDir $benchDir

@@ -1,0 +1,12 @@
+{
+    "tokens_input":  21164,
+    "tokens_output":  112,
+    "tokens_reasoning":  91,
+    "tokens_cache_read":  8889,
+    "tokens_cache_write":  0,
+    "cost":  0,
+    "model":  "{\"id\":\"kilo-auto/free\",\"providerID\":\"kilo\",\"variant\":\"default\"}",
+    "title":  "[BENCH]",
+    "time_created":  1792517806816,
+    "time_updated":  1792517949935
+}

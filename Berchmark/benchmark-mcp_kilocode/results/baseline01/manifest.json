@@ -1,0 +1,42 @@
+﻿{
+    "model":  "kilo/kilo-auto/free",
+    "label":  "baseline01",
+    "started_at":  "2026-10-20T18:53:00+02:00",
+    "max_minutes":  10,
+    "modes":  [
+                  "baseline"
+              ],
+    "queries":  [
+                    "Q03",
+                    "Q04",
+                    "Q12",
+                    "Q07",
+                    "Q05",
+                    "Q06",
+                    "Q08",
+                    "Q01",
+                    "Q02",
+                    "Q09",
+                    "Q10",
+                    "Q11"
+                ],
+    "repetitions":  1,
+    "workspace":  "C:\\Users\\JoseEstebandelaCruz\\AppData\\Local\\Temp\\klia-benchmark-workspace",
+    "isolation":  {
+                      "sandbox":  true,
+                      "sandbox_root":  "C:\\ProyectosV2\\telemetria\\Klia_Token_Optimizer_All\\test-mcp-real2\\benchmark-mcp\\sandbox",
+                      "blocked_path_dirs":  [
+                                                "C:\\Users\\JoseEstebandelaCruz\\.cargo\\bin",
+                                                "C:\\Users\\JoseEstebandelaCruz\\AppData\\Roaming\\Python\\Python314\\Scripts",
+                                                "C:\\Users\\JoseEstebandelaCruz\\.local\\bin",
+                                                "C:\\Users\\JoseEstebandelaCruz\\AppData\\Roaming\\npm"
+                                            ],
+                      "blocked_binaries":  [
+                                               "rtk",
+                                               "semble",
+                                               "serena",
+                                               "tokenade",
+                                               "repomix"
+                                           ]
+                  }
+}

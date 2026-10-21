@@ -1,0 +1,78 @@
+﻿<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><title>baseline01</title><style>body{font-family:system-ui,Arial,sans-serif;max-width:1100px;margin:2em auto;padding:0 1em;line-height:1.5;color:#222}
+pre{white-space:pre-wrap;word-wrap:break-word;background:#f8f8f8;padding:1.5em;border-radius:6px;font-family:Consolas,monospace}</style></head><body><pre># Fase baseline - KiloCode sin optimizadores instalados
+_Generado: 2026-10-20T19:38:57.5718165+02:00_
+_Etiqueta de la fase: baseline01_
+
+## 1. Que mide este informe
+Medicion del **baseline**: el entorno de KiloCode sin ningun optimizador de contexto instalado.
+Es la referencia contra la que se medira la fase con optimizadores (`optimizer01`).
+Cada prueba (consulta x ejecucion) queda registrada con sus metricas en la seccion 6.
+
+## 2. Entorno medido (aislamiento)
+- Sandbox de HOME/config: **activo**
+- Raiz del sandbox: `C:\ProyectosV2\telemetria\Klia_Token_Optimizer_All\test-mcp-real2\benchmark-mcp\sandbox`
+- Plugins externos (klia-router-inject, klia-auto-record, DCP, tokenade, context-mode): **no cargados** (`--pure` + config aislada).
+- Servidores MCP: **todos deshabilitados** (override `logs/overrides/kilo.&lt;modo&gt;.json`).
+- Binarios de optimizadores bloqueados (shims "no instalado"): rtk, semble, serena, tokenade, repomix
+- Directorios retirados del PATH: `C:\Users\JoseEstebandelaCruz\.cargo\bin`, `C:\Users\JoseEstebandelaCruz\AppData\Roaming\Python\Python314\Scripts`, `C:\Users\JoseEstebandelaCruz\.local\bin`, `C:\Users\JoseEstebandelaCruz\AppData\Roaming\npm`
+- Reglas globales (`~/.kilo/rules`, `~/.config/kilo/AGENTS.md`): **no cargadas** (HOME aislado).
+
+- Proyecto de trabajo (workspace neutral, sin AGENTS.md del repo): `C:\Users\JoseEstebandelaCruz\AppData\Local\Temp\klia-benchmark-workspace`
+
+## 3. Cobertura de la bateria
+- Presupuesto de tiempo: 10 min | consumido: 590.8s
+- Consultas planificadas: 12 | con medicion valida: 4 | con timeout: 1 | no ejecutadas: 7
+- Con timeout (medicion no valida): Q05
+- No ejecutadas (presupuesto agotado): Q06, Q08, Q01, Q02, Q09, Q10, Q11
+- Latencia media de la fase: 100.6s
+- Ejecuciones registradas: **5** | con timeout (excluidas de las medias): 1
+
+## 4. Resultados agregados de la fase
+| Metrica | Valor |
+|---|---|
+| Ejecuciones | 4 |
+| Consultas distintas | 4 |
+| Tokens medios por ejecucion | 8,428 |
+| Tokens totales | 33,710 |
+| Tokens input medios | 8,036 |
+| Tokens output medios | 321 |
+| Coste total | $0.0000 |
+| Latencia media | 89.7s |
+| Tool calls totales | 7 |
+| Tasa de exito | 100% |
+
+## 5. Resultados por consulta
+| Query | Categoria | N | Tokens (in/out/total) | Coste | Latencia | Tools | Exito |
+|---|---|---|---|---|---|---|---|
+| Q03 | SEARCH_RETRIEVAL | 1 | 7,649 / 527 / 8,274 | $0.0000 | 179.3s | 5.0 | 100% |
+| Q04 | SEARCH_RETRIEVAL | 1 | 11,045 / 402 / 11,550 | $0.0000 | 77.3s | 1.0 | 100% |
+| Q07 | COMPLEX_ANALYSIS | 1 | 6,617 / 141 / 6,791 | $0.0000 | 51.2s | 0.0 | 100% |
+| Q12 | AMBIGUOUS_ERROR | 1 | 6,832 / 213 / 7,095 | $0.0000 | 51.1s | 1.0 | 100% |
+
+## 6. Detalle por prueba (cada ejecucion)
+| Query | Modo | Run | Estado | Tokens in | Tokens out | Tokens total | Coste | Latencia | Tools | Servidores | Errores |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| Q03 | baseline | run-1 | success | 7,649 | 527 | 8,274 | $0.0000 | 179.3s | 5 | - | 0 |
+| Q04 | baseline | run-1 | success | 11,045 | 402 | 11,550 | $0.0000 | 77.3s | 1 | - | 0 |
+| Q05 | baseline | run-1 | timeout | - | - | - | $0.0000 | 144.0s |  | - | 0 |
+| Q07 | baseline | run-1 | success | 6,617 | 141 | 6,791 | $0.0000 | 51.2s | 0 | - | 0 |
+| Q12 | baseline | run-1 | success | 6,832 | 213 | 7,095 | $0.0000 | 51.1s | 1 | - | 0 |
+
+## 7. Conclusiones de la fase
+1. Esta fase establish el **punto de partida** (baseline) del que la fase con optimizadores debe mejorar.
+2. No se afirma ahorro todavia: la comparacion requiere ejecutar la misma bateria con los optimizadores activos.
+3. Las ejecuciones con `status=timeout` quedan excluidas de las medias (mediciones parciales).
+4. Las consultas que no caben en el presupuesto quedan listadas como omitidas: no forman parte de la medicion.
+
+## 8. Reproduccion
+```powershell
+# Fase baseline (10 min, sandbox activo)
+.\benchmark-mcp\run-phase.ps1 -Phase baseline -Label baseline01 -MaxMinutes 10
+```
+
+## 9. Limitaciones
+- Los tokens se obtienen de la BD de KiloCode (`kilo db`), no directamente de la API del provider.
+- La calidad de las respuestas no se evalua automaticamente en esta version.
+- La variabilidad entre repeticiones puede ser alta en muestras pequenas.
+- El workspace es una copia neutral del codigo: sirve para comparar fases, no para medir el repo real.
+</pre></body></html>

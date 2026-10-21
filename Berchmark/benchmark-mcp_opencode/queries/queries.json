@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "2.0.0",
+  "description": "Bateria de consultas REALISTAS y NEUTRAS para benchmark MCP vs baseline. Las consultas no contienen palabras clave que el router pueda usar para clasificar la tarea (small_code, terminal, refactor, etc.). El modelo decide si usar herramientas segun su logica nativa.",
+  "project_context": "C:\\ProyectosV2\\telemetria\\Klia_Optimizer_Last_Version",
+  "model": "klia/GLM-5.2",
+  "queries": [
+    {
+      "id": "Q01",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "localizar_codigo",
+      "prompt": "Busca la funcion classifyTask en este codigo y muestrame donde esta y que hace.",
+      "expected_behavior": "Busqueda puntual. Puede usar parece, grep o read para localizar la funcion.",
+      "quality_criteria": [
+        "Ubicacion correcta (archivo y linea)",
+        "Firma de la funcion",
+        "Descripcion breve de que hace"
+      ]
+    },
+    {
+      "id": "Q02",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "localizar_codigo",
+      "prompt": "Donde se define la funcion createAdaptiveRouter y que parametros recibe?",
+      "expected_behavior": "Busqueda puntual de una funcion exportada en index.ts.",
+      "quality_criteria": [
+        "Archivo correcto",
+        "Lista de parametros",
+        "Tipo de retorno"
+      ]
+    },
+    {
+      "id": "Q03",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_funcion",
+      "prompt": "Lista todos los archivos donde se llama o se importa la funcion computeCostUsd.",
+      "expected_behavior": "Busqueda de referencias. Puede usar parece find_related, serena o grep.",
+      "quality_criteria": [
+        "Lista de archivos que referencian la funcion",
+        "Incluye el archivo de definicion",
+        "No omite archivos principales"
+      ]
+    },
+    {
+      "id": "Q04",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_tipo",
+      "prompt": "En que archivos se usa el tipo RouterEvent? Muestra la lista.",
+      "expected_behavior": "Busqueda de un tipo en el codigo.",
+      "quality_criteria": [
+        "Lista de archivos",
+        "Incluye definicion y usos",
+        "No incluye node_modules"
+      ]
+    },
+    {
+      "id": "Q05",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "prompt": "Empaqueta este repositorio en un solo archivo y muestrame el resumen de metricas (cuantos archivos, lineas y tamano total).",
+      "expected_behavior": "Deberia activar repomix_pack_codebase en modo MCP. En baseline usaria glob+read manualmente o no podria.",
+      "quality_criteria": [
+        "Genera archivo consolidado o resumen",
+        "Muestra metricas (archivos, lineas, tamano)",
+        "Estructura legible"
+      ]
+    },
+    {
+      "id": "Q06",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "prompt": "Genera un resumen del modulo src/pricing/ con todos sus archivos y funciones exportadas.",
+      "expected_behavior": "Puede usar repomix (skill o pack) o leer archivos directamente.",
+      "quality_criteria": [
+        "Lista archivos del modulo pricing",
+        "Muestra funciones exportadas",
+        "Estructura organizada"
+      ]
+    },
+    {
+      "id": "Q07",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_modulo",
+      "prompt": "Explica que hace el modulo src/classifier/ y lista sus archivos principales con una linea de descripcion cada uno.",
+      "expected_behavior": "Puede usar parece, serena o leer archivos. Respuesta estructurada.",
+      "quality_criteria": [
+        "Lista al menos 3 archivos del modulo",
+        "Descripcion breve de cada uno",
+        "Explicacion del proposito del modulo"
+      ]
+    },
+    {
+      "id": "Q08",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_modulo",
+      "prompt": "Que hace la funcion extractModelFamily y donde se usa? Incluye un ejemplo de como se llama.",
+      "expected_behavior": "Busca la funcion, explica su proposito y muestra un ejemplo de uso.",
+      "quality_criteria": [
+        "Ubicacion correcta",
+        "Explicacion del proposito",
+        "Ejemplo de llamada o uso"
+      ]
+    },
+    {
+      "id": "Q09",
+      "category": "COMANDO_TERMINAL",
+      "subcategory": "git_log",
+      "prompt": "Ejecuta git log en este repositorio y muestra los ultimos 5 commits con hash, fecha y mensaje.",
+      "expected_behavior": "Ejecuta git log. RTK puede comprimir la salida. Comando terminal.",
+      "quality_criteria": [
+        "Muestra 5 commits",
+        "Incluye hash, fecha y mensaje",
+        "Formato legible"
+      ]
+    },
+    {
+      "id": "Q10",
+      "category": "COMANDO_TERMINAL",
+      "subcategory": "git_status",
+      "prompt": "Ejecuta git status en este repositorio y muestrame el estado actual de los archivos.",
+      "expected_behavior": "Ejecuta git status. RTK puede comprimir la salida.",
+      "quality_criteria": [
+        "Muestra estado de archivos",
+        "Indica rama actual",
+        "Formato legible"
+      ]
+    },
+    {
+      "id": "Q11",
+      "category": "ANALISIS_ESTRUCTURA",
+      "subcategory": "dependencias",
+      "prompt": "Lista los modulos principales de la carpeta src/ de este proyecto con una breve descripcion de cada uno.",
+      "expected_behavior": "Puede usar glob, parece o leer directamente. Respuesta breve.",
+      "quality_criteria": [
+        "Lista al menos 5 modulos",
+        "Descripcion breve de cada uno",
+        "Estructura clara"
+      ]
+    },
+    {
+      "id": "Q12",
+      "category": "ANALISIS_ESTRUCTURA",
+      "subcategory": "dependencias",
+      "prompt": "Cuales son las dependencias principales de este proyecto segun package.json? Lista las mas importantes.",
+      "expected_behavior": "Lee package.json y lista dependencias. Puede usar read directamente.",
+      "quality_criteria": [
+        "Lista dependencias principales",
+        "No incluye devDependencies",
+        "Formato legible"
+      ]
+    }
+  ],
+  "metadata": {
+    "total_queries": 12,
+    "categories_covered": [
+      "BUSQUEDA_FUNCION",
+      "BUSQUEDA_REFERENCIAS",
+      "EMPAQUETADO_REPO",
+      "DOCUMENTACION",
+      "COMANDO_TERMINAL",
+      "ANALISIS_ESTRUCTURA"
+    ],
+    "design_notes": [
+      "Las consultas son realistas: un desarrollador las haria normalmente.",
+      "No contienen palabras clave del router (small_code, terminal, refactor, etc.).",
+      "No mencionan MCP ni herramientas especificas.",
+      "Las consultas son identicas en ambos entornos.",
+      "Q01-Q04: busquedas puntuales que pueden activar parece o serena.",
+      "Q05-Q06: empaquetado que deberia activar repomix.",
+      "Q07-Q08: documentacion que requiere leer y explicar codigo.",
+      "Q09-Q10: comandos de terminal que pueden activar RTK.",
+      "Q11-Q12: analisis de estructura que requiere leer varios archivos."
+    ]
+  }
+}

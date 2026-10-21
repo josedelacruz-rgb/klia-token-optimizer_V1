@@ -1,0 +1,34 @@
+# Configuracion del benchmark MCP vs Baseline
+# ===============================================
+# Copia este fichero a benchmark-mcp.config.json y rellena los valores.
+
+# Ruta al proyecto sobre el que se ejecutan las consultas
+project_dir: "C:\\ProyectosV2\\telemetria\\Klia_Optimizer_Last_Version"
+
+# Config global de opencode que se swap antes de cada ejecucion
+opencode_config_path: "C:\\Users\\JoseEstebandelaCruz\\.config\\opencode\\opencode.json"
+
+# Configs de referencia (se copian a opencode_config_path segun el modo)
+baseline_config: "benchmark-mcp\\configs\\opencode.baseline.json"
+mcp_config: "benchmark-mcp\\configs\\opencode.mcp.json"
+
+# Modelo a usar (formato provider/model)
+model: "klia/GLM-5.2"
+
+# Numero de repeticiones por consulta en cada modo
+repetitions: 3
+
+# Modo pilot (true = 2 consultas x 2 modos x 1 repeticion)
+pilot: true
+pilot_queries: ["Q01", "Q05"]
+
+# Timeout por consulta en segundos
+query_timeout: 180
+
+# Bateria de consultas
+queries_file: "benchmark-mcp\\queries\\queries.json"
+
+# Directorios de salida
+results_dir: "benchmark-mcp\\results"
+logs_dir: "benchmark-mcp\\logs"
+reports_dir: "benchmark-mcp\\reports"

@@ -1,0 +1,96 @@
+{
+    "query_id":  "Q06",
+    "mode":  "baseline",
+    "run":  "run-1",
+    "category":  "MULTI_TOOL",
+    "subcategory":  "analisis_estructura",
+    "prompt":  "Analiza la estructura completa del proyecto, identifica los modulos principales y explica como se relacionan entre si.",
+    "expected_mcp_usage":  "multiple",
+    "model":  "kilo/kilo-auto/free",
+    "session_id":  "ses_ea599afe1ffegeYH2AaGCVBgOa",
+    "status":  "success",
+    "exit_code":  null,
+    "tokens_input":  18621,
+    "tokens_output":  706,
+    "tokens_reasoning":  92,
+    "tokens_cache_read":  45376,
+    "tokens_cache_write":  0,
+    "tokens_total":  19419,
+    "cost_usd":  0,
+    "latency_seconds":  91.67,
+    "assistant_messages":  1,
+    "tool_calls_count":  6,
+    "tool_calls_by_server":  {
+                                 "unknown":  [
+                                                 "bash",
+                                                 "bash",
+                                                 "bash",
+                                                 "bash",
+                                                 "bash",
+                                                 "bash"
+                                             ]
+                             },
+    "tool_calls_list":  [
+                            {
+                                "tool":  "bash",
+                                "server":  null,
+                                "args":  {
+                                             "command":  "find . -type f -not -path \u0027*/node_modules/*\u0027 -not -path \u0027*/.git/*\u0027 | head -100"
+                                         },
+                                "status":  "completed",
+                                "time":  1792518040061
+                            },
+                            {
+                                "tool":  "bash",
+                                "server":  null,
+                                "args":  {
+                                             "command":  "ls -la"
+                                         },
+                                "status":  "completed",
+                                "time":  1792518040480
+                            },
+                            {
+                                "tool":  "bash",
+                                "server":  null,
+                                "args":  {
+                                             "command":  "Get-ChildItem -LiteralPath \".\""
+                                         },
+                                "status":  "completed",
+                                "time":  1792518051259
+                            },
+                            {
+                                "tool":  "bash",
+                                "server":  null,
+                                "args":  {
+                                             "command":  "Get-ChildItem -Recurse -File -LiteralPath \".\" | Select-Object -ExpandProperty FullName | Select-Object -First 100"
+                                         },
+                                "status":  "completed",
+                                "time":  1792518051500
+                            },
+                            {
+                                "tool":  "bash",
+                                "server":  null,
+                                "args":  {
+                                             "command":  "Get-Content -LiteralPath \"README.md\"; Get-Content -LiteralPath \"package.json\""
+                                         },
+                                "status":  "completed",
+                                "time":  1792518060062
+                            },
+                            {
+                                "tool":  "bash",
+                                "server":  null,
+                                "args":  {
+                                             "command":  "Get-Content -LiteralPath \"src\\index.ts\"; Get-Content -LiteralPath \"src\\types.ts\""
+                                         },
+                                "status":  "completed",
+                                "time":  1792518068417
+                            }
+                        ],
+    "errors":  [
+
+               ],
+    "response_chars":  1797,
+    "started_at":  "2026-10-20T19:39:47.8379853+02:00",
+    "ended_at":  "2026-10-20T19:41:19.5046421+02:00",
+    "raw_file":  ".\\benchmark-mcp\\results\\baseline01\\baseline\\Q06\\run-1\\raw.jsonl"
+}

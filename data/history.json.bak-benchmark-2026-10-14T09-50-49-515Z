@@ -1,0 +1,482 @@
+[
+  {
+    "id": "1791968577923-57zqd57",
+    "timestamp": "2026-10-14T09:02:57.923Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "SMALL_CODE",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 8,
+      "latencySeconds": 0.063,
+      "toolingCost": 0,
+      "quality": 0,
+      "failed": true
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 25,
+      "query": "leer missing.ts"
+    }
+  },
+  {
+    "id": "1791969682387-j2nels1",
+    "timestamp": "2026-10-14T09:21:22.387Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 8200,
+      "latencySeconds": 15,
+      "toolingCost": 0,
+      "quality": 0.86,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791969754220-vdpdicn",
+    "timestamp": "2026-10-14T09:22:34.220Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "UNKNOWN",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 900,
+      "latencySeconds": 1.8,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791969754229-2zl9ti3",
+    "timestamp": "2026-10-14T09:22:34.229Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "LARGE_CONTEXT",
+    "optimizer": "SEMBLE",
+    "metrics": {
+      "tokens": 3600,
+      "latencySeconds": 11,
+      "toolingCost": 0,
+      "quality": 0.92,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791969754281-lisdbdo",
+    "timestamp": "2026-10-14T09:22:34.281Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "TERMINAL",
+    "optimizer": "RTK",
+    "metrics": {
+      "tokens": 2600,
+      "latencySeconds": 6.5,
+      "toolingCost": 0,
+      "quality": 0.98,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970038020-klsv86a",
+    "timestamp": "2026-10-14T09:27:18.020Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 1200,
+      "latencySeconds": 2.5,
+      "toolingCost": 0,
+      "quality": 0.95,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998371-q4safdd",
+    "timestamp": "2026-10-14T09:43:18.371Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 8200,
+      "latencySeconds": 15,
+      "toolingCost": 0,
+      "quality": 0.86,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 3,
+      "contextSizeBytes": 15000,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998461-f8l9x11",
+    "timestamp": "2026-10-14T09:43:18.461Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "LARGE_CONTEXT",
+    "optimizer": "SEMBLE",
+    "metrics": {
+      "tokens": 3600,
+      "latencySeconds": 11,
+      "toolingCost": 0,
+      "quality": 0.92,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 180000,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998488-epvwc5e",
+    "timestamp": "2026-10-14T09:43:18.488Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "TERMINAL",
+    "optimizer": "RTK",
+    "metrics": {
+      "tokens": 2600,
+      "latencySeconds": 6.5,
+      "toolingCost": 0,
+      "quality": 0.98,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 30000,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998508-rz45oii",
+    "timestamp": "2026-10-14T09:43:18.508Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "SMALL_CODE",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 900,
+      "latencySeconds": 1.8,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 4000,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791971378499-j8z4a9d",
+    "timestamp": "2026-10-14T09:49:38.499Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 2003,
+      "latencySeconds": 5.7411030408989046,
+      "toolingCost": 0,
+      "quality": 0.9168317816450019,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 3,
+      "contextSizeBytes": 15000,
+      "query": "Buscar donde se maneja la autenticacion en el repositorio"
+    }
+  },
+  {
+    "id": "1791971378597-ua7hu57",
+    "timestamp": "2026-10-14T09:49:38.597Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 8000,
+      "latencySeconds": 14,
+      "toolingCost": 0,
+      "quality": 0.85,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 3,
+      "contextSizeBytes": 15000,
+      "query": "Buscar donde se maneja la autenticacion en el repositorio"
+    }
+  },
+  {
+    "id": "1791971379699-hw8f9sz",
+    "timestamp": "2026-10-14T09:49:39.699Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "LARGE_CONTEXT",
+    "optimizer": "SEMBLE",
+    "metrics": {
+      "tokens": 4470,
+      "latencySeconds": 11.950116249834522,
+      "toolingCost": 0,
+      "quality": 0.8817936443603775,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 180000,
+      "query": "Analizar un log de 3000 lineas para encontrar errores de conexion"
+    }
+  },
+  {
+    "id": "1791971379782-zyz1z42",
+    "timestamp": "2026-10-14T09:49:39.782Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "LARGE_CONTEXT",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 25000,
+      "latencySeconds": 55,
+      "toolingCost": 0,
+      "quality": 0.78,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 180000,
+      "query": "Analizar un log de 3000 lineas para encontrar errores de conexion"
+    }
+  },
+  {
+    "id": "1791971380944-b0t0hjo",
+    "timestamp": "2026-10-14T09:49:40.944Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "TERMINAL",
+    "optimizer": "RTK",
+    "metrics": {
+      "tokens": 2896,
+      "latencySeconds": 6.450343365558556,
+      "toolingCost": 0,
+      "quality": 0.9237893151749761,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 30000,
+      "query": "Ejecutar npm test y revisar la salida de los tests que fallan"
+    }
+  },
+  {
+    "id": "1791971381011-hs1iv60",
+    "timestamp": "2026-10-14T09:49:41.012Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "TERMINAL",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 60000,
+      "latencySeconds": 32,
+      "toolingCost": 0,
+      "quality": 0.95,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 30000,
+      "query": "Ejecutar npm test y revisar la salida de los tests que fallan"
+    }
+  },
+  {
+    "id": "1791971382119-m6w6t0o",
+    "timestamp": "2026-10-14T09:49:42.119Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "SMALL_CODE",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 960,
+      "latencySeconds": 1.6187433364263701,
+      "toolingCost": 0,
+      "quality": 0.9790555295586852,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 4000,
+      "query": "Cambiar el color del boton a azul en el header"
+    }
+  },
+  {
+    "id": "1791971382177-xlxn9hx",
+    "timestamp": "2026-10-14T09:49:42.177Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "SMALL_CODE",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 1200,
+      "latencySeconds": 2,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 4000,
+      "query": "Cambiar el color del boton a azul en el header"
+    }
+  },
+  {
+    "id": "1791971383289-br1p8k7",
+    "timestamp": "2026-10-14T09:49:43.289Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "REFACTOR",
+    "optimizer": "RTK",
+    "metrics": {
+      "tokens": 19323,
+      "latencySeconds": 27.225996753255075,
+      "toolingCost": 0,
+      "quality": 0.8603320383422556,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 8,
+      "contextSizeBytes": 80000,
+      "query": "Refactorizar el sistema de scoring para separar coste v1 y v2, actualizar tests y documentacion"
+    }
+  },
+  {
+    "id": "1791971383362-e4xmp4f",
+    "timestamp": "2026-10-14T09:49:43.362Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "REFACTOR",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 45000,
+      "latencySeconds": 48,
+      "toolingCost": 0,
+      "quality": 0.9,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 8,
+      "contextSizeBytes": 80000,
+      "query": "Refactorizar el sistema de scoring para separar coste v1 y v2, actualizar tests y documentacion"
+    }
+  },
+  {
+    "id": "1791971384506-mbomf2o",
+    "timestamp": "2026-10-14T09:49:44.506Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "MULTISTEP",
+    "optimizer": "DCP",
+    "metrics": {
+      "tokens": 5896,
+      "latencySeconds": 11.566756600540504,
+      "toolingCost": 0,
+      "quality": 0.9452632040191014,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 5,
+      "contextSizeBytes": 50000,
+      "query": "Planificar la migracion del router a un nuevo esquema de eventos en 5 fases"
+    }
+  },
+  {
+    "id": "1791971384618-el71jwk",
+    "timestamp": "2026-10-14T09:49:44.619Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "MULTISTEP",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 12000,
+      "latencySeconds": 22,
+      "toolingCost": 0,
+      "quality": 0.92,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 5,
+      "contextSizeBytes": 50000,
+      "query": "Planificar la migracion del router a un nuevo esquema de eventos en 5 fases"
+    }
+  },
+  {
+    "id": "1791971385766-warpyqy",
+    "timestamp": "2026-10-14T09:49:45.767Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 2460,
+      "latencySeconds": 5.200295161475762,
+      "toolingCost": 0,
+      "quality": 0.962158476160137,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 10,
+      "contextSizeBytes": 60000,
+      "query": "Encontrar todas las llamadas a la funcion extractModelFamily en el repositorio"
+    }
+  },
+  {
+    "id": "1791971385852-h48e7ze",
+    "timestamp": "2026-10-14T09:49:45.852Z",
+    "model": "klia/GLM-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 9500,
+      "latencySeconds": 17,
+      "toolingCost": 0,
+      "quality": 0.88,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 10,
+      "contextSizeBytes": 60000,
+      "query": "Encontrar todas las llamadas a la funcion extractModelFamily en el repositorio"
+    }
+  }
+]

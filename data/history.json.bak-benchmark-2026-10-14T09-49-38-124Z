@@ -1,0 +1,202 @@
+[
+  {
+    "id": "1791968577923-57zqd57",
+    "timestamp": "2026-10-14T09:02:57.923Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "SMALL_CODE",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 8,
+      "latencySeconds": 0.063,
+      "toolingCost": 0,
+      "quality": 0,
+      "failed": true
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 25,
+      "query": "leer missing.ts"
+    }
+  },
+  {
+    "id": "1791969682387-j2nels1",
+    "timestamp": "2026-10-14T09:21:22.387Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 8200,
+      "latencySeconds": 15,
+      "toolingCost": 0,
+      "quality": 0.86,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791969754220-vdpdicn",
+    "timestamp": "2026-10-14T09:22:34.220Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "UNKNOWN",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 900,
+      "latencySeconds": 1.8,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791969754229-2zl9ti3",
+    "timestamp": "2026-10-14T09:22:34.229Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "LARGE_CONTEXT",
+    "optimizer": "SEMBLE",
+    "metrics": {
+      "tokens": 3600,
+      "latencySeconds": 11,
+      "toolingCost": 0,
+      "quality": 0.92,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791969754281-lisdbdo",
+    "timestamp": "2026-10-14T09:22:34.281Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "TERMINAL",
+    "optimizer": "RTK",
+    "metrics": {
+      "tokens": 2600,
+      "latencySeconds": 6.5,
+      "toolingCost": 0,
+      "quality": 0.98,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970038020-klsv86a",
+    "timestamp": "2026-10-14T09:27:18.020Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 1200,
+      "latencySeconds": 2.5,
+      "toolingCost": 0,
+      "quality": 0.95,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998371-q4safdd",
+    "timestamp": "2026-10-14T09:43:18.371Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 8200,
+      "latencySeconds": 15,
+      "toolingCost": 0,
+      "quality": 0.86,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 3,
+      "contextSizeBytes": 15000,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998461-f8l9x11",
+    "timestamp": "2026-10-14T09:43:18.461Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "LARGE_CONTEXT",
+    "optimizer": "SEMBLE",
+    "metrics": {
+      "tokens": 3600,
+      "latencySeconds": 11,
+      "toolingCost": 0,
+      "quality": 0.92,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 180000,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998488-epvwc5e",
+    "timestamp": "2026-10-14T09:43:18.488Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "TERMINAL",
+    "optimizer": "RTK",
+    "metrics": {
+      "tokens": 2600,
+      "latencySeconds": 6.5,
+      "toolingCost": 0,
+      "quality": 0.98,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 0,
+      "contextSizeBytes": 30000,
+      "toolCallsExpected": "low"
+    }
+  },
+  {
+    "id": "1791970998508-rz45oii",
+    "timestamp": "2026-10-14T09:43:18.508Z",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "SMALL_CODE",
+    "optimizer": "BASELINE",
+    "metrics": {
+      "tokens": 900,
+      "latencySeconds": 1.8,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "contextSnapshot": {
+      "fileCount": 1,
+      "contextSizeBytes": 4000,
+      "toolCallsExpected": "low"
+    }
+  }
+]

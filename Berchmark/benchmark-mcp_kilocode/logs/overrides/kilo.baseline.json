@@ -1,0 +1,51 @@
+{
+    "$schema":  "https://app.kilo.ai/config.json",
+    "mcp":  {
+                "klia-token-optimizer":  {
+                                             "type":  "local",
+                                             "command":  [
+                                                             "node",
+                                                             "C:\\ProyectosV2\\telemetria\\Klia_Token_Optimizer_All\\test-mcp-real2\\.\\dist\\mcp-server.js"
+                                                         ],
+                                             "environment":  {
+                                                                 "ROUTER_HISTORY_PATH":  "~/.klia/data/history.json",
+                                                                 "ROUTER_METRICS_PATH":  "~/.klia/data/mcp-metrics.json",
+                                                                 "ROUTER_EVENTS_PATH":  "~/.klia/data/events.json",
+                                                                 "ROUTER_MIN_CONFIDENCE":  "0.6",
+                                                                 "ROUTER_EXPLORATION_RATE":  "0.1",
+                                                                 "ROUTER_MIN_SAMPLES":  "3"
+                                                             },
+                                             "enabled":  false
+                                         },
+                "semble":  {
+                               "type":  "local",
+                               "command":  [
+                                               "uvx",
+                                               "--from",
+                                               "semble[mcp]==0.6.1",
+                                               "semble"
+                                           ],
+                               "enabled":  false
+                           },
+                "repomix":  {
+                                "type":  "local",
+                                "command":  [
+                                                "npx",
+                                                "-y",
+                                                "repomix",
+                                                "--mcp"
+                                            ],
+                                "enabled":  false
+                            },
+                "serena":  {
+                               "type":  "local",
+                               "command":  [
+                                               "serena",
+                                               "start-mcp-server",
+                                               "--context",
+                                               "ide"
+                                           ],
+                               "enabled":  false
+                           }
+            }
+}

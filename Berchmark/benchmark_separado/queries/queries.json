@@ -1,0 +1,203 @@
+{
+  "$schema": "benchmark-separado-queries-v1.json",
+  "version": "1.0.0",
+  "description": "Bateria de 18 consultas realistas para benchmark baseline vs optimizer. Las consultas no mencionan herramientas MCP ni palabras clave del router. El modelo decide como resolverlas.",
+  "project_context": "klia-token-optimizer",
+  "model": "klia/GLM-5.2",
+  "metadata": {
+    "total_queries": 18,
+    "categories_covered": [
+      "BUSQUEDA_FUNCION",
+      "BUSQUEDA_REFERENCIAS",
+      "EMPAQUETADO_REPO",
+      "DOCUMENTACION",
+      "COMANDO_TERMINAL",
+      "ANALISIS_ESTRUCTURA",
+      "REFACTOR",
+      "FIX_BUG",
+      "TEST",
+      "MULTISTEP"
+    ],
+    "task_types_covered": [
+      "REPOSITORY_SEARCH",
+      "LARGE_CONTEXT",
+      "TERMINAL",
+      "SMALL_CODE",
+      "REFACTOR",
+      "MULTISTEP"
+    ],
+    "design_notes": [
+      "Las consultas son realistas: un desarrollador las haria normalmente.",
+      "No contienen palabras clave del router (small_code, terminal, refactor, etc.).",
+      "No mencionan MCP ni herramientas especificas.",
+      "Las consultas son identicas en ambos scripts (baseline y optimizer).",
+      "Q01-Q12: tareas de lectura y analisis (read-only).",
+      "Q13-Q18: tareas de modificacion (refactor, fix, test, multistep).",
+      "El numero de archivo (.md) coincide entre scripts: baseline07.md vs optimizer07.md = mismo prompt."
+    ]
+  },
+  "queries": [
+    {
+      "id": "Q01",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "localizar_codigo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Busca la funcion classifyTask en este codigo y muestrame donde esta y que hace.",
+      "expected_behavior": "Busqueda puntual. Puede usar semble, grep o read para localizar la funcion.",
+      "quality_criteria": "Ubicacion correcta (archivo y linea); Firma de la funcion; Descripcion breve de que hace"
+    },
+    {
+      "id": "Q02",
+      "category": "BUSQUEDA_FUNCION",
+      "subcategory": "localizar_codigo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Donde se define la funcion createAdaptiveRouter y que parametros recibe?",
+      "expected_behavior": "Busqueda puntual de una funcion exportada en index.ts.",
+      "quality_criteria": "Archivo correcto; Lista de parametros; Tipo de retorno"
+    },
+    {
+      "id": "Q03",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_funcion",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "Lista todos los archivos donde se llama o se importa la funcion computeCostUsd.",
+      "expected_behavior": "Busqueda de referencias. Puede usar semble find_related, serena o grep.",
+      "quality_criteria": "Lista de archivos que referencian la funcion; Incluye el archivo de definicion; No omite archivos principales"
+    },
+    {
+      "id": "Q04",
+      "category": "BUSQUEDA_REFERENCIAS",
+      "subcategory": "usos_de_tipo",
+      "task_type": "REPOSITORY_SEARCH",
+      "prompt": "En que archivos se usa el tipo RouterEvent? Muestra la lista.",
+      "expected_behavior": "Busqueda de un tipo en el codigo.",
+      "quality_criteria": "Lista de archivos; Incluye definicion y usos; No incluye node_modules"
+    },
+    {
+      "id": "Q05",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "task_type": "LARGE_CONTEXT",
+      "prompt": "Empaqueta este repositorio en un solo archivo y muestrame el resumen de metricas (cuantos archivos, lineas y tamano total).",
+      "expected_behavior": "Deberia activar repomix_pack_codebase en modo optimizer. En baseline usaria glob+read manualmente o no podria.",
+      "quality_criteria": "Genera archivo consolidado o resumen; Muestra metricas (archivos, lineas, tamano); Estructura legible"
+    },
+    {
+      "id": "Q06",
+      "category": "EMPAQUETADO_REPO",
+      "subcategory": "vision_global",
+      "task_type": "LARGE_CONTEXT",
+      "prompt": "Genera un resumen del modulo src/pricing/ con todos sus archivos y funciones exportadas.",
+      "expected_behavior": "Puede usar repomix (skill o pack) o leer archivos directamente.",
+      "quality_criteria": "Lista archivos del modulo pricing; Muestra funciones exportadas; Estructura organizada"
+    },
+    {
+      "id": "Q07",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_modulo",
+      "task_type": "LARGE_CONTEXT",
+      "prompt": "Explica que hace el modulo src/classifier/ y lista sus archivos principales con una linea de descripcion cada uno.",
+      "expected_behavior": "Puede usar semble, serena o leer archivos. Respuesta estructurada.",
+      "quality_criteria": "Lista al menos 3 archivos del modulo; Descripcion breve de cada uno; Explicacion del proposito del modulo"
+    },
+    {
+      "id": "Q08",
+      "category": "DOCUMENTACION",
+      "subcategory": "explicar_modulo",
+      "task_type": "SMALL_CODE",
+      "prompt": "Que hace extractModelFamily y donde se usa? Incluye un ejemplo de como se llama.",
+      "expected_behavior": "Busca la funcion, explica su proposito y muestra un ejemplo de uso.",
+      "quality_criteria": "Ubicacion correcta; Explicacion del proposito; Ejemplo de llamada o uso"
+    },
+    {
+      "id": "Q09",
+      "category": "COMANDO_TERMINAL",
+      "subcategory": "git_log",
+      "task_type": "TERMINAL",
+      "prompt": "Ejecuta git log en este repositorio y muestra los ultimos 5 commits con hash, fecha y mensaje.",
+      "expected_behavior": "Ejecuta git log. RTK puede comprimir la salida. Comando terminal.",
+      "quality_criteria": "Muestra 5 commits; Incluye hash, fecha y mensaje; Formato legible"
+    },
+    {
+      "id": "Q10",
+      "category": "COMANDO_TERMINAL",
+      "subcategory": "git_status",
+      "task_type": "TERMINAL",
+      "prompt": "Ejecuta git status en este repositorio y muestrame el estado actual de los archivos.",
+      "expected_behavior": "Ejecuta git status. RTK puede comprimir la salida.",
+      "quality_criteria": "Muestra estado de archivos; Indica rama actual; Formato legible"
+    },
+    {
+      "id": "Q11",
+      "category": "ANALISIS_ESTRUCTURA",
+      "subcategory": "dependencias",
+      "task_type": "LARGE_CONTEXT",
+      "prompt": "Lista los modulos principales de la carpeta src/ de este proyecto con una breve descripcion de cada uno.",
+      "expected_behavior": "Puede usar glob, semble o leer directamente. Respuesta breve.",
+      "quality_criteria": "Lista al menos 5 modulos; Descripcion breve de cada uno; Estructura clara"
+    },
+    {
+      "id": "Q12",
+      "category": "ANALISIS_ESTRUCTURA",
+      "subcategory": "dependencias",
+      "task_type": "SMALL_CODE",
+      "prompt": "Cuales son las dependencias principales de este proyecto segun package.json? Lista las mas importantes.",
+      "expected_behavior": "Lee package.json y lista dependencias. Puede usar read directamente.",
+      "quality_criteria": "Lista dependencias principales; No incluye devDependencies; Formato legible"
+    },
+    {
+      "id": "Q13",
+      "category": "REFACTOR",
+      "subcategory": "reducir_complejidad",
+      "task_type": "REFACTOR",
+      "prompt": "Refactoriza computeRecordCost en src/scorer/expected-cost-scorer.ts para reducir su complejidad ciclomatica extrayendo metodos auxiliares. No cambies el comportamiento.",
+      "expected_behavior": "Deberia usar serena para analisis simbolico y edit para aplicar cambios. Tarea de refactor.",
+      "quality_criteria": "Extrae metodos auxiliares con nombres descriptivos; Mantiene el comportamiento; Compila sin errores"
+    },
+    {
+      "id": "Q14",
+      "category": "REFACTOR",
+      "subcategory": "rename_symbol",
+      "task_type": "REFACTOR",
+      "prompt": "Renombra la variable conf a confidence en todo el archivo src/selector/optimizer-selector.ts.",
+      "expected_behavior": "Rename simbolico. Serena brilla con rename_symbol. En baseline usaria grep+edit manual.",
+      "quality_criteria": "Todas las ocurrencias renombradas; No rompe otros archivos; Muestra los cambios"
+    },
+    {
+      "id": "Q15",
+      "category": "FIX_BUG",
+      "subcategory": "anadir_validacion",
+      "task_type": "SMALL_CODE",
+      "prompt": "Anade validacion de null en el parametro signals de classifyTaskDetailed. Si es null, lanza TypeError con mensaje descriptivo.",
+      "expected_behavior": "Cambio pequeno en un archivo. DCP optimizador podria aplicar. Edit directo.",
+      "quality_criteria": "Anade la validacion; Mensaje descriptivo; No rompe casos existentes"
+    },
+    {
+      "id": "Q16",
+      "category": "FIX_BUG",
+      "subcategory": "fix_y_test",
+      "task_type": "MULTISTEP",
+      "prompt": "El metodo extractModelFamily falla cuando el modelo no tiene guion. Corrige el bug y anade un test que cubra el caso.",
+      "expected_behavior": "Fix + test en multiples pasos. MULTISTEP real. Puede usar serena+edit+write.",
+      "quality_criteria": "Identifica el bug; Aplica el fix; Anade test que cubre el caso"
+    },
+    {
+      "id": "Q17",
+      "category": "TEST",
+      "subcategory": "escribir_tests",
+      "task_type": "SMALL_CODE",
+      "prompt": "Escribe tests con Vitest para la funcion extractModelFamily en src/utils/model-family.ts. Cubre al menos 3 casos.",
+      "expected_behavior": "Escritura de tests. SMALL_CODE. Puede usar read+write.",
+      "quality_criteria": "Usa Vitest; Cubre al menos 3 casos; Tests validos"
+    },
+    {
+      "id": "Q18",
+      "category": "MULTISTEP",
+      "subcategory": "cambio_multi_archivo",
+      "task_type": "MULTISTEP",
+      "prompt": "Anade un campo quality opcional al esquema RouterEvent en src/types.ts, propagalo en record_execution en src/mcp-server.ts y actualiza el migrador en src/history/migrate.ts.",
+      "expected_behavior": "Cambio que toca 3 archivos. MULTISTEP real. Requiere leer, entender y editar multiples archivos.",
+      "quality_criteria": "Anade el campo en types.ts; Propaga en mcp-server.ts; Actualiza el migrador; Coherencia entre archivos"
+    }
+  ]
+}

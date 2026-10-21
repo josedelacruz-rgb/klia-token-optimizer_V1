@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "version": "1.0.0",
+  "description": "Bateria de consultas para benchmark MCP vs baseline OpenAI. Las mismas consultas se ejecutan en ambos entornos sin reformulacion.",
+  "project_context": "C:\\ProyectosV2\\telemetria\\Klia_Optimizer_Last_Version",
+  "model": "kilo/kilo-auto/free",
+  "queries": [
+    {
+      "id": "Q01",
+      "category": "SIMPLE_INFO",
+      "subcategory": "concepto_general",
+      "prompt": "Que es un closure en JavaScript y como se usa? Explica con un ejemplo breve.",
+      "expected_behavior": "Respuesta directa sin necesidad de herramientas. El modelo debe responder desde su conocimiento.",
+      "quality_criteria": [
+        "Definicion correcta de closure",
+        "Ejemplo de codigo funcional",
+        "Explicacion del ambitito lexico"
+      ],
+      "expected_mcp_usage": "none"
+    },
+    {
+      "id": "Q02",
+      "category": "SIMPLE_INFO",
+      "subcategory": "concepto_general",
+      "prompt": "Cual es la diferencia entre let, const y var en JavaScript?",
+      "expected_behavior": "Respuesta directa sin herramientas. Diferencias de ambito y reasignacion.",
+      "quality_criteria": [
+        "Diferencia de ambito (function vs block)",
+        "Diferencia de reasignacion",
+        "Mencion de hoisting"
+      ],
+      "expected_mcp_usage": "none"
+    },
+    {
+      "id": "Q03",
+      "category": "SEARCH_RETRIEVAL",
+      "subcategory": "busqueda_codigo",
+      "prompt": "Busca la funcion classifyTask en este repositorio y muestra su firma y ubicacion.",
+      "expected_behavior": "Puede usar semble/serena/grep para encontrar la funcion. En baseline usara grep/glob nativos.",
+      "quality_criteria": [
+        "Ubicacion correcta del archivo",
+        "Firma de la funcion completa",
+        "Numero de linea"
+      ],
+      "expected_mcp_usage": "optional"
+    },
+    {
+      "id": "Q04",
+      "category": "SEARCH_RETRIEVAL",
+      "subcategory": "busqueda_referencias",
+      "prompt": "Encuentra todas las referencias al tipo Optimizer en el codigo fuente y lista en que archivos se usa.",
+      "expected_behavior": "Busqueda de referencias. MCP puede usar serena o semble. Baseline usara grep.",
+      "quality_criteria": [
+        "Lista de archivos que referencian Optimizer",
+        "No omite archivos principales",
+        "Incluye la definicion del tipo"
+      ],
+      "expected_mcp_usage": "optional"
+    },
+    {
+      "id": "Q05",
+      "category": "MCP_TOOL_SELECTION",
+      "subcategory": "empaquetado_repo",
+      "prompt": "Empaqueta este repositorio en un solo archivo para analisis y muestrame el resumen de metricas.",
+      "expected_behavior": "MCP debe usar repomix. Baseline no podra empaquetar, intentara algo alternativo.",
+      "quality_criteria": [
+        "Genera archivo consolidado",
+        "Muestra metricas (archivos, lineas, tamano)",
+        "Estructura legible"
+      ],
+      "expected_mcp_usage": "repomix"
+    },
+    {
+      "id": "Q06",
+      "category": "MULTI_TOOL",
+      "subcategory": "analisis_estructura",
+      "prompt": "Analiza la estructura completa del proyecto, identifica los modulos principales y explica como se relacionan entre si.",
+      "expected_behavior": "Puede usar multiple herramientas: repomix (empaquetar), semble (buscar), serena (simbolos). Varias llamadas.",
+      "quality_criteria": [
+        "Identifica modulos principales (classifier, rules, scorer, selector, history)",
+        "Explica relaciones entre modulos",
+        "Estructura arborescente o lista organizada"
+      ],
+      "expected_mcp_usage": "multiple"
+    },
+    {
+      "id": "Q07",
+      "category": "COMPLEX_ANALYSIS",
+      "subcategory": "comparacion_enfoques",
+      "prompt": "Compara el enfoque de router adaptativo con un sistema de reglas fijas. Incluye ventajas, desventajas y recomendaciones de uso para cada uno.",
+      "expected_behavior": "Analisis complejo. Puede usar herramientas para inspeccionar el codigo del router. Respuesta estructurada.",
+      "quality_criteria": [
+        "Definicion de ambos enfoques",
+        "Al menos 3 ventajas y 3 desventajas de cada uno",
+        "Recomendaciones de uso concretas"
+      ],
+      "expected_mcp_usage": "optional"
+    },
+    {
+      "id": "Q08",
+      "category": "MCP_CHOICE",
+      "subcategory": "documentacion_busqueda",
+      "prompt": "Genera documentacion del modulo classifier y luego busca codigo similar a la funcion classifyTask en otros archivos del proyecto.",
+      "expected_behavior": "Debe usar repomix (skill) o serena para documentar, y luego semble/serena para buscar similar. Multi-servidor.",
+      "quality_criteria": [
+        "Documentacion generada del modulo",
+        "Busqueda de codigo similar",
+        "Resultados de codigo similar relevantes"
+      ],
+      "expected_mcp_usage": "multiple_servers"
+    },
+    {
+      "id": "Q09",
+      "category": "DIRECT_OPENAI",
+      "subcategory": "escritura_codigo",
+      "prompt": "Escribe una funcion en Python que invierta una cadena de texto sin usar slicing negativo.",
+      "expected_behavior": "Respuesta directa del modelo. No necesita herramientas.",
+      "quality_criteria": [
+        "Funcion Python valida",
+        "No usa [::-1]",
+        "Manja caso vacio"
+      ],
+      "expected_mcp_usage": "none"
+    },
+    {
+      "id": "Q10",
+      "category": "DIRECT_OPENAI",
+      "subcategory": "explicacion_concepto",
+      "prompt": "Explica la diferencia entre herencia prototipica y herencia clasica en JavaScript con ejemplos de codigo.",
+      "expected_behavior": "Respuesta directa del modelo con ejemplos. No necesita herramientas.",
+      "quality_criteria": [
+        "Definicion de herencia prototipica",
+        "Definicion de herencia clasica (ES6 classes)",
+        "Ejemplos de codigo de ambos"
+      ],
+      "expected_mcp_usage": "none"
+    },
+    {
+      "id": "Q11",
+      "category": "AMBIGUOUS_ERROR",
+      "subcategory": "diagnostico_error",
+      "prompt": "Que significa el error 'Cannot find module' en Node.js y como se soluciona? Incluye las causas mas comunes.",
+      "expected_behavior": "Respuesta de diagnostico. Puede usar herramientas para verificar node_modules si esta en contexto de proyecto.",
+      "quality_criteria": [
+        "Al menos 3 causas comunes",
+        "Soluciones para cada causa",
+        "Comando npm install mencionado"
+      ],
+      "expected_mcp_usage": "none"
+    },
+    {
+      "id": "Q12",
+      "category": "AMBIGUOUS_ERROR",
+      "subcategory": "comando_fallido",
+      "prompt": "Ejecuta el comando git log en este repositorio y muestra los ultimos 5 commits con su hash, fecha y mensaje.",
+      "expected_behavior": "Debe ejecutar git log. MCP puede o no intervenir. El comando debe funcionar en ambos entornos.",
+      "quality_criteria": [
+        "Muestra 5 commits",
+        "Incluye hash, fecha y mensaje",
+        "Formato legible"
+      ],
+      "expected_mcp_usage": "terminal"
+    }
+  ],
+  "metadata": {
+    "total_queries": 12,
+    "categories_covered": [
+      "SIMPLE_INFO",
+      "SEARCH_RETRIEVAL",
+      "MCP_TOOL_SELECTION",
+      "MULTI_TOOL",
+      "COMPLEX_ANALYSIS",
+      "MCP_CHOICE",
+      "DIRECT_OPENAI",
+      "AMBIGUOUS_ERROR"
+    ],
+    "design_notes": [
+      "Las consultas no mencionan MCP ni herramientas especificas.",
+      "Las consultas son identicas en ambos entornos.",
+      "El modelo decide si usar herramientas segun su logica nativa.",
+      "Q01-Q02 y Q09-Q11 deberian resolverse sin herramientas en ambos entornos.",
+      "Q05 y Q08 deberian activar herramientas MCP en el entorno B.",
+      "Q03-Q04 y Q06-Q07 pueden usar herramientas en ambos entornos.",
+      "Q12 requiere ejecutar un comando terminal en ambos entornos."
+    ]
+  }
+}

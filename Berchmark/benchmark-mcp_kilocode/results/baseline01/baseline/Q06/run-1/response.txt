@@ -1,0 +1,12 @@
+El proyecto es `sample-project`, un router adaptativo de optimizadores de tokens en TypeScript/Node.js. MÃ³dulos principales en `src/`:
+
+- **classifier** (`task-classifier`, `bayes-classifier`, `reclassify`, `retrain`, `operation-rules`): clasifica tareas por tipo (SMALL_CODE, TERMINAL, etc.) usando reglas + Naive Bayes.
+- **types** (`types.ts`, `types.legacy.ts`): tipos compartidos (Optimizer, TaskSignals, RouterDecision, RouterEvent, etc.).
+- **selector** (`optimizer-selector`, `exploration`, `saver-direct`, `shadow-mode`): elige el optimizador (BASELINE, DCP, RTK, etc.) y maneja exploraciÃ³n/exploit.
+- **history** (`history-store`, `router-event-store`, `reprompt`, `mcp-metrics-store`, `migrate`, `schemas`): persistencia de eventos de ejecuciÃ³n y mÃ©tricas.
+- **scorer** (`expected-cost-scorer`, `uncertainty-scorer`, `stats-report`): cÃ¡lculo de coste esperado y estadÃ­sticas.
+- **cache** (`optimizer-cache`): cache de decisiones del router.
+- **session** (`session-store`), **checkpoint** (`multistep-checkpoint`): continuidad de tareas multipaso.
+- **prompt-optimizer**, **autopilot**, **monitor** (`token-burn-monitor`), **pricing**, **project** (perfiles), **security** (`secret-redactor`), **utils**, **dashboard**, **export**, **mcp**, **scripts** (CLIs).
+
+Relaciones: `index.ts` (`createAdaptiveRouter`) orquesta el flujo: `classifier` analiza seÃ±ales â†’ `selector` (con `exploration` si estÃ¡ activo) consulta `history` y `cache` para elegir optimizador â†’ devuelve `RouterDecision`. `recordExecution` aÃ±ade al `history` e invalida `cache`. `buildRecord`/`buildContextFromQuery` conectan contexto, clasificador y mÃ©tricas. `scripts/*` y `dashboard` son CLIs/UI sobre estos mÃ³dulos; `mcp-server` expone herramientas. Tests en `tests/` replican la estructura de `src/`.

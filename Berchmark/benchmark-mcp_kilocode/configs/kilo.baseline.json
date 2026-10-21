@@ -1,0 +1,29 @@
+{
+  "$schema": "https://app.kilo.ai/config.json",
+  "mcp": {
+    "klia-token-optimizer": {
+      "type": "local",
+      "command": ["node", "./dist/mcp-server.js"],
+      "environment": {
+        "ROUTER_HISTORY_PATH": "~/.klia/data/history.json",
+        "ROUTER_METRICS_PATH": "~/.klia/data/mcp-metrics.json",
+        "ROUTER_EVENTS_PATH": "~/.klia/data/events.json",
+        "ROUTER_MIN_CONFIDENCE": "0.6",
+        "ROUTER_EXPLORATION_RATE": "0.1",
+        "ROUTER_MIN_SAMPLES": "3"
+      }
+    },
+    "semble": {
+      "type": "local",
+      "command": ["uvx", "--from", "semble[mcp]==0.6.1", "semble"]
+    },
+    "repomix": {
+      "type": "local",
+      "command": ["npx", "-y", "repomix", "--mcp"]
+    },
+    "serena": {
+      "type": "local",
+      "command": ["serena", "start-mcp-server", "--context", "ide"]
+    }
+  }
+}

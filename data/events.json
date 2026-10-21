@@ -1,0 +1,4129 @@
+[
+  {
+    "id": "1792172645817-woktkdb",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-16T17:44:05.817Z",
+    "type": "execution",
+    "sessionId": "sess-mvb9bjp7-uw15uh",
+    "query": "leer missing.ts",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "SMALL_CODE",
+    "signals": {
+      "fileCount": 1,
+      "contextSizeBytes": 25,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "SEMBLE",
+      "inputTokens": 7,
+      "outputTokens": 10,
+      "totalTokens": 17,
+      "latencySeconds": 0.051,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 0,
+      "failed": true
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792399676838-jd0yveq",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-19T08:47:56.838Z",
+    "type": "decision",
+    "sessionId": "sess-mvf0hm05-p4bi4b",
+    "projectId": "C:\\ProyectosV2\\telemetria\\Klia_Optimizer_Last_Version",
+    "query": "Inspeccionar infraestructura Mira: localizar instalacion, entender como ejecuta consultas OpenAI, como instala/desinstala servidores MCP, como descubre herramientas y como registra metricas de tokens. Tarea multipaso de exploracion de repo y sistema.",
+    "queryHash": "55a545e65a942bb2",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "high",
+      "hasTerminalCommands": true,
+      "isRefactor": false,
+      "isRepositorySearch": true,
+      "isMultistep": true
+    },
+    "analysis": {
+      "taskType": "TERMINAL",
+      "largeContext": false,
+      "manyFiles": false,
+      "expectedToolCalls": "high",
+      "requiresRepositorySearch": true,
+      "requiresRefactoring": false,
+      "requiresMultistep": true,
+      "hasTerminalCommands": true,
+      "singleFileNavigation": false,
+      "documentRetrieval": false
+    },
+    "decision": {
+      "optimizer": "RTK",
+      "version": "V0",
+      "confidence": 0,
+      "reason": "No hay historial para klia/glm-5.2/TERMINAL ni para su familia glm. Se usa la regla base RTK. Confianza insuficiente; sin exploracion en esta pasada."
+    },
+    "source": "mcp"
+  },
+  {
+    "id": "1792404041659-2d0erxy",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-19T10:00:41.659Z",
+    "type": "decision",
+    "sessionId": "sess-mvf335wv-r7ppa7",
+    "projectId": "C:\\ProyectosV2\\telemetria\\Klia_Optimizer_Last_Version",
+    "query": "Analiza la estructura completa del proyecto, identifica los modulos principales y explica como se relacionan entre si",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REPOSITORY_SEARCH",
+    "signals": {
+      "fileCount": 50,
+      "contextSizeBytes": 200000,
+      "toolCallsExpected": "medium",
+      "hasTerminalCommands": false,
+      "isRefactor": false,
+      "isRepositorySearch": true,
+      "isMultistep": false
+    },
+    "analysis": {
+      "taskType": "REPOSITORY_SEARCH",
+      "largeContext": true,
+      "manyFiles": true,
+      "expectedToolCalls": "medium",
+      "requiresRepositorySearch": true,
+      "requiresRefactoring": false,
+      "requiresMultistep": false,
+      "hasTerminalCommands": false
+    },
+    "decision": {
+      "optimizer": "CONTEXT_MODE",
+      "version": "V0",
+      "confidence": 0,
+      "reason": "No hay historial para klia/glm-5.2/REPOSITORY_SEARCH ni para su familia glm. Se usa la regla base CONTEXT_MODE. SEMBLE descartado en Windows por latencia (~170s, MinishLab/semble#133)."
+    },
+    "source": "mcp"
+  },
+  {
+    "id": "1792404196284-7yi29ju",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-19T10:03:16.284Z",
+    "type": "execution",
+    "sessionId": "sess-mvf335wv-r7ppa7",
+    "projectId": "C:\\ProyectosV2\\telemetria\\Klia_Optimizer_Last_Version",
+    "query": "Analiza la estructura completa del proyecto, identifica los modulos principales y explica como se relacionan entre si",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "LARGE_CONTEXT",
+    "signals": {
+      "fileCount": 50,
+      "contextSizeBytes": 200000,
+      "toolCallsExpected": "low"
+    },
+    "analysis": {
+      "taskType": "LARGE_CONTEXT",
+      "largeContext": true,
+      "manyFiles": true,
+      "expectedToolCalls": "low",
+      "requiresRepositorySearch": true,
+      "requiresRefactoring": false,
+      "requiresMultistep": false,
+      "hasTerminalCommands": false
+    },
+    "execution": {
+      "optimizer": "CONTEXT_MODE",
+      "inputTokens": 12000,
+      "outputTokens": 2000,
+      "totalTokens": 14000,
+      "tokensSource": "measured",
+      "latencySeconds": 45,
+      "costUsd": 0.009,
+      "toolingCost": 0,
+      "quality": 0.95,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792406094446-3my73k2",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-19T10:34:54.446Z",
+    "type": "decision",
+    "sessionId": "sess-mvf4b5tf-ixu1cn",
+    "projectId": "C:\\ProyectosV2\\telemetria\\Klia_Optimizer_Last_Version",
+    "query": "Escribe una funcion en Python que invierta una cadena de texto sin usar slicing negativo",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "UNKNOWN",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 0,
+      "toolCallsExpected": "low",
+      "hasTerminalCommands": false,
+      "isRefactor": false,
+      "isRepositorySearch": false,
+      "isMultistep": false
+    },
+    "analysis": {
+      "taskType": "UNKNOWN",
+      "largeContext": false,
+      "manyFiles": false,
+      "expectedToolCalls": "low",
+      "requiresRepositorySearch": false,
+      "requiresRefactoring": false,
+      "requiresMultistep": false,
+      "hasTerminalCommands": false
+    },
+    "decision": {
+      "optimizer": "BASELINE",
+      "version": "V0",
+      "confidence": 0,
+      "reason": "REFUSED saver-direct: tarea pequena, se resuelve con herramientas nativas"
+    },
+    "source": "mcp"
+  },
+  {
+    "id": "1792574697822-mij8ew1",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:24:57.822Z",
+    "type": "decision",
+    "sessionId": "sess-mvhwox25-uqsszy",
+    "query": "refactoriza el modulo de autenticacion",
+    "queryHash": "5dcc57f702f814e4",
+    "model": "klia/glm-5.2",
+    "modelFamily": "glm",
+    "taskType": "REFACTOR",
+    "signals": {
+      "fileCount": 12,
+      "contextSizeBytes": 250000,
+      "toolCallsExpected": "low",
+      "hasTerminalCommands": false,
+      "isRefactor": true,
+      "isRepositorySearch": false,
+      "isMultistep": false
+    },
+    "analysis": {
+      "taskType": "REFACTOR",
+      "largeContext": false,
+      "manyFiles": true,
+      "expectedToolCalls": "low",
+      "requiresRepositorySearch": false,
+      "requiresRefactoring": true,
+      "requiresMultistep": false,
+      "hasTerminalCommands": false,
+      "singleFileNavigation": false,
+      "documentRetrieval": false
+    },
+    "decision": {
+      "optimizer": "SERENA",
+      "version": "V0",
+      "confidence": 0,
+      "reason": "No hay historial para klia/glm-5.2/REFACTOR ni para su familia glm. Se usa la regla base SERENA."
+    },
+    "source": "cli"
+  },
+  {
+    "id": "1792575109290-u6zhsou",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:49.290Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxpv4-w6284u",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 61,
+      "outputTokens": 5000,
+      "totalTokens": 5061,
+      "latencySeconds": 0.865,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575109379-n0cdsdd",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:49.379Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxq2r-858mei",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 49,
+      "outputTokens": 1007,
+      "totalTokens": 1056,
+      "latencySeconds": 0.685,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575112914-x2a70na",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:52.914Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxt5s-ggzpif",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 32,
+      "outputTokens": 711,
+      "totalTokens": 743,
+      "latencySeconds": 0.229,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575113240-ks2wi7o",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:53.240Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxt5d-p75r1e",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 134,
+      "outputTokens": 4492,
+      "totalTokens": 4626,
+      "latencySeconds": 0.553,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575115527-4qojoro",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:55.527Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxv75-7ue06q",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 36,
+      "outputTokens": 5000,
+      "totalTokens": 5036,
+      "latencySeconds": 0.198,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575115601-2lra4gr",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:55.601Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxv8v-5vf1a9",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 38,
+      "outputTokens": 5000,
+      "totalTokens": 5038,
+      "latencySeconds": 0.213,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575119217-bz67g6i",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:59.217Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxy3p-qggenb",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 37,
+      "outputTokens": 2719,
+      "totalTokens": 2756,
+      "latencySeconds": 0.121,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575119298-vawesfz",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:31:59.298Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwxy4y-74yfm5",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 40,
+      "outputTokens": 1304,
+      "totalTokens": 1344,
+      "latencySeconds": 0.162,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575124521-586cs5l",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:04.521Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwy27q-ke2497",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 37,
+      "outputTokens": 5000,
+      "totalTokens": 5037,
+      "latencySeconds": 0.095,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575124620-a9hxaz0",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:04.620Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwy287-ja5nt5",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 39,
+      "outputTokens": 5000,
+      "totalTokens": 5039,
+      "latencySeconds": 0.179,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575127549-j4lqgux",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:07.549Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwy4k4-zd4b47",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 39,
+      "outputTokens": 4924,
+      "totalTokens": 4963,
+      "latencySeconds": 0.084,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575127706-46ptxbw",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:07.706Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwy4o0-sk3enm",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 39,
+      "outputTokens": 3954,
+      "totalTokens": 3993,
+      "latencySeconds": 0.096,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575135896-0l419s2",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:15.896Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyay4-bysegb",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "DCP",
+      "inputTokens": 40,
+      "outputTokens": 855,
+      "totalTokens": 895,
+      "latencySeconds": 0.154,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575136000-1fm6pjq",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:16.000Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyaye-1tdiz0",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 41,
+      "outputTokens": 859,
+      "totalTokens": 900,
+      "latencySeconds": 0.25,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575136140-l6eg031",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:16.140Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyb1f-lthr43",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 39,
+      "outputTokens": 4830,
+      "totalTokens": 4869,
+      "latencySeconds": 0.267,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575140050-n57zu5q",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:20.050Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwye71-uaf3gx",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 43,
+      "outputTokens": 2825,
+      "totalTokens": 2868,
+      "latencySeconds": 0.096,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575140786-zk30nvx",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:20.786Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyehe-wkyer8",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 82,
+      "outputTokens": 1510,
+      "totalTokens": 1592,
+      "latencySeconds": 0.464,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575144378-aebvpx5",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:24.378Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyhk1-3hakma",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 29,
+      "outputTokens": 2481,
+      "totalTokens": 2510,
+      "latencySeconds": 0.058,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575144454-90wolnl",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:24.454Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyhkd-f4mnik",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 31,
+      "outputTokens": 2343,
+      "totalTokens": 2374,
+      "latencySeconds": 0.14,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575144595-22izmmv",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:24.595Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyhps-ilcvyy",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 31,
+      "outputTokens": 2377,
+      "totalTokens": 2408,
+      "latencySeconds": 0.086,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575148318-mhbykw3",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:28.318Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwykk1-2q4jap",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 18,
+      "outputTokens": 1273,
+      "totalTokens": 1291,
+      "latencySeconds": 0.126,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575148656-xai5391",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:28.656Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwykgh-0rhpt3",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 50,
+      "outputTokens": 5000,
+      "totalTokens": 5050,
+      "latencySeconds": 0.587,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575152669-21mut77",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:32.669Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwynyq-77dwyw",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 19,
+      "outputTokens": 2709,
+      "totalTokens": 2728,
+      "latencySeconds": 0.056,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575153463-mwc4iq7",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:33.463Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyoat-b85m3r",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 80,
+      "outputTokens": 75,
+      "totalTokens": 155,
+      "latencySeconds": 0.422,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575156562-9ecbrwe",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:36.562Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyqy9-d5fgp8",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 33,
+      "outputTokens": 5000,
+      "totalTokens": 5033,
+      "latencySeconds": 0.08,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575157441-a0mjb89",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:37.441Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyraw-amagx0",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 104,
+      "outputTokens": 2089,
+      "totalTokens": 2193,
+      "latencySeconds": 0.51,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575162379-fffrt7g",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:42.379Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyuzz-1kfh2t",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 188,
+      "outputTokens": 343,
+      "totalTokens": 531,
+      "latencySeconds": 0.641,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575162430-1hdy644",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:42.430Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyv49-7qn8g3",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 45,
+      "outputTokens": 1451,
+      "totalTokens": 1496,
+      "latencySeconds": 0.55,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575165771-o0zf5gl",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:45.772Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyy0r-ijpvjx",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 43,
+      "outputTokens": 1356,
+      "totalTokens": 1399,
+      "latencySeconds": 0.128,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575168816-oub8uq5",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:32:48.816Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwyxyn-awacvu",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 63,
+      "outputTokens": 75,
+      "totalTokens": 138,
+      "latencySeconds": 3.249,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575188227-zgbn1z2",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:33:08.227Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwzbax-g71iwq",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 29,
+      "outputTokens": 481,
+      "totalTokens": 510,
+      "latencySeconds": 5.365,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575188392-bokmo18",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:33:08.392Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwzb9h-px3syo",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 58,
+      "outputTokens": 526,
+      "totalTokens": 584,
+      "latencySeconds": 5.585,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575197932-foea847",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:33:17.932Z",
+    "type": "execution",
+    "sessionId": "sess-mvhwzibf-4ksp95",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 29,
+      "outputTokens": 1898,
+      "totalTokens": 1927,
+      "latencySeconds": 5.971,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575391723-i4m5aow",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:36:31.723Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx0bzi-kcoo4h",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 217,
+      "outputTokens": 223,
+      "totalTokens": 440,
+      "latencySeconds": 161.328,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575396112-8m5o9zi",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:36:36.112Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx3vs4-277w9d",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 18,
+      "outputTokens": 2659,
+      "totalTokens": 2677,
+      "latencySeconds": 0.09,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575402067-n9thpth",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:36:42.067Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx403w-k59wh2",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 117,
+      "outputTokens": 70,
+      "totalTokens": 187,
+      "latencySeconds": 0.438,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575521861-z5twahk",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:38:41.861Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx6kj3-u0ou6n",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 126,
+      "outputTokens": 151,
+      "totalTokens": 277,
+      "latencySeconds": 0.456,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575546627-062vilg",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:39:06.627Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx72xq-rzxstp",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 70,
+      "outputTokens": 80,
+      "totalTokens": 150,
+      "latencySeconds": 1.36,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575546742-kpzgmjd",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:39:06.742Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx73jg-k01iy4",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 151,
+      "outputTokens": 5000,
+      "totalTokens": 5151,
+      "latencySeconds": 0.7,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575552997-kw4rqdh",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:39:12.997Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx780i-iisgmf",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 31,
+      "outputTokens": 1791,
+      "totalTokens": 1822,
+      "latencySeconds": 1.15,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575607092-czod1kv",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:40:07.092Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx8dml-ppj869",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 82,
+      "outputTokens": 965,
+      "totalTokens": 1047,
+      "latencySeconds": 1.318,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575611620-t81d8kk",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:40:11.620Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx8hsw-58kxmt",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 141,
+      "outputTokens": 100,
+      "totalTokens": 241,
+      "latencySeconds": 0.44,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575617348-7awu51c",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:40:17.348Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx8mgk-2id77a",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 20,
+      "outputTokens": 5000,
+      "totalTokens": 5020,
+      "latencySeconds": 0.13,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575627123-0gzj1gy",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:40:27.123Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx8qz7-s84o8d",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 31,
+      "outputTokens": 782,
+      "totalTokens": 813,
+      "latencySeconds": 4.045,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575635429-htjkjzo",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:40:35.429Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx8w2e-x3wand",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 32,
+      "outputTokens": 200,
+      "totalTokens": 232,
+      "latencySeconds": 5.763,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575656467-nx1jn1v",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:40:56.467Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx9gpd-v26yvq",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 3237,
+      "outputTokens": 5000,
+      "totalTokens": 8237,
+      "latencySeconds": 0.035,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575669578-8wuleoi",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:41:09.578Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx9qth-wr9sof",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 2223,
+      "outputTokens": 4870,
+      "totalTokens": 7093,
+      "latencySeconds": 0.05,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575680300-0nz4kab",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:41:20.300Z",
+    "type": "execution",
+    "sessionId": "sess-mvhx9z3q-pvhm58",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 1742,
+      "outputTokens": 3877,
+      "totalTokens": 5619,
+      "latencySeconds": 0.038,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575694895-31wuv4j",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:41:34.895Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxaacz-e329gj",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 2605,
+      "outputTokens": 5000,
+      "totalTokens": 7605,
+      "latencySeconds": 0.026,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575714320-w79vgkc",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:41:54.320Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxapbh-nw88u9",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 2587,
+      "outputTokens": 5000,
+      "totalTokens": 7587,
+      "latencySeconds": 0.084,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575757121-a1w3boc",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:42:37.121Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxbmcp-88n1nn",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 5000,
+      "outputTokens": 5000,
+      "totalTokens": 10000,
+      "latencySeconds": 0.07,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575763424-k2pw3tq",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:42:43.424Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxbr94-96je7c",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 642,
+      "outputTokens": 1636,
+      "totalTokens": 2278,
+      "latencySeconds": 0.025,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575765744-kpd56vv",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:42:45.744Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxbt1c-81hr3c",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 537,
+      "outputTokens": 1424,
+      "totalTokens": 1961,
+      "latencySeconds": 0.034,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575791131-us52nd9",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:43:11.131Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxccm7-bafuax",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 5000,
+      "outputTokens": 5000,
+      "totalTokens": 10000,
+      "latencySeconds": 0.023,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575817081-xjji6sp",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:43:37.081Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxcwmp-rv2iwg",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 3955,
+      "outputTokens": 5000,
+      "totalTokens": 8955,
+      "latencySeconds": 0.053,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575833153-kkz08vo",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:43:53.153Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxd91i-hu1qm8",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 2387,
+      "outputTokens": 5000,
+      "totalTokens": 7387,
+      "latencySeconds": 0.043,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575838759-0yxt3m6",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:43:58.759Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxddcp-85revp",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 145,
+      "outputTokens": 624,
+      "totalTokens": 769,
+      "latencySeconds": 0.062,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575844114-wo7lcma",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:04.114Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxdhhv-1cjatp",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 560,
+      "outputTokens": 1474,
+      "totalTokens": 2034,
+      "latencySeconds": 0.049,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575845099-h7xejdb",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:05.099Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxdia0-wr1ohd",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 259,
+      "outputTokens": 871,
+      "totalTokens": 1130,
+      "latencySeconds": 0.018,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575849237-dyu61qb",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:09.237Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxdlg9-s7yilb",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 258,
+      "outputTokens": 871,
+      "totalTokens": 1129,
+      "latencySeconds": 0.043,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575850243-v9o0jab",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:10.243Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxdm7u-ytwwk9",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 263,
+      "outputTokens": 886,
+      "totalTokens": 1149,
+      "latencySeconds": 0.059,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575853458-9tq9f4u",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:13.458Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxdopm-77jn53",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 296,
+      "outputTokens": 956,
+      "totalTokens": 1252,
+      "latencySeconds": 0.039,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575880252-403x63a",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:40.252Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxe9dc-ry46na",
+    "query": "ejecutar write",
+    "queryHash": "55ce0f27bd475d35",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 3948,
+      "outputTokens": 5000,
+      "totalTokens": 8948,
+      "latencySeconds": 0.054,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575887205-pvvz1ws",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:47.205Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxebit-hob5al",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 60,
+      "outputTokens": 779,
+      "totalTokens": 839,
+      "latencySeconds": 4.207,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575894343-xihx5p4",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:54.343Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxek7r-er5xco",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 542,
+      "outputTokens": 1194,
+      "totalTokens": 1736,
+      "latencySeconds": 0.096,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575897935-yb76iaz",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:44:57.935Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxen1h-chvtz8",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 456,
+      "outputTokens": 1125,
+      "totalTokens": 1581,
+      "latencySeconds": 0.027,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575902168-3q4s1r6",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:45:02.168Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxeplo-nmc0st",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 113,
+      "outputTokens": 384,
+      "totalTokens": 497,
+      "latencySeconds": 0.928,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575955137-q18vnkp",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:45:55.137Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxeuon-ipayo6",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 73,
+      "outputTokens": 1762,
+      "totalTokens": 1835,
+      "latencySeconds": 47.315,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575967907-7hsi5o7",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:46:07.907Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxg4k4-9mkz59",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 103,
+      "outputTokens": 129,
+      "totalTokens": 232,
+      "latencySeconds": 0.641,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575977956-pfput6f",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:46:17.956Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxgcqx-bgtcn5",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 1567,
+      "outputTokens": 2734,
+      "totalTokens": 4301,
+      "latencySeconds": 0.071,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792575981868-7qs46e6",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:46:21.868Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxgfs4-8qi5hz",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 81,
+      "outputTokens": 709,
+      "totalTokens": 790,
+      "latencySeconds": 0.059,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576046387-l183zp5",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:47:26.387Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxghwa-14gjmp",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 75,
+      "outputTokens": 1700,
+      "totalTokens": 1775,
+      "latencySeconds": 61.827,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576054600-ti6ky4y",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:47:34.600Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxhz9f-9czomu",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 150,
+      "outputTokens": 166,
+      "totalTokens": 316,
+      "latencySeconds": 0.87,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576091858-lxuy53k",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:48:11.858Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxi4nm-hoahvk",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 102,
+      "outputTokens": 606,
+      "totalTokens": 708,
+      "latencySeconds": 31.131,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576120324-ya4vchg",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:48:40.324Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxiy2p-l0r3h5",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 64,
+      "outputTokens": 5000,
+      "totalTokens": 5064,
+      "latencySeconds": 21.475,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576160543-ztsenf5",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:49:20.543Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxjjso-lv0pxs",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 133,
+      "outputTokens": 2406,
+      "totalTokens": 2539,
+      "latencySeconds": 33.533,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576246627-e764jg8",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:50:46.627Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxke0u-dsu80r",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 158,
+      "outputTokens": 1833,
+      "totalTokens": 1991,
+      "latencySeconds": 80.407,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576312511-qdu755w",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:51:52.511Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxmc1q-tq0cpl",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 99,
+      "outputTokens": 404,
+      "totalTokens": 503,
+      "latencySeconds": 55.545,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576326714-ep7ixn9",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:52:06.714Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxnt0m-hx9kr4",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 123,
+      "outputTokens": 231,
+      "totalTokens": 354,
+      "latencySeconds": 1.151,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576333032-u2linbg",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:52:13.032Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxnypy-pgd44f",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 508,
+      "outputTokens": 1022,
+      "totalTokens": 1530,
+      "latencySeconds": 0.082,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576338634-wmtqo9m",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:52:18.634Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxo333-6xap1s",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 394,
+      "outputTokens": 965,
+      "totalTokens": 1359,
+      "latencySeconds": 0.027,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576465228-zvd63f3",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:54:25.228Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxo5nm-oiaq66",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 79,
+      "outputTokens": 860,
+      "totalTokens": 939,
+      "latencySeconds": 123.245,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576483126-f03i5wd",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:54:43.126Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxr5uf-9st5xs",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 69,
+      "outputTokens": 191,
+      "totalTokens": 260,
+      "latencySeconds": 0.975,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576488333-loeudk9",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:54:48.333Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxra0r-sfr7bq",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 89,
+      "outputTokens": 812,
+      "totalTokens": 901,
+      "latencySeconds": 0.77,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576494277-c4o315v",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:54:54.277Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxrers-t1zycx",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 127,
+      "outputTokens": 450,
+      "totalTokens": 577,
+      "latencySeconds": 0.557,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576499431-zvg3yot",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:54:59.431Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxri83-fydn76",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 284,
+      "outputTokens": 2253,
+      "totalTokens": 2537,
+      "latencySeconds": 1.206,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576504082-mptggjm",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:55:04.082Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxrlvw-t4shjo",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 161,
+      "outputTokens": 2226,
+      "totalTokens": 2387,
+      "latencySeconds": 1.119,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576508478-l4f7e8i",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:55:08.478Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxrppg-esp4ld",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 107,
+      "outputTokens": 49,
+      "totalTokens": 156,
+      "latencySeconds": 0.586,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576542678-qt43ei5",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:55:42.678Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxsg40-zk1fu4",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 254,
+      "outputTokens": 488,
+      "totalTokens": 742,
+      "latencySeconds": 0.567,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576549036-xyakfih",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:55:49.036Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxskk5-hiz034",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 233,
+      "outputTokens": 347,
+      "totalTokens": 580,
+      "latencySeconds": 1.147,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576553989-iqww74k",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:55:53.989Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxsokm-e7ksal",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 192,
+      "outputTokens": 5000,
+      "totalTokens": 5192,
+      "latencySeconds": 0.908,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576586331-5z0coa9",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:56:26.331Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxtc95-t8joan",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 228,
+      "outputTokens": 114,
+      "totalTokens": 342,
+      "latencySeconds": 2.559,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576595329-vbpfwdf",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:56:35.329Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxtkkw-5wuqaq",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 124,
+      "outputTokens": 309,
+      "totalTokens": 433,
+      "latencySeconds": 0.767,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576657443-kapven8",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:57:37.443Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxtq80-xnp84x",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 251,
+      "outputTokens": 646,
+      "totalTokens": 897,
+      "latencySeconds": 55.515,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576677980-nidbmhm",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:57:57.981Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxv2t7-n62lmb",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 148,
+      "outputTokens": 995,
+      "totalTokens": 1143,
+      "latencySeconds": 13.121,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576691314-eczu1q0",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:58:11.314Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxvn66-xufzrv",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 33,
+      "outputTokens": 2486,
+      "totalTokens": 2519,
+      "latencySeconds": 0.081,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576707983-0t740gr",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:58:27.983Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxw01i-0858rt",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 1302,
+      "outputTokens": 2540,
+      "totalTokens": 3842,
+      "latencySeconds": 0.069,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576711720-jo8xcj9",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:58:31.720Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxw2xo-a7eebr",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 127,
+      "outputTokens": 649,
+      "totalTokens": 776,
+      "latencySeconds": 0.058,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576715866-j3kbmd1",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:58:35.866Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxw65j-felvo2",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 163,
+      "outputTokens": 633,
+      "totalTokens": 796,
+      "latencySeconds": 0.031,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576725326-gicvdm5",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:58:45.326Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxwdg2-77gnwy",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 1254,
+      "outputTokens": 2159,
+      "totalTokens": 3413,
+      "latencySeconds": 0.046,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576731777-el9rzez",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:58:51.778Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxwiep-ytzqsk",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 235,
+      "outputTokens": 548,
+      "totalTokens": 783,
+      "latencySeconds": 0.055,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576736592-8krqfe0",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:58:56.592Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxwm5k-rgyhyv",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 295,
+      "outputTokens": 772,
+      "totalTokens": 1067,
+      "latencySeconds": 0.026,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576740632-xx8ok51",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:00.632Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxwp83-pytvvl",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 242,
+      "outputTokens": 1067,
+      "totalTokens": 1309,
+      "latencySeconds": 0.085,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576743492-ezg9doz",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:03.492Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxwrfs-7gxku6",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 98,
+      "outputTokens": 564,
+      "totalTokens": 662,
+      "latencySeconds": 0.052,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576746883-jww5p2t",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:06.883Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxwu2a-2yagyw",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 150,
+      "outputTokens": 785,
+      "totalTokens": 935,
+      "latencySeconds": 0.066,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576750093-5wb0gjo",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:10.093Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxwwk6-p4gtw7",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 162,
+      "outputTokens": 757,
+      "totalTokens": 919,
+      "latencySeconds": 0.04,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576757551-epzpcxu",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:17.551Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxx2b5-wiqo4c",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 459,
+      "outputTokens": 1094,
+      "totalTokens": 1553,
+      "latencySeconds": 0.027,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576760739-gedy9lj",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:20.739Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxx4se-g6resi",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 91,
+      "outputTokens": 586,
+      "totalTokens": 677,
+      "latencySeconds": 0.023,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576785787-1xn0tmd",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:45.787Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxx71z-pk0w22",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 76,
+      "outputTokens": 798,
+      "totalTokens": 874,
+      "latencySeconds": 22.116,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576795864-uwy1ony",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T09:59:55.864Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxxv32-vx71y5",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 88,
+      "outputTokens": 45,
+      "totalTokens": 133,
+      "latencySeconds": 1.059,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576802791-xba4cfz",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:00:02.791Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxy06s-775k45",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 297,
+      "outputTokens": 237,
+      "totalTokens": 534,
+      "latencySeconds": 1.366,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576865698-tciqw16",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:05.698Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxzdqe-g8rg51",
+    "query": "ejecutar read",
+    "queryHash": "3dfa2e7542bd1d9a",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 43,
+      "outputTokens": 1961,
+      "totalTokens": 2004,
+      "latencySeconds": 0.076,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576872629-2q6supr",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:12.629Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxzj44-fwwt2o",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 352,
+      "outputTokens": 1115,
+      "totalTokens": 1467,
+      "latencySeconds": 0.033,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576877066-9p89asm",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:17.066Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxzmim-corbdf",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 407,
+      "outputTokens": 890,
+      "totalTokens": 1297,
+      "latencySeconds": 0.06,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576881371-3dq2ayl",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:21.371Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxzpuk-c9lh7w",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 109,
+      "outputTokens": 568,
+      "totalTokens": 677,
+      "latencySeconds": 0.044,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576888061-2v0eoi6",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:28.061Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxzuzz-fcrodh",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 491,
+      "outputTokens": 1272,
+      "totalTokens": 1763,
+      "latencySeconds": 0.063,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576891149-4u3v3dm",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:31.149Z",
+    "type": "execution",
+    "sessionId": "sess-mvhxzxdz-56ptov",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 102,
+      "outputTokens": 620,
+      "totalTokens": 722,
+      "latencySeconds": 0.053,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576895689-h4bq0j3",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:35.689Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy00wr-tcywvv",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 175,
+      "outputTokens": 717,
+      "totalTokens": 892,
+      "latencySeconds": 0.026,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576903875-evx8tp8",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:43.875Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy077e-ntw5vb",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 767,
+      "outputTokens": 1472,
+      "totalTokens": 2239,
+      "latencySeconds": 0.055,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576909035-34ej98p",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:49.035Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy0b6o-d4xzf8",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 358,
+      "outputTokens": 916,
+      "totalTokens": 1274,
+      "latencySeconds": 0.057,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576913587-ownxlfz",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:01:53.587Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy0eoo-6w6oyv",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 292,
+      "outputTokens": 804,
+      "totalTokens": 1096,
+      "latencySeconds": 0.058,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576921096-p14q167",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:02:01.096Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy0k0z-gdvcus",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 275,
+      "outputTokens": 263,
+      "totalTokens": 538,
+      "latencySeconds": 0.659,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792576926373-7cugcd0",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:02:06.373Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy0o3r-g82871",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 271,
+      "outputTokens": 191,
+      "totalTokens": 462,
+      "latencySeconds": 0.654,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792577061390-vk0v9bp",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:04:21.390Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy3k58-rlsbnw",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 89,
+      "outputTokens": 48,
+      "totalTokens": 137,
+      "latencySeconds": 0.832,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792577169865-iasim3j",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:06:09.865Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy3qdv-1npv8p",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 33,
+      "outputTokens": 46,
+      "totalTokens": 79,
+      "latencySeconds": 101.221,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792577419656-bic4njy",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:10:19.656Z",
+    "type": "execution",
+    "sessionId": "sess-mvhy63fn-1ba59k",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 37,
+      "outputTokens": 42,
+      "totalTokens": 79,
+      "latencySeconds": 240.768,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792577441118-hsgixt1",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:10:41.118Z",
+    "type": "execution",
+    "sessionId": "sess-mvhybod5-zarejb",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 218,
+      "outputTokens": 190,
+      "totalTokens": 408,
+      "latencySeconds": 1.813,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792577449297-a2zjf0j",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:10:49.297Z",
+    "type": "execution",
+    "sessionId": "sess-mvhybvuv-txky55",
+    "query": "ejecutar edit",
+    "queryHash": "5ff7b21bd6de6d20",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 256,
+      "outputTokens": 828,
+      "totalTokens": 1084,
+      "latencySeconds": 0.274,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792577734677-5rwd488",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:15:34.677Z",
+    "type": "execution",
+    "sessionId": "sess-mvhybz28-w47bdd",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 41,
+      "outputTokens": 51,
+      "totalTokens": 92,
+      "latencySeconds": 281.535,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  },
+  {
+    "id": "1792577753875-suhxesb",
+    "schemaVersion": 2,
+    "timestamp": "2026-10-21T10:15:53.875Z",
+    "type": "execution",
+    "sessionId": "sess-mvhyiebw-94uxez",
+    "query": "ejecutar bash",
+    "queryHash": "386db2bd4dcf01bb",
+    "model": "unknown",
+    "modelFamily": "unknown",
+    "taskType": "TERMINAL",
+    "signals": {
+      "fileCount": 0,
+      "contextSizeBytes": 2,
+      "toolCallsExpected": "low"
+    },
+    "execution": {
+      "optimizer": "RTK",
+      "inputTokens": 313,
+      "outputTokens": 495,
+      "totalTokens": 808,
+      "latencySeconds": 1.007,
+      "costUsd": 0,
+      "toolingCost": 0,
+      "quality": 1,
+      "failed": false
+    },
+    "source": "mcp",
+    "synthetic": false
+  }
+]

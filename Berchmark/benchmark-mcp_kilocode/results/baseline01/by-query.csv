@@ -1,0 +1,5 @@
+﻿"query_id","mode","n","category","tokens_input_mean","tokens_input_median","tokens_output_mean","tokens_output_median","tokens_total_mean","tokens_total_median","tokens_total_stdev","cost_usd_mean","cost_usd_median","latency_mean","latency_median","latency_stdev","tool_calls_mean","success_rate"
+"Q03","baseline","1","SEARCH_RETRIEVAL","7649","7649","527","527","8274","8274","0","0","0","179,27","179,27","0","5","1"
+"Q04","baseline","1","SEARCH_RETRIEVAL","11045","11045","402","402","11550","11550","0","0","0","77,32","77,32","0","1","1"
+"Q07","baseline","1","COMPLEX_ANALYSIS","6617","6617","141","141","6791","6791","0","0","0","51,19","51,19","0","0","1"
+"Q12","baseline","1","AMBIGUOUS_ERROR","6832","6832","213","213","7095","7095","0","0","0","51,09","51,09","0","1","1"

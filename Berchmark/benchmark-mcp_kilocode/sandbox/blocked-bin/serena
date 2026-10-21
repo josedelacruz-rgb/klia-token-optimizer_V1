@@ -1,0 +1,3 @@
+#!/bin/sh
+echo 'serena' no esta instalado en el entorno baseline del benchmark (shim de aislamiento del benchmark) >&2
+exit 127
