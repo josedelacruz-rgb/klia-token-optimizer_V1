@@ -261,6 +261,8 @@ npm run router -- --model glm-5.2 --query "refactoriza auth" --files 12 --size 2
 
 The output includes the selected optimizer, task type, router version, confidence, and decision rationale.
 
+If the task is small or trivial (no cost signal), the router refuses it: it prints `REFUSED=true` and `DIRECT=NATIVE` and recommends running it directly with the native tools (`read`, `grep`, `glob`, `shell`). The decision is still recorded as `BASELINE`.
+
 After running the task, record real metrics to contribute to the history:
 
 ```bash
@@ -275,9 +277,46 @@ npm run router -- stats --model glm-5.2 --real-only
 
 The values above are usage examples, not a savings promise or a universal benchmark result.
 
+## Maintenance: stats, calibrate, compact, autopilot and dashboard
+
+The CLI includes five maintenance subcommands that operate on `events.json` (the router event log):
+
+```bash
+npm run router -- stats          # 8-section savings report built from events
+npm run router -- calibrate      # compares declared confidence vs. actual quality, suggests ROUTER_MIN_CONFIDENCE
+npm run router -- compact        # store cleanup plan (dry-run by default; --write applies it)
+npm run router -- autopilot      # evaluates tokens/hour, failure rate and store size, returns actions
+npm run router -- dashboard      # local web panel with metrics and benchmark (http://127.0.0.1:6283)
+```
+
+- `stats` accepts `--model`, `--task`, `--real-only` and `--no-color`.
+- `calibrate --write` applies the suggested threshold to the global OpenCode config (with a `.bak-<timestamp>` backup); without `--write` it only prints the recommendation.
+- `compact` expires events older than 90 days (`--max-age-days`), purges orphan decisions after 7 days (`--orphan-grace-days`) and rotates the file with `--rotate --keep-events 5000`. Persisting changes requires `--write`.
+- `autopilot` suggests actions (`adjust_confidence`, `force_baseline`, `compact_store`, `alert_burn`, `retrain_classifier`) without executing them; `--disable` turns it off for 24 h and `--enable` reactivates it.
+- `dashboard --detach` leaves the server running in the background (log at `~/.klia/logs/dashboard.log`) and does not start if the port is already in use.
+
+### Slash commands
+
+The installer registers five slash commands for OpenCode and Kilo: `/klia_stats`, `/klia_calibrate`, `/klia_compact`, `/klia_dashboard` and `/klia_autopilot`. Each command invokes the installed CLI (`dist/router-cli.js`) with the `~/.klia` events path and renders the output in the chat.
+
+### Health check at startup
+
+Thin plugins (`klia-healthcheck`) installed for Kilo and OpenCode (v1 and v2) launch `dist/scripts/health-check.js --popup` every time the editor starts. The check verifies that:
+
+- the Node version is >= 22.5,
+- the global runtime exists (`%LOCALAPPDATA%\klia-token-optimizer\dist\router-cli.js`),
+- the event store (`events.json`) is accessible and writable,
+- the `repomix` and `semble` MCPs are registered in the OpenCode/Kilo configs,
+- the `rtk`, `repomix` and `semble` binaries respond to `--version`,
+- the plugins (`klia-router-inject`, `klia-auto-record`, `klia-healthcheck`) are in their directories.
+
+The result is stored in `~/.klia/data/health-state.json` and a full run is throttled to once every 24 hours (`--interval-hours` or `KLIA_HEALTH_HOURS`; intermediate startups use the cache and print nothing). If something fails, or if `health-check.js` itself is missing (incomplete installation), a Windows popup shows whether everything works or which program fails. Possible statuses: `ok`, `warn` (e.g. a binary does not respond), `fail` (critical).
+
+The popup is controlled with `KLIA_HEALTH_POPUP` (`always` by default, `fail-only` pops only on failures, `off` silences it) and `KLIA_HEALTH_POPUP_TIMEOUT` (seconds, 10 by default). `KLIA_HEALTH_DISABLE=1` disables the check. The check can also be run manually: `node dist/scripts/health-check.js --force --json`.
+
 ## MCP integration
 
-El servidor expone cuatro herramientas:
+The MCP server exposes four tools:
 
 | Tool               | Purpose                                      |
 | ------------------ | -------------------------------------------- |
@@ -297,6 +336,10 @@ Its value should be verified with data from the real environment. Run comparable
 - Adaptive router with versions V0–V3.
 - Six strategies supported by the router rules.
 - Execution recording and reports by model and task.
+- Decision and execution logging with atomic writes and programmable store cleanup.
+- CLI with `stats`, `calibrate`, `compact` and `autopilot`, plus a `dashboard` web panel in detached mode.
+- Slash commands for OpenCode and Kilo (`/klia_stats`, `/klia_calibrate`, `/klia_compact`, `/klia_dashboard`, `/klia_autopilot`).
+- Health check with popup at OpenCode and Kilo startup: Node, runtime, event store, MCP, binaries and plugins.
 - MCP server and CLI.
 - Automated tests available in the repository.
 

@@ -408,6 +408,37 @@ function Install-TuiBadge {
     return $true
 }
 
+# Despliega los 5 comandos KLIA sustituyendo los placeholders de los .md:
+#   __KLIA_INSTALL_DIR__ -> runtime global (%LOCALAPPDATA%\klia-token-optimizer)
+#   __KLIA_HOME__        -> ~/.klia
+function Install-KliaCommands {
+    param([string]$CommandDir, [string]$Phase = '15')
+
+    if (-not (Test-Path -LiteralPath $commandsRepoDir)) {
+        Write-Err "Faltan las fuentes de los comandos: $commandsRepoDir"
+        return
+    }
+    if ($DryRun) {
+        Write-Warn "[DryRun] Se desplegarian los comandos KLIA en $CommandDir"
+        return
+    }
+    if (-not (Test-Path -LiteralPath $CommandDir)) {
+        New-Item -ItemType Directory -Path $CommandDir -Force | Out-Null
+    }
+    $kliaHome = ($HOME.TrimEnd('\') + '\.klia') -replace '\\', '/'
+    foreach ($cmdFile in @('klia_stats.md', 'klia_calibrate.md', 'klia_compact.md', 'klia_dashboard.md', 'klia_autopilot.md')) {
+        $src = Join-Path $commandsRepoDir $cmdFile
+        if (-not (Test-Path -LiteralPath $src)) { Write-Warn "Falta la fuente del comando: $src"; continue }
+        $content = Get-Content -LiteralPath $src -Raw
+        $content = $content.Replace('__KLIA_INSTALL_DIR__', ($kliaRuntimeDir -replace '\\', '/'))
+        $content = $content.Replace('__KLIA_HOME__', $kliaHome)
+        $dst = Join-Path $CommandDir $cmdFile
+        if (Test-Path -LiteralPath $dst) { New-FileBackup -Path $dst -Phase $Phase | Out-Null }
+        Set-Content -LiteralPath $dst -Value $content -Encoding UTF8
+    }
+    Write-Ok "Comandos KLIA desplegados en $CommandDir (klia_stats, klia_calibrate, klia_compact, klia_dashboard, klia_autopilot)"
+}
+
 function Restore-OpenCode {
     param([string]$BackupDir, [string]$ConfigPath, [string]$AgentsPath)
     if ($BackupDir -and (Test-Path "$BackupDir/opencode.jsonc")) {
@@ -490,6 +521,13 @@ $kiloTuiJsonc = Join-Path $kiloConfigDir "tui.jsonc"
 $kiloTuiDir   = Join-Path $kiloConfigDir "tui"
 $pluginsRepoKiloTuiBadge    = Join-Path $pluginsRepoKilo "tui/klia-badge"
 $pluginsRepoOpencodeV2Badge = Join-Path $pluginsRepoOpencodeV2 "klia-badge"
+
+# Comandos KLIA (slash commands de OpenCode y KiloCode; shell-out puros al CLI)
+$commandsRepoDir = Join-Path $projectRoot "commands"
+$ocCommandDir    = Join-Path $ocDir "command"
+$ocCommandsDir   = Join-Path $ocDir "commands"
+$kiloCommandDir  = Join-Path $kiloConfigDir "command"
+$kiloCommandsDir = Join-Path $kiloConfigDir "commands"
 
 # === CONTENIDO EMBEDIDO: AGENTS.md (reglas minimas) ===
 $AGENTS_MD_CONTENT = @'
@@ -2593,7 +2631,7 @@ if ($Uninstall) {
     }
     # Remover los plugins Klia de Kilo y de OpenCode (singular v1 y plural v2)
     foreach ($dir in @($kiloPluginDir, $ocPluginDirXdg, $ocPluginDirAppData, $ocPluginDirXdgV2, $ocPluginDirAppDataV2)) {
-        foreach ($name in @('klia-router-inject.ts', 'klia-auto-record.ts')) {
+        foreach ($name in @('klia-router-inject.ts', 'klia-auto-record.ts', 'klia-healthcheck.ts')) {
             $p = Join-Path $dir $name
             if (Test-Path -LiteralPath $p) {
                 if (-not $DryRun) { Remove-Item -LiteralPath $p -Force; Write-Ok "Plugin eliminado: $p" }
@@ -2619,6 +2657,17 @@ if ($Uninstall) {
                 $tcfg | Add-Member -NotePropertyName 'plugin' -NotePropertyValue $kept -Force
                 Save-KiloConfig $tuiFile $tcfg
                 Write-Ok "Entrada klia-badge removida de $tuiFile"
+            }
+        }
+    }
+    # Remover los comandos KLIA (ambos aplicativos, dirs command/ y commands/)
+    foreach ($cmdDir in @($ocCommandDir, $ocCommandsDir, $kiloCommandDir, $kiloCommandsDir)) {
+        if (-not (Test-Path -LiteralPath $cmdDir)) { continue }
+        foreach ($cmdFile in @('klia_stats.md', 'klia_calibrate.md', 'klia_compact.md', 'klia_dashboard.md', 'klia_autopilot.md')) {
+            $p = Join-Path $cmdDir $cmdFile
+            if (Test-Path -LiteralPath $p) {
+                if ($DryRun) { Write-Warn "[DryRun] Se eliminaria $p" }
+                else { Remove-Item -LiteralPath $p -Force; Write-Ok "Comando eliminado: $p" }
             }
         }
     }
@@ -3236,6 +3285,31 @@ if ($Script:OcMajor -ge 2) {
 }
 
 # ====================================================================
+# FASE 15: Comandos KLIA (slash commands /klia_stats, /klia_calibrate,
+# /klia_compact, /klia_dashboard, /klia_autopilot). Son shell-out puros
+# del CLI del router (node dist/router-cli.js), agnosticos del agente:
+# IGUALES para OpenCode (v1 y v2; los dirs {command,commands} se
+# escanean igual) y para KiloCode. Solo cambia el directorio destino.
+# ====================================================================
+Write-Step "15" "Comandos KLIA (stats/calibrate/compact/dashboard/autopilot)"
+
+Install-KliaCommands $ocCommandDir '15a'
+Install-KliaCommands $kiloCommandDir '15b'
+
+# ====================================================================
+# FASE 16: Plugin de health-check (Kilo, OpenCode v1 y v2). Comprueba en
+# cada arranque del host que el stack funciona (Node, runtime global,
+# almacen de eventos, MCPs repomix/semble, binarios, plugins) y muestra
+# un popup del sistema con el resultado. El instalador NO muestra
+# popups: el chequeo corre en el host via dist/scripts/health-check.js
+# y respeta un intervalo de cache (KLIA_HEALTH_HOURS, 24 h por defecto).
+# ====================================================================
+Write-Step "16" "Plugin de health-check"
+
+Install-KliaPluginFile (Join-Path $pluginsRepoKilo 'klia-healthcheck.ts') $kiloPluginDir '16a'
+Install-KliaPluginFile (Join-Path $pluginsRepoTarget 'klia-healthcheck.ts') $ocPluginTargetDir '16b'
+
+# ====================================================================
 # SMOKE TEST del router
 # ====================================================================
 Write-Step "ST" "Smoke test del router"
@@ -3327,6 +3401,8 @@ Write-Host " Plugin router-inject: $(Join-Path $ocPluginTargetDir 'klia-router-i
 Write-Host " Runtime global:  $kliaRuntimeDir" -ForegroundColor Green
 Write-Host " Plugins Kilo:    $kiloPluginDir (klia-router-inject + klia-auto-record)" -ForegroundColor Green
 Write-Host " Badge TUI:       $(Join-Path $kiloTuiDir 'klia-badge') (Kilo) + $(if ($Script:OcMajor -ge 2) { Join-Path $ocPluginDirXdgV2 'klia-badge' } else { Join-Path $ocTuiDir 'klia-badge' })" -ForegroundColor Green
+Write-Host " Comandos KLIA:   $ocCommandDir (OpenCode) + $kiloCommandDir (Kilo) [stats, calibrate, compact, dashboard, autopilot]" -ForegroundColor Green
+Write-Host " Healthcheck:      plugins finos en Kilo + OpenCode (v1 y v2); chequeo con popup en cada arranque del host (dist/scripts/health-check.js)" -ForegroundColor Green
 Write-Host ""
 Write-Host " Optimizadores instalados:" -ForegroundColor Cyan
 if ($installResults.ContainsKey('SEMBLE') -and $installResults['SEMBLE']) { Write-Host "   [OK] Semble" -ForegroundColor Green }

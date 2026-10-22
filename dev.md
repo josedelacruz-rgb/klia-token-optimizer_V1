@@ -45,7 +45,7 @@ npm install
 
 ### Unified installer (recommended for full environment)
 
-The unified installer `install_klia_tokens.ps1` installs the router plus all 4 context optimizers (Semble, Context Mode, RTK, Repomix), the auto-record plugin, and the system prompt:
+The unified installer `install_klia_tokens.ps1` installs the router plus the context optimizers (Semble, Context Mode, RTK, Repomix), the auto-record plugin, the system prompt, the five `/klia_*` slash commands and the `klia-healthcheck` startup plugins for OpenCode and Kilo (a popup health check runs at each editor startup, not during the install):
 
 ```powershell
 .\install_klia_tokens.ps1
@@ -80,26 +80,45 @@ klia-token-optimizer/
       exploration.ts           # selectOptimizerWithExploration (V3)
     history/
       history-store.ts         # HistoryStore interface, JsonHistoryStore, createExecutionRecord (v1)
-      router-event-store.ts     # RouterEventStore (v2 unified events), createDecisionEvent, createExecutionEvent
+      router-event-store.ts     # RouterEventStore (v2 unified events), createDecisionEvent, createExecutionEvent, compact
       mcp-metrics-store.ts      # McpMetricsStore (legacy usage telemetry)
       migrate.ts                # migrateV1ToV2, isMigratedToV2 (v1 -> v2 with synthetic detection)
     pricing/
       model-pricing.ts          # computeCostUsd, getPricing, ModelPricing
+    autopilot/
+      auto-pilot.ts             # AutoPilot (evaluate, checkAndAct), AutoPilotAction, AutoPilotOptions
+    dashboard/
+      web-dashboard.ts          # startWebDashboard (HTTP server, default 127.0.0.1:6283)
+      stats-adapter.ts          # buildDashboardReport (report + DashboardSummary)
+      benchmark-adapter.ts      # benchmark-results.json -> aggregates + calibration
     utils/
       model-family.ts          # extractModelFamily, normalizeModel, isChatModel
+      cli-args.ts              # parseCliArgs (positionals, values, flags)
+      json.ts                  # readJsonSync/Async, writeFileSyncAtomic, stripBom, ensureJsonFile
     scripts/
       calibrate.ts             # runCalibration + CLI entry
       migrate-history.ts       # CLI to migrate history.json -> events.json
       stats-display.ts         # runStatsCli: `router stats` professional report (8 ANSI sections)
+      calibrate-display.ts     # runCalibrateCli: `router calibrate` (confidence calibration)
+      compact-display.ts       # runCompactCli: `router compact` (store cleanup plan)
+      autopilot-display.ts     # runAutopilotCli: `router autopilot` (maintenance actions)
+      dashboard-display.ts     # runDashboardCli: `router dashboard` (--detach daemon)
+      min-confidence-config.ts # resolveMinConfidence + write to global OpenCode config
+      health-check.ts          # runHealthCheckCli: startup health check (popup, throttle, state)
     klia-discovery.ts          # detectKliaApiKey, discoverModels, discoverModelsFromApi, SNAPSHOT_MODELS
     index.ts                   # Public API: createAdaptiveRouter, buildContextFromQuery, buildRecord + re-exports
     cli.ts                     # `route` CLI (JSON output)
-    router-cli.ts              # `router` CLI (decide / record / stats)
+    router-cli.ts              # `router` CLI (decide / record / stats / calibrate / compact / autopilot / dashboard)
     mcp-server.ts              # MCP server (route_task, record_execution, get_router_stats, migrate_history)
     types.ts                   # Shared types + DEFAULT_ROUTER_OPTIONS + RouterEvent (v2)
+  commands/                    # Slash command sources (klia_stats, klia_calibrate, klia_compact, klia_dashboard, klia_autopilot)
+  plugins/                     # Thin host plugins (klia-router-inject, klia-auto-record, klia-healthcheck) per host:
+    kilo/
+    opencode/
+    opencode/v2/               # v2 hosts read from plugins (plural); klia-badge only under kilo/tui and opencode/v2
   tests/                       # Mirror of src/, plus integration tests
   instaladores/                # Installer documentation (install.md, opencode.json)
-  install_klia_tokens.ps1          # Unified installer (router + 4 optimizers + auto-record plugin)
+  install_klia_tokens.ps1          # Unified installer (router + optimizers + auto-record plugin + slash commands)
   tsconfig.json                # Base config (includes tests)
   tsconfig.build.json          # Build config (src only, declarations)
   package.json
@@ -107,7 +126,7 @@ klia-token-optimizer/
   OPENCODE_USAGE.md
   SYSTEM_PROMPT.md
   router.md
-  README.md / README_es.md
+  README.md / README_en.md
   dev.md / dev_es.md
 ```
 
@@ -121,6 +140,9 @@ klia-token-optimizer/
 | Understand cost scoring | `src/scorer/expected-cost-scorer.ts` |
 | Understand the v2 enriched report | `src/scorer/stats-report.ts` |
 | Understand the v2 event store | `src/history/router-event-store.ts` + `src/history/migrate.ts` |
+| Understand store cleanup | `src/history/router-event-store.ts` (`compact`) + `src/scripts/compact-display.ts` |
+| Understand auto-tuning | `src/autopilot/auto-pilot.ts` + `src/scripts/calibrate-display.ts` |
+| Understand the web dashboard | `src/dashboard/web-dashboard.ts` + `src/dashboard/stats-adapter.ts` |
 | Understand USD pricing | `src/pricing/model-pricing.ts` |
 | Understand model discovery | `src/klia-discovery.ts` |
 | Understand the MCP server | `src/mcp-server.ts` |
@@ -151,6 +173,20 @@ npm run router -- --model glm-5.2 --query "refactoriza auth" --files 12 --size 2
 npm run route  -- --model glm-5.2 --query "refactoriza auth" --files 12 --size 200000
 npm run router -- stats
 ```
+
+The `router` CLI accepts a subcommand as the first positional argument:
+
+| Subcommand | Purpose |
+| ---------- | ------- |
+| (none) | Decide: route a task and record the decision event. |
+| `stats` | 8-section savings report from `events.json`. |
+| `calibrate` | Compare declared confidence vs. actual quality; suggest `ROUTER_MIN_CONFIDENCE`; `--write` applies it. |
+| `compact` | Build a cleanup plan for `events.json` (dry-run by default; `--write` applies). |
+| `autopilot` | Evaluate burn/failure/store-size and return maintenance actions (no execution). |
+| `dashboard` | Start the local web dashboard (default `http://127.0.0.1:6283`). |
+
+Decision mode flags: `--model`, `--query`, `--files`, `--size`, `--history`, `--explore`, `--json`.
+Recording flags: `--record-id <id> --tokens N --latency N --quality N` (v1 metrics update) or `--record-execution --model M --query Q --optimizer O --tokens N [--input-tokens --output-tokens] --latency N [--quality --cost-usd --session-id --failed --context-after --tokens-pruned --actual-tool-calls --router-latency-ms --started-at --completed-at --events --metrics]` (writes the v1 record, the v2 execution event, and the legacy MCP metric).
 
 ### Run the MCP server
 
@@ -375,10 +411,11 @@ This is the store the adaptive router reads to make decisions. Kept for compatib
 
 ### `src/history/router-event-store.ts` (v2)
 
-- `RouterEventStore` - file-based store for `RouterEvent`. Promise chain lock, like `JsonHistoryStore`.
+- `RouterEventStore` - file-based store for `RouterEvent`. Promise chain lock, like `JsonHistoryStore`. Reads and writes go through `src/utils/json.ts` (`stripBom`, `writeFileSyncAtomic`) so partial writes from concurrent processes do not corrupt the file.
 - `createDecisionEvent(...)` - builds a `type: 'decision'` event from a `RouterDecision`.
 - `createExecutionEvent(...)` - builds a `type: 'execution'` event from the `record_execution` payload.
 - `migrateFile()` - migrates the underlying file from v1 to v2 in place (used by the `migrate_history` MCP tool).
+- `compact(options)` - returns a pure `planCompact`-based `CompactReport`; called by `router compact` (see below). Does not write by itself.
 - On read, if v1 records are detected, they are migrated in memory (lazy migration) via `migrateV1ToV2`.
 
 ### `src/history/migrate.ts`
@@ -418,6 +455,67 @@ This is the store the adaptive router reads to make decisions. Kept for compatib
 ### `src/scripts/stats-display.ts`
 
 - `runStatsCli(argv)` - the `router stats` command. Prints 8 ANSI sections: header, executive summary (KPI cards), system health, model ranking, model x task heatmap, per-(model,task) detail, global savings + verdict, confidence calibration + recommendations. Flags: `--model`, `--task`, `--real-only`, `--no-color`.
+- `resolveEventsPath(explicit?)` - picks the events file in this order (first existing candidate wins): explicit `--events`; `ROUTER_EVENTS_PATH`; `KLIA_STORE_DIR/events.json`; `KLIA_HOME/data/events.json`; `~/.klia/data/events.json`; legacy fallback `<cwd>/.router-history/events.json`.
+
+### `src/scripts/calibrate-display.ts` + `src/scripts/min-confidence-config.ts`
+
+- `runCalibrateCli(argv)` - the `router calibrate` command. Pairs decisions and executions by `sessionId` (reuses `buildStatsReport` confidence calibration) and compares declared confidence against actual quality per model:
+  - overconfidence (conf > quality) -> suggests raising `minConfidence`
+  - underconfidence -> suggests lowering it
+  - aligned -> keep current value
+- Suggested value = `clamp(current + overconfidence, 0.3, 0.95)` rounded to 0.05. Without paired data the verdict is `sin-datos`.
+- Threshold resolution (explicit flag beats env beats file beats default): `--min-confidence` > `ROUTER_MIN_CONFIDENCE` env > value from the global OpenCode config > `0.6`. The file fallback exists so the recommendation converges after `--write`.
+- `min-confidence-config.ts` - `resolveMinConfidence(...)` implements that chain (`KLIA_OPENCODE_CONFIG` overrides the config candidate; candidates `~/.config/opencode/opencode.json` / `opencode.jsonc`). Applying the suggested value edits the global OpenCode config with a surgical regex that preserves JSONC comments (V2 key `mcp.servers['klia-token-optimizer'].environment.ROUTER_MIN_CONFIDENCE` or V1 `mcp[...].env`), creating a `.bak-<timestamp>` backup first.
+
+### `src/scripts/compact-display.ts`
+
+- `runCompactCli(argv)` - the `router compact` command. Wraps `RouterEventStore.compact`:
+  - TTL: events older than `DEFAULT_MAX_AGE_DAYS` (90) expire; events with a missing/invalid timestamp are treated as expired.
+  - Orphan purge: decisions without a paired execution are removed after `DEFAULT_ORPHAN_GRACE_DAYS` (7); matching is by `sessionId`. Execution orphans are preserved by default because they feed cost learning; `--drop-orphan-executions` purges them.
+  - Synthetic events survive the TTL unless `--purge-synthetic`.
+  - Rotation: `--rotate` archives the oldest excess to `<base>.rotated-<stamp>.json`, keeping `DEFAULT_KEEP_EVENTS` (5000).
+  - Default is dry-run; `--write` creates a timestamped `events.backup-*` before overwriting (atomic write).
+- Exports: `CompactOptions`, `CompactStats` (`examined`, `removedExpired`, `removedOrphanDecisions`, `removedOrphanExecutions`, `kept`), `CompactReport` (adds bytes/dryRun/rotation info), `planCompact`.
+
+### `src/autopilot/auto-pilot.ts`
+
+- `AutoPilot` - evaluates metrics and returns suggested actions **without executing them**.
+- `AutoPilotAction` types: `adjust_confidence`, `force_baseline`, `compact_store`, `alert_burn`, `retrain_classifier` (each with `reason` and `payload`).
+- `AutoPilotOptions` defaults: `enabled: true`, `burnThresholdTokensPerHour: 500_000`, `failureRateThreshold: 0.4`, `maxStoreSizeBytes: 50 MB`, `cooldownMinutes: 60`.
+- `evaluate(...)` and `checkAndAct(...)`: `alert_burn` when tokens in the last hour exceed the threshold; `force_baseline` when the last-hour failure rate exceeds 0.4; `compact_store` when the events file exceeds 50 MB. A cooldown prevents repeating actions; `disableUntil`/`enable` are exposed.
+- State is persisted at `(KLIA_HOME ?? ~/.klia)/data/autopilot-state.json` (last 100 actions kept).
+- CLI: `src/scripts/autopilot-display.ts` computes last-hour tokens/failure rate from `events.json`, calls `checkAndAct` and prints the actions (or `--json`); `--disable` / `--enable` / `--events` / `--json`.
+
+### `src/dashboard/web-dashboard.ts`
+
+- `startWebDashboard({ port, host, eventsPath, benchmarkPath })` - HTTP server serving the HTML dashboard. Defaults: `127.0.0.1:6283`.
+- `src/dashboard/stats-adapter.ts` - `buildDashboardReport(...)`: builds the `buildStatsReport` report plus a `DashboardSummary` (`totalEvents`, `totalDecisions`, `totalExecutions`, `totalTokens`, `avgQuality`, `failureCount`, `avgLatencySeconds`, `optimizerCounts`, `generatedAt`, savings fields, `hasRealData`, `realCount`, `syntheticCount`). If there are no real executions, savings fall back to benchmark data when available.
+- `src/dashboard/benchmark-adapter.ts` - parses `benchmark-results.json` rows (`taskId`, `model`, `optimizer`, `estimatedTokens`, `latencySeconds`, `quality`, `failed`, ...) and computes per-row savings vs `BASELINE` grouped by `taskId`, aggregates by optimizer and group (`BenchmarkOptimizerAggregate`, `BenchmarkGroupAggregate`), and derives `BenchmarkCalibration` (`pairsMatched`, `avgDeclaredConfidence`, `avgActualQuality`, `calibrationScore`, `verdict`, `byOptimizer[]`).
+- CLI: `src/scripts/dashboard-display.ts`. Flags: `--port`, `--host`, `--events`, `--benchmark`, `--detach`, `--child`. `--detach` spawns a detached child process (log at `~/.klia/logs/dashboard.log`), prints the URL and PID, and refuses to start a duplicate if the port is in use.
+- Dashboard HTML: KPI cards, optimizer distribution charts, benchmark rows (or the top-100 `model x task` cells from the report), `byModel` / `byModelTask` tables, `es-ES` number formatting, auto-refresh.
+
+### `src/scripts/health-check.ts` + `plugins/*/klia-healthcheck.ts`
+
+- `runHealthCheckCli(argv)` - the startup health check. Flags: `--json`, `--popup`, `--no-popup`, `--force` (skip the throttle), `--interval-hours N`, `--timeout MS`, `--help`.
+- Checks (each produces a `CheckResult` with status `ok` / `warn` / `fail`):
+  1. Node >= 22.5 (`MIN_NODE_VERSION`).
+  2. Runtime CLI: first existing candidate among `KLIA_ROUTER_CLI_PATH`, `%LOCALAPPDATA%\klia-token-optimizer\dist\router-cli.js` and `KLIA_PROJECT_ROOT/dist/router-cli.js` (`resolveRuntimeCli`).
+  3. Events store: write-probe next to the first existing events candidate (`resolveEventsCandidates`: `ROUTER_EVENTS_PATH`, `KLIA_STORE_DIR`, `KLIA_HOME/data`, `~/.klia/data`, legacy `<cwd>/.router-history`).
+  4. MCP registry: `repomix` and `semble` entries looked up (BOM-strip + line-comment strip) in the OpenCode / Kilo config files.
+  5. Binaries: `rtk`, `repomix` and `semble` respond to `--version` (timeout `DEFAULT_BIN_TIMEOUT_MS`, 10 s).
+  6. Plugin files: `klia-router-inject.ts`, `klia-auto-record.ts` and `klia-healthcheck.ts` present in the Kilo / OpenCode v1 / v2 (and AppData) plugin directories.
+- Pure helpers exported for tests: `severityOf`, `summarize`, `parsePopupPolicy`, `decidePopup`, `formatPopupMessage`, `stripJsonComments`, `hasMcpEntry`.
+- State: `HealthState` in `resolveStatePath` (default `~/.klia/data/health-state.json`), written atomically. A full check runs once per `DEFAULT_INTERVAL_HOURS` (24; `KLIA_HEALTH_HOURS`); cached runs report from state and do not pop.
+- Popup: `showSystemPopup` runs `WScript.Shell.Popup` through a detached PowerShell child (UTF-8 message passed base64-encoded; auto-close `DEFAULT_POPUP_TIMEOUT_SECONDS`, 10 s). Policy env `KLIA_HEALTH_POPUP`: `always` (default) / `fail-only` / `off`; exit code 1 only when the status is `fail`.
+- The thin plugins (`plugins/kilo|opencode|opencode/v2/klia-healthcheck.ts`, one per host API) resolve `dist/scripts/health-check.js` next to `router-cli.js` and spawn it detached with `--popup` on host startup. If the script is missing they pop up an "incomplete installation" warning and never throw; debug log at `~/.klia/logs/healthcheck-debug.log`.
+
+### `src/utils/cli-args.ts` and `src/utils/json.ts`
+
+- `parseCliArgs(tokens, valueFlags)` - shared parser for the router CLI subcommands; returns `{ positionals, values, flags }` (tokens not starting with `--` are positionals).
+- `ensureJsonFile(path)` - creates the parent directory and an empty JSON array file on demand.
+- `stripBom(text)` - removes a leading U+FEFF (Windows editors add a BOM that breaks `JSON.parse`).
+- `readJsonSync` / `readJsonAsync` - BOM-safe JSON reads.
+- `writeFileSyncAtomic` / `writeFileAtomic` - write to `<base>.tmp.<pid>.<ts>.tmp` and rename, retrying transient `EPERM`/`EACCES`/`EBUSY` errors with a 50 ms backoff. Used by both history stores so plugin CLI spawns and the MCP server never leave a half-written JSON file.
 
 ### `src/index.ts` (public API)
 
@@ -549,6 +647,47 @@ A JSON array of `RouterEvent`. Written by `RouterEventStore` with the same Promi
 
 A JSON array of `McpUsageMetric`. Written synchronously on every `record()` call. Used by `get_router_stats` (format=legacy) for the `mcpUsageSummary` field.
 
+### `benchmark-results.json` (benchmark harness, consumed by the dashboard)
+
+A JSON array of benchmark result rows. The dashboard benchmark adapter reads it when `--benchmark` is provided (or via installer defaults):
+
+```jsonc
+[
+  {
+    "taskId": "Q05",
+    "taskName": "...",
+    "model": "glm-5.2",
+    "optimizer": "REPOMIX",
+    "taskType": "REPO_PACKAGING",
+    "estimatedTokens": 18780,
+    "latencySeconds": 65,
+    "quality": 0.95,
+    "failed": false
+  }
+]
+```
+
+Per-row savings are computed against the `BASELINE` row with the same `taskId`; aggregates (`BenchmarkOptimizerAggregate`, `BenchmarkGroupAggregate`) and the calibration summary (`BenchmarkCalibration`) are derived in `src/dashboard/benchmark-adapter.ts`.
+
+### Health state file (`health-state.json`)
+
+A single object written by `src/scripts/health-check.ts` after every full run:
+
+```jsonc
+{
+  "lastRunAt": "2026-10-22T15:12:40.000Z",
+  "status": "ok",            // ok | warn | fail
+  "okCount": 8,
+  "failedCount": 0,
+  "warnCount": 1,
+  "lastMessage": "Resumen: 8 correctas, 1 avisos, 0 fallos",
+  "lastPopupAt": "2026-10-22T15:12:41.000Z",
+  "runs": 42
+}
+```
+
+A full check runs when the stored `lastRunAt` is older than the interval (default 24 h); otherwise the CLI reports from this file (cached, summary only) and does not pop up a window.
+
 ---
 
 ## Configuration Reference
@@ -585,6 +724,33 @@ See [README.md - Environment Variables](./README.md#environment-variables). All 
 | `ROUTER_TOOLING_COST_WEIGHT` | Tooling cost weight | `1.0` |
 | `ROUTER_FAILURE_PENALTY` | Failure penalty | `5.0` |
 | `ROUTER_QUALITY_PENALTY` | Lost-quality penalty | `3.0` |
+
+### Environment variables (CLI and installer)
+
+| Variable | Description | Default |
+| -------- | ----------- | ------- |
+| `KLIA_HOME` | Base directory for installed KLIA data and logs (set by the installer) | `~/.klia` |
+| `KLIA_STORE_DIR` | Alternative events/data directory used by `resolveEventsPath` | unset |
+| `KLIA_OPENCODE_CONFIG` | Overrides the OpenCode config file path used by `router calibrate --write` | unset |
+| `KLIA_HEALTH_POPUP` | Health-check popup policy (`always`, `fail-only`, `off`) | `always` |
+| `KLIA_HEALTH_POPUP_TIMEOUT` | Popup auto-close, in seconds | `10` |
+| `KLIA_HEALTH_HOURS` | Hours between full health checks | `24` |
+| `KLIA_HEALTH_TIMEOUT` | Binary check timeout, in ms | `10000` |
+| `KLIA_HEALTH_DISABLE` | `1` or `true` disables the startup health check | unset |
+| `KLIA_HEALTH_STATE_PATH` | Overrides the health state file path | `<KLIA_STORE_DIR ?? ~/.klia/data>/health-state.json` |
+
+### Events path resolution order
+
+`router stats`, `compact`, `autopilot` and `dashboard --events` all accept an explicit `--events`. Without it, the first existing candidate wins:
+
+1. explicit `--events`
+2. `ROUTER_EVENTS_PATH`
+3. `KLIA_STORE_DIR/events.json`
+4. `KLIA_HOME/data/events.json`
+5. `~/.klia/data/events.json`
+6. legacy `<cwd>/.router-history/events.json`
+
+`ROUTER_MIN_CONFIDENCE` can also live in the global OpenCode config (`mcp.servers['klia-token-optimizer'].environment.ROUTER_MIN_CONFIDENCE` in JSONC, or `mcp[...].env` in the V1 layout); `router calibrate --write` updates that key.
 
 ### `tsconfig.json` vs `tsconfig.build.json`
 
@@ -643,6 +809,14 @@ Or call `get_router_stats` with `format=v2` from the MCP server.
 
 The MCP server writes structured JSON logs to `ROUTER_LOG_PATH` (default `.router-history/mcp-server.log.json`). Each entry has `timestamp`, `level`, `message`, and `meta`. Levels: `debug`, `info`, `error`.
 
+### Inspect the health check
+
+```bash
+node dist/scripts/health-check.js --force --json
+```
+
+State lives in `~/.klia/data/health-state.json`; the thin plugins debug-log to `~/.klia/logs/healthcheck-debug.log`. `KLIA_HEALTH_DISABLE=1` silences the startup check.
+
 ### Common issues
 
 | Symptom | Likely cause | Fix |
@@ -652,7 +826,14 @@ The MCP server writes structured JSON logs to `ROUTER_LOG_PATH` (default `.route
 | `SEMBLE` is never selected | Not in `BASE_RULES` for the task, or insufficient evidence / samples | Check `BASE_RULES` and record more executions. |
 | MCP tools not visible | Server not started or `opencode.jsonc` not loaded | Run `npm run mcp-server` and check `opencode.jsonc`. |
 | `get_router_stats` v2 report is empty | `events.json` is empty or all events are synthetic | Call `migrate_history` or record real executions; pass `excludeSynthetic=false` to see synthetic data. |
-| History file grows unbounded | No eviction policy | Prune old records or move to SQLite (see roadmap in `router.md`). |
+| History file grows unbounded | No eviction policy | Run `npm run router -- compact --write` (TTL 90 days, orphan purge, `--rotate`). |
+| `router stats` sees no data | Events file is not where the CLI looks | Pass `--events <path>` or set `KLIA_HOME`/`ROUTER_EVENTS_PATH` (see resolution order above). |
+| Dashboard does not start | Port 6283 already in use (or another dashboard instance) | Use `--port`, or check `~/.klia/logs/dashboard.log` after `--detach`. |
+| Autopilot prints nothing | No executions in the last hour, or it is disabled | It only reacts to last-hour metrics; check with `npm run router -- autopilot --json`, re-enable with `--enable`. |
+| `router calibrate` suggests the same value | Threshold comes from the OpenCode config file | Apply the suggestion with `--write`; verify with `--min-confidence` to force a value. |
+| `JSON.parse` fails on a store file | File was edited by a tool that added a BOM | `stripBom` in `src/utils/json.ts` handles this on read; re-save the file without BOM. |
+| Health check reports stale data after a change | Runs are throttled to `KLIA_HEALTH_HOURS` (24 h); cached runs read `health-state.json` | Run `node dist/scripts/health-check.js --force --json` to force a fresh check. |
+| Popup does not appear on startup | `KLIA_HEALTH_POPUP=off` or `KLIA_HEALTH_DISABLE=1`, or the run was cached | Remove the disables or re-run with `--popup --force`; plugin errors go to `~/.klia/logs/healthcheck-debug.log`. |
 
 ---
 
@@ -666,7 +847,7 @@ The MCP server writes structured JSON logs to `ROUTER_LOG_PATH` (default `.route
    - Selector picks it when it has the lowest relative cost.
    - Explorer can pick it when unexplored.
    - `record_execution` accepts it.
-6. Update `README.md`, `README_es.md`, `dev.md`, and `dev_es.md`.
+6. Update `README.md`, `README_en.md`, `dev.md`, and `dev_es.md`.
 
 The scorer and history store need no changes; they work generically with any `Optimizer` value. The v2 event store also picks up new optimizers automatically.
 
@@ -760,6 +941,8 @@ The unified installer also:
 - Injects the system prompt into `opencode.jsonc`.
 - Adjusts `base-rules.ts` if any optimizer failed to install.
 - Calibrates the history with baseline records.
+- Installs the five `/klia_*` slash commands into the OpenCode and Kilo command directories (from `commands/`, rewriting the `__KLIA_INSTALL_DIR__` and `__KLIA_HOME__` placeholders).
+- Installs the `klia-healthcheck.ts` thin plugins into the Kilo and OpenCode (v1/v2) plugin directories (phase 16). They run `dist/scripts/health-check.js --popup` at editor startup and show a Windows popup with the result, or with the component that failed.
 
 ---
 
@@ -789,7 +972,15 @@ The router only learns when `recordExecution` is called. If you only ever call `
 
 ### Concurrent writes to the history file
 
-`JsonHistoryStore` and `RouterEventStore` serialize writes with a Promise chain lock, but only within a single process. If you run multiple MCP server instances pointing at the same file, you will get data loss. Run a single server per history file.
+`JsonHistoryStore` and `RouterEventStore` serialize writes with a Promise chain lock within a process, and both use `writeFileSyncAtomic` (temp file + rename) from `src/utils/json.ts`, so a crash no longer leaves a half-written JSON file. Still, two processes can overwrite each other's last write; run a single MCP server per history file.
+
+### BOM in JSON store files
+
+Some Windows editors add a U+FEFF BOM that breaks `JSON.parse`. The stores read through `readJsonSync`/`readJsonAsync` (BOM-safe), so the stores tolerate it, but hand-edited temp files or external tools may not. Save store files without BOM or re-run through the store API.
+
+### Dashboard port already in use
+
+`router dashboard` binds `127.0.0.1:6283` by default. A second launch (or a leftover `--detach` child) fails to bind; change the port with `--port` or inspect `~/.klia/logs/dashboard.log`.
 
 ### Relative cost without a baseline
 

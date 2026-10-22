@@ -3,6 +3,74 @@ import * as path from 'path';
 import type { Optimizer, RouterEvent, TaskType } from '../types';
 import { ROUTER_EVENT_SCHEMA_VERSION } from '../types';
 import { isMigratedToV2, migrateV1ToV2 } from './migrate';
+import { writeFileSyncAtomic } from '../utils/json';
+
+/** Dias de vida util de un evento antes de la caducidad por TTL. */
+export const DEFAULT_MAX_AGE_DAYS = 90;
+
+/** Dias de gracia antes de purgar un par huerfano (protege sesiones en curso). */
+export const DEFAULT_ORPHAN_GRACE_DAYS = 7;
+
+/** Eventos conservados en el fichero activo al rotar. */
+export const DEFAULT_KEEP_EVENTS = 5000;
+
+/**
+ * Politica de compactacion del store. Ver planCompact() para la semantica.
+ */
+export interface CompactOptions {
+  /** TTL en dias: eventos con timestamp mas viejo caducan. 0 desactiva el TTL. */
+  maxAgeDays?: number;
+  /** Solo se purga un huerfano si su antiguedad supera estos dias. */
+  orphanGraceDays?: number;
+  /** Purgar decisiones sin ejecucion pareada (default: true). */
+  dropOrphanDecisions?: boolean;
+  /**
+   * Purgar ejecuciones sin decision pareada (default: false).
+   * Las ejecuciones alimentan el aprendizaje de coste por (modelo, tarea,
+   * optimizador) aunque el par decision-ejecucion se haya roto, asi que por
+   * defecto se conservan y solo expiran por TTL.
+   */
+  dropOrphanExecutions?: boolean;
+  /** El TTL tambien caduca eventos sinteticos (default: false: calibracion). */
+  purgeSynthetic?: boolean;
+  /** Simulacion: calcula el informe sin escribir nada. */
+  dryRun?: boolean;
+  /** Archivar el exceso (eventos mas antiguos) a un .rotated-<stamp>.json. */
+  rotate?: boolean;
+  /** Eventos a conservar en el fichero activo al rotar (default: DEFAULT_KEEP_EVENTS). */
+  keepEvents?: number;
+  /** Instante de referencia para TTL y gracia (inyectable en tests). */
+  now?: Date;
+}
+
+/** Conteo de bajas de la compactacion, sin medidas de E/S. */
+export interface CompactStats {
+  /** Eventos leidos al entrar. */
+  examined: number;
+  /** Eventos caducados por TTL. */
+  removedExpired: number;
+  /** Decisiones huerfanas purgadas. */
+  removedOrphanDecisions: number;
+  /** Ejecuciones huerfanas purgadas. */
+  removedOrphanExecutions: number;
+  /** Eventos que permanecen tras la compactacion. */
+  kept: number;
+}
+
+/** Informe completo de compactacion del store. */
+export interface CompactReport extends CompactStats {
+  /** Tamano del fichero antes de la operacion (bytes). */
+  bytesBefore: number;
+  /** Tamano estimado tras la compactacion (JSON de los conservados). */
+  bytesAfter: number;
+  dryRun: boolean;
+  /** Se archivo el exceso a un fichero .rotated (solo fuera de dry-run). */
+  rotated: boolean;
+  /** La rotacion aplicaria (dry-run con --rotate y exceso detectado). */
+  wouldRotate: boolean;
+  /** Ruta del fichero de archivo creado por la rotacion. */
+  rotatedFile?: string;
+}
 
 /**
  * Store unificado para RouterEvent (esquema v2).
@@ -121,6 +189,175 @@ export class RouterEventStore {
     this.write(events);
     return events.length;
   }
+
+  /**
+   * Compacta el fichero de eventos: caducidad por TTL, purga de pares
+   * huerfanos (decision sin ejecucion y viceversa) y, con `rotate`, archiva
+   * el exceso a un fichero .rotated-<stamp>.json conservando los keepEvents
+   * mas recientes. En dry-run no escribe nada. Fuera de dry-run deja un
+   * backup timestampado del fichero antes de sobreescribir.
+   */
+  async compact(options: CompactOptions = {}): Promise<CompactReport> {
+    const events = this.read();
+    let bytesBefore = 0;
+    try {
+      bytesBefore = fs.statSync(this.filePath).size;
+    } catch {
+      bytesBefore = 0;
+    }
+
+    const { kept, stats } = planCompact(events, options);
+
+    let finalEvents = kept;
+    let rotated = false;
+    let rotatedFile: string | undefined;
+    if (options.rotate && !options.dryRun) {
+      const keepEvents = options.keepEvents ?? DEFAULT_KEEP_EVENTS;
+      if (finalEvents.length > keepEvents) {
+        const dir = path.dirname(this.filePath);
+        const ext = path.extname(this.filePath);
+        const base = path.basename(this.filePath, ext);
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        rotatedFile = path.join(dir, `${base}.rotated-${stamp}${ext}`);
+        // El orden del array es cronologico (los add() hacen push al final),
+        // asi que la cabeza son los mas antiguos.
+        const archive = finalEvents.slice(0, finalEvents.length - keepEvents);
+        finalEvents = finalEvents.slice(finalEvents.length - keepEvents);
+        writeFileSyncAtomic(rotatedFile, JSON.stringify(archive, null, 2));
+        rotated = true;
+      }
+    }
+
+    const removed =
+      stats.removedExpired + stats.removedOrphanDecisions + stats.removedOrphanExecutions;
+    if (!options.dryRun && (rotated || removed > 0)) {
+      // Backup timestampado antes de sobreescribir (politica del store).
+      try {
+        const fileStats = fs.statSync(this.filePath);
+        if (fileStats.size > 0) {
+          const dir = path.dirname(this.filePath);
+          const ext = path.extname(this.filePath);
+          const base = path.basename(this.filePath, ext);
+          const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+          fs.copyFileSync(this.filePath, path.join(dir, `${base}.backup.${stamp}${ext}`));
+        }
+      } catch {
+        // Si no existe el fichero aun, no hay nada que respaldar
+      }
+      this.write(finalEvents);
+    }
+
+    const bytesAfter = Buffer.byteLength(JSON.stringify(finalEvents, null, 2), 'utf8');
+    let wouldRotate = false;
+    if (options.rotate && options.dryRun) {
+      const keepEvents = options.keepEvents ?? DEFAULT_KEEP_EVENTS;
+      wouldRotate = kept.length > keepEvents;
+    }
+
+    return {
+      ...stats,
+      bytesBefore,
+      bytesAfter,
+      dryRun: options.dryRun === true,
+      rotated,
+      wouldRotate,
+      rotatedFile: rotated ? rotatedFile : undefined,
+    };
+  }
+}
+
+/**
+ * Calcula que eventos sobreviven a la compactacion. Funcion pura: no toca
+ * ningun fichero, lo que permite testear la politica de purga de forma aislada.
+ *
+ * Doble filtro:
+ * 1. Caducidad por TTL: eventos con timestamp anterior a maxAgeDays salen.
+ *    Los sinteticos se conservan salvo que se active purgeSynthetic (los datos
+ *    de calibracion/benchmark no deberian desaparecer por edad). Los eventos
+ *    con timestamp ausente o invalido se consideran caducados.
+ * 2. Pares huerfanos: se calculan SOLO entre los supervivientes de la fase 1,
+ *    de modo que si la ejecucion de una decision caduco por TTL, la decision
+ *    queda huerfana en cascada. Un evento esta pareado si comparte sessionId
+ *    con al menos un evento del tipo contrario (semantica de pertenencia,
+ *    mas conservadora que balancear conteos). Las sesiones sin sessionId no
+ *    pueden emparejarse nunca. Para no machacar sesiones en curso, un huerfano
+ *    solo se purga si su antiguedad supera orphanGraceDays.
+ */
+export function planCompact(
+  events: RouterEvent[],
+  options: CompactOptions = {},
+): { kept: RouterEvent[]; stats: CompactStats } {
+  const maxAgeDays = options.maxAgeDays ?? DEFAULT_MAX_AGE_DAYS;
+  const orphanGraceDays = options.orphanGraceDays ?? DEFAULT_ORPHAN_GRACE_DAYS;
+  const dropOrphanDecisions = options.dropOrphanDecisions ?? true;
+  const dropOrphanExecutions = options.dropOrphanExecutions ?? false;
+  const purgeSynthetic = options.purgeSynthetic ?? false;
+  const now = (options.now ?? new Date()).getTime();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const ttlCutoff = maxAgeDays > 0 ? now - maxAgeDays * dayMs : Number.NEGATIVE_INFINITY;
+  const orphanCutoff = now - orphanGraceDays * dayMs;
+
+  // Fase 1: caducidad por TTL.
+  const survivors: RouterEvent[] = [];
+  let removedExpired = 0;
+  for (const e of events) {
+    if (e.synthetic && !purgeSynthetic) {
+      survivors.push(e);
+      continue;
+    }
+    const ts = Date.parse(e.timestamp ?? '');
+    if (Number.isNaN(ts) || ts < ttlCutoff) {
+      removedExpired++;
+    } else {
+      survivors.push(e);
+    }
+  }
+
+  // Fase 2: huerfanos entre supervivientes.
+  const execSessions = new Set<string>();
+  const decisionSessions = new Set<string>();
+  for (const e of survivors) {
+    if (!e.sessionId) continue;
+    if (e.type === 'execution') {
+      execSessions.add(e.sessionId);
+    } else {
+      decisionSessions.add(e.sessionId);
+    }
+  }
+
+  const kept: RouterEvent[] = [];
+  let removedOrphanDecisions = 0;
+  let removedOrphanExecutions = 0;
+  for (const e of survivors) {
+    // Emparejamiento cruzado: una decision necesita una execution con el mismo
+    // sessionId (y viceversa); comparar contra el propio tipo autovalidaria al
+    // ultimo evento superviviente de una sesion rota.
+    const siblingSessions = e.type === 'execution' ? decisionSessions : execSessions;
+    const isOrphan = !e.sessionId || !siblingSessions.has(e.sessionId);
+    // Los eventos sin timestamp ya hubieran caducado (o son sinteticos sin
+    // fecha): en ese caso no se purgan como huerfanos, solo expiran por TTL.
+    const ts = Date.parse(e.timestamp ?? '');
+    const isStale = !Number.isNaN(ts) && ts < orphanCutoff;
+    if (isOrphan && isStale) {
+      if (e.type === 'decision' ? dropOrphanDecisions : dropOrphanExecutions) {
+        if (e.type === 'decision') removedOrphanDecisions++;
+        else removedOrphanExecutions++;
+        continue;
+      }
+    }
+    kept.push(e);
+  }
+
+  return {
+    kept,
+    stats: {
+      examined: events.length,
+      removedExpired,
+      removedOrphanDecisions,
+      removedOrphanExecutions,
+      kept: kept.length,
+    },
+  };
 }
 
 /**

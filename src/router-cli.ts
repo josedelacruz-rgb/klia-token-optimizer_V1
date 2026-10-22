@@ -12,6 +12,10 @@ import { RouterEventStore, createDecisionEvent, createExecutionEvent } from './h
 import { isSmallTrivialTask } from './classifier/task-classifier';
 import { computeCostUsd } from './pricing/model-pricing';
 import { runStatsCli } from './scripts/stats-display';
+import { runCalibrateCli } from './scripts/calibrate-display';
+import { runCompactCli } from './scripts/compact-display';
+import { runAutopilotCli } from './scripts/autopilot-display';
+import { runDashboardCli } from './scripts/dashboard-display';
 import type { Optimizer, RouterEvent } from './types';
 
 /**
@@ -37,12 +41,38 @@ import type { Optimizer, RouterEvent } from './types';
  * `record_execution` del MCP o `--record-execution` (usado por el plugin automatico).
  */
 async function main() {
+  const argv = process.argv;
   const args = process.argv.slice(2);
 
   // Comando `stats`: informe profesional con 8 secciones y colores ANSI.
   if (args[0] === 'stats') {
     await runStatsCli(process.argv);
     process.exit(0);
+  }
+
+  // Comando `calibrate`: calibracion de confianza + recomendacion de minConfidence.
+  if (args[0] === 'calibrate') {
+    await runCalibrateCli(argv);
+    return;
+  }
+
+  // Comando `compact`: purga el store de eventos (TTL + pares huerfanos);
+  // dry-run por defecto, --write aplica con backup.
+  if (args[0] === 'compact') {
+    await runCompactCli(argv);
+    return;
+  }
+
+  // Comando `autopilot`: evalua metricas y muestra acciones automaticas.
+  if (args[0] === 'autopilot') {
+    await runAutopilotCli(argv);
+    return;
+  }
+
+  // Comando `dashboard`: inicia servidor HTTP con dashboard web.
+  if (args[0] === 'dashboard') {
+    await runDashboardCli(argv);
+    return;
   }
 
   if (args.includes('--help') || args.length === 0) {

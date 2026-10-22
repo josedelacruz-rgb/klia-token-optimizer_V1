@@ -14,6 +14,8 @@
  * Uso:
  *   npm run router -- stats [--model M] [--task T] [--real-only] [--no-color]
  */
+import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { RouterEventStore } from '../history/router-event-store';
 import { buildStatsReport } from '../scorer/stats-report';
@@ -701,6 +703,36 @@ function renderEmptyReport(): string {
   out.push(bCyan('='.repeat(80)));
   out.push('');
   return out.join('\n');
+}
+
+// Resuelve la ruta a events.json de forma robusta, independiente del cwd:
+//   1. --events explicito
+//   2. ROUTER_EVENTS_PATH (lo define el MCP en opencode.json)
+//   3. KLIA_STORE_DIR/events.json
+//   4. KLIA_HOME/data/events.json
+//   5. ~/.klia/data/events.json (store global por defecto)
+//   6. <cwd>/.router-history/events.json (comportamiento historico)
+// Se devuelve el primer candidato que exista; si ninguno existe, el historico.
+export function resolveEventsPath(explicit?: string): string {
+  if (explicit) return explicit;
+
+  const legacy = path.join(process.cwd(), '.router-history', 'events.json');
+  const candidates: string[] = [];
+  if (process.env.ROUTER_EVENTS_PATH) candidates.push(process.env.ROUTER_EVENTS_PATH);
+  if (process.env.KLIA_STORE_DIR)
+    candidates.push(path.join(process.env.KLIA_STORE_DIR, 'events.json'));
+  if (process.env.KLIA_HOME)
+    candidates.push(path.join(process.env.KLIA_HOME, 'data', 'events.json'));
+  candidates.push(path.join(os.homedir(), '.klia', 'data', 'events.json'));
+
+  for (const candidate of candidates) {
+    try {
+      if (fs.existsSync(candidate)) return candidate;
+    } catch {
+      // ignora candidatos inaccesibles
+    }
+  }
+  return legacy;
 }
 
 // ============================================================================

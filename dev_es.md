@@ -19,7 +19,7 @@
 - [Añadir un optimizador](#añadir-un-optimizador)
 - [Añadir un tipo de tarea](#añadir-un-tipo-de-tarea)
 - [Cambiar la función de coste](#cambiar-la-función-de-coste)
-- [Integrados del servidor MCP](#integrados-del-servidor-mcp)
+- [Internos del servidor MCP](#internos-del-servidor-mcp)
 - [Convenciones de código](#convenciones-de-código)
 - [Errores comunes](#errores-comunes)
 
@@ -45,7 +45,7 @@ npm install
 
 ### Instalador unificado (recomendado para entorno completo)
 
-El instalador unificado `install_klia_tokens.ps1` instala el router mas los 4 optimizadores de contexto (Semble, Context Mode, RTK, Repomix), el plugin de auto-registro y el system prompt:
+El instalador unificado `install_klia_tokens.ps1` instala el router y los optimizadores de contexto (Semble, Context Mode, RTK, Repomix), el plugin de auto-registro, el system prompt, los cinco comandos slash `/klia_*` y los plugins de arranque `klia-healthcheck` para OpenCode y Kilo (el chequeo de salud con popup corre en cada arranque del editor, no durante la instalación):
 
 ```powershell
 .\install_klia_tokens.ps1
@@ -80,26 +80,45 @@ klia-token-optimizer/
       exploration.ts           # selectOptimizerWithExploration (V3)
     history/
       history-store.ts         # HistoryStore interface, JsonHistoryStore, createExecutionRecord (v1)
-      router-event-store.ts     # RouterEventStore (v2 unified events), createDecisionEvent, createExecutionEvent
+      router-event-store.ts     # RouterEventStore (v2 unified events), createDecisionEvent, createExecutionEvent, compact
       mcp-metrics-store.ts      # McpMetricsStore (legacy usage telemetry)
       migrate.ts                # migrateV1ToV2, isMigratedToV2 (v1 -> v2 with synthetic detection)
     pricing/
       model-pricing.ts          # computeCostUsd, getPricing, ModelPricing
+    autopilot/
+      auto-pilot.ts             # AutoPilot (evaluate, checkAndAct), AutoPilotAction, AutoPilotOptions
+    dashboard/
+      web-dashboard.ts          # startWebDashboard (HTTP server, default 127.0.0.1:6283)
+      stats-adapter.ts          # buildDashboardReport (report + DashboardSummary)
+      benchmark-adapter.ts      # benchmark-results.json -> aggregates + calibration
     utils/
       model-family.ts          # extractModelFamily, normalizeModel, isChatModel
+      cli-args.ts              # parseCliArgs (positionals, values, flags)
+      json.ts                  # readJsonSync/Async, writeFileSyncAtomic, stripBom, ensureJsonFile
     scripts/
       calibrate.ts             # runCalibration + CLI entry
       migrate-history.ts       # CLI to migrate history.json -> events.json
       stats-display.ts         # runStatsCli: `router stats` professional report (8 ANSI sections)
+      calibrate-display.ts     # runCalibrateCli: `router calibrate` (confidence calibration)
+      compact-display.ts       # runCompactCli: `router compact` (store cleanup plan)
+      autopilot-display.ts     # runAutopilotCli: `router autopilot` (maintenance actions)
+      dashboard-display.ts     # runDashboardCli: `router dashboard` (--detach daemon)
+      min-confidence-config.ts # resolveMinConfidence + write to global OpenCode config
+      health-check.ts          # runHealthCheckCli: chequeo de salud al arranque (popup, throttle, estado)
     klia-discovery.ts          # detectKliaApiKey, discoverModels, discoverModelsFromApi, SNAPSHOT_MODELS
     index.ts                   # Public API: createAdaptiveRouter, buildContextFromQuery, buildRecord + re-exports
     cli.ts                     # `route` CLI (JSON output)
-    router-cli.ts              # `router` CLI (decide / record / stats)
+    router-cli.ts              # `router` CLI (decide / record / stats / calibrate / compact / autopilot / dashboard)
     mcp-server.ts              # MCP server (route_task, record_execution, get_router_stats, migrate_history)
     types.ts                   # Shared types + DEFAULT_ROUTER_OPTIONS + RouterEvent (v2)
+  commands/                    # Slash command sources (klia_stats, klia_calibrate, klia_compact, klia_dashboard, klia_autopilot)
+  plugins/                     # Plugins finos de host (klia-router-inject, klia-auto-record, klia-healthcheck) por host:
+    kilo/
+    opencode/
+    opencode/v2/               # v2 lee de plugins (plural); klia-badge solo en kilo/tui y opencode/v2
   tests/                       # Mirror of src/, plus integration tests
   instaladores/                # Installer documentation (install.md, opencode.json)
-  install_klia_tokens.ps1          # Unified installer (router + 4 optimizers + auto-record plugin)
+  install_klia_tokens.ps1          # Unified installer (router + optimizers + auto-record plugin + slash commands)
   tsconfig.json                # Base config (includes tests)
   tsconfig.build.json          # Build config (src only, declarations)
   package.json
@@ -107,7 +126,7 @@ klia-token-optimizer/
   OPENCODE_USAGE.md
   SYSTEM_PROMPT.md
   router.md
-  README.md / README_es.md
+  README.md / README_en.md
   dev.md / dev_es.md
 ```
 
@@ -121,6 +140,9 @@ klia-token-optimizer/
 | Entender el scoring de coste | `src/scorer/expected-cost-scorer.ts` |
 | Entender el reporte enriquecido v2 | `src/scorer/stats-report.ts` |
 | Entender el store de eventos v2 | `src/history/router-event-store.ts` + `src/history/migrate.ts` |
+| Entender la limpieza del store | `src/history/router-event-store.ts` (`compact`) + `src/scripts/compact-display.ts` |
+| Entender el autoajuste | `src/autopilot/auto-pilot.ts` + `src/scripts/calibrate-display.ts` |
+| Entender el panel web | `src/dashboard/web-dashboard.ts` + `src/dashboard/stats-adapter.ts` |
 | Entender el pricing en USD | `src/pricing/model-pricing.ts` |
 | Entender el descubrimiento de modelos | `src/klia-discovery.ts` |
 | Entender el servidor MCP | `src/mcp-server.ts` |
@@ -151,6 +173,20 @@ npm run router -- --model glm-5.2 --query "refactoriza auth" --files 12 --size 2
 npm run route  -- --model glm-5.2 --query "refactoriza auth" --files 12 --size 200000
 npm run router -- stats
 ```
+
+La CLI `router` acepta un subcomando como primer argumento posicional:
+
+| Subcomando | Propósito |
+| ---------- | --------- |
+| (ninguno) | Decidir: enruta la tarea y registra el evento de decisión. |
+| `stats` | Informe de ahorro de 8 secciones a partir de `events.json`. |
+| `calibrate` | Compara la confianza declarada vs. la calidad real; sugiere `ROUTER_MIN_CONFIDENCE`; `--write` lo aplica. |
+| `compact` | Construye un plan de limpieza de `events.json` (dry-run por defecto; `--write` lo aplica). |
+| `autopilot` | Evalúa burn/fallos/tamaño del store y devuelve acciones de mantenimiento (no las ejecuta). |
+| `dashboard` | Arranca el panel web local (por defecto `http://127.0.0.1:6283`). |
+
+Flags de decisión: `--model`, `--query`, `--files`, `--size`, `--history`, `--explore`, `--json`.
+Flags de registro: `--record-id <id> --tokens N --latency N --quality N` (actualización de métricas v1) o `--record-execution --model M --query Q --optimizer O --tokens N [--input-tokens --output-tokens] --latency N [--quality --cost-usd --session-id --failed --context-after --tokens-pruned --actual-tool-calls --router-latency-ms --started-at --completed-at --events --metrics]` (escribe el registro v1, el evento de ejecución v2 y la métrica MCP legacy).
 
 ### Ejecutar el servidor MCP
 
@@ -323,115 +359,177 @@ Umbrales por defecto:
 
 ### `src/scorer/expected-cost-scorer.ts`
 
-- `computeRecordCost(record, options)` - absolute cost of one execution.
-- `computeRelativeCost(records, optimizer, options)` - relative cost vs the baseline for the same group. `Infinity` if no records; `absoluteCost / avgBaselineCost` otherwise. If no baseline records exist, the optimizer's own average is used as the denominator (so `relativeCost = 1`).
-- `buildCostMatrix(records, options?)` - groups records by `model::taskType` and returns `Map<key, Map<Optimizer, CostScore>>`.
-- `keyFor(model, taskType)` - returns the grouping key.
+- `computeRecordCost(record, options)` - coste absoluto de una ejecución.
+- `computeRelativeCost(records, optimizer, options)` - coste relativo vs el baseline del mismo grupo. `Infinity` si no hay registros; `absoluteCost / avgBaselineCost` en caso contrario. Si no existen registros de baseline, se usa como denominador la media del propio optimizador (con lo que `relativeCost = 1`).
+- `buildCostMatrix(records, options?)` - agrupa los registros por `model::taskType` y devuelve `Map<key, Map<Optimizer, CostScore>>`.
+- `keyFor(model, taskType)` - devuelve la clave de agrupación.
 
 ### `src/scorer/stats-report.ts`
 
-Builds the enriched v2 report consumed by `get_router_stats` (format=v2) and `router stats`:
+Construye el reporte enriquecido v2 consumido por `get_router_stats` (format=v2) y `router stats`:
 
-- `OptimizerCell` - rich cell per optimizer: `samples`, `avgTokens`, `avgInputTokens`, `avgOutputTokens`, `avgLatency`, `avgQuality`, `failureRate`, `avgAbsoluteCost`, `relativeCost`, `savingsTokens`, `savingsPercent`, `savingsUsd`, `verdict` (`AHORRO` | `PERDIDA` | `NEUTRO`), `winner`.
-- `ModelTaskRow` - one row per `(model, task)`: `totalSamples`, `baseline`, `optimizers[]`, `bestOptimizer`.
-- `ModelRow` - one row per model: `executions`, `avgTokens`, `avgLatency`, `avgQuality`, `failureRate`, `bestOptimizer`, `savingsVsBaselinePercent`, `savingsVsBaselineTokens`.
-- `RouterStatsReport` - top-level: `summary` (`totalDecisions`, `totalExecutions`, `syntheticCount`, `realCount`, ...), `byModel`, `byModelTask`, `globalSavings` (weighted savings + literal verdict).
-- `buildStatsReport(events, options?)` - the entry point. `computeEventCost` lives here (v2 equivalent of `computeRecordCost`).
+- `OptimizerCell` - celda enriquecida por optimizador: `samples`, `avgTokens`, `avgInputTokens`, `avgOutputTokens`, `avgLatency`, `avgQuality`, `failureRate`, `avgAbsoluteCost`, `relativeCost`, `savingsTokens`, `savingsPercent`, `savingsUsd`, `verdict` (`AHORRO` | `PERDIDA` | `NEUTRO`), `winner`.
+- `ModelTaskRow` - una fila por `(model, task)`: `totalSamples`, `baseline`, `optimizers[]`, `bestOptimizer`.
+- `ModelRow` - una fila por modelo: `executions`, `avgTokens`, `avgLatency`, `avgQuality`, `failureRate`, `bestOptimizer`, `savingsVsBaselinePercent`, `savingsVsBaselineTokens`.
+- `RouterStatsReport` - nivel superior: `summary` (`totalDecisions`, `totalExecutions`, `syntheticCount`, `realCount`, ...), `byModel`, `byModelTask`, `globalSavings` (ahorro ponderado + veredicto literal).
+- `buildStatsReport(events, options?)` - el punto de entrada. `computeEventCost` vive aquí (equivalente v2 de `computeRecordCost`).
 
 ### `src/selector/optimizer-selector.ts`
 
-- `selectOptimizer(model, taskType, deps, options?, forcedDefault?)` - the core V0/V1/V2 selector with family inheritance.
-- If the model has no history, it queries `queryByFamily(family, taskType)` and uses those records with reduced confidence (`familyConfidenceWeight`, default 0.5).
-- Only considers optimizers that are in `BASE_RULES[taskType]` or are `BASELINE`.
-- Returns alternatives sorted by relative cost.
-- `evaluateOptimizer(records, optimizer, options?)` - utility for tests.
+- `selectOptimizer(model, taskType, deps, options?, forcedDefault?)` - el selector central V0/V1/V2 con herencia por familia.
+- Si el modelo no tiene histórico, consulta `queryByFamily(family, taskType)` y usa esos registros con confianza reducida (`familyConfidenceWeight`, por defecto 0.5).
+- Solo considera optimizadores que estén en `BASE_RULES[taskType]` o sean `BASELINE`.
+- Devuelve alternativas ordenadas por coste relativo.
+- `evaluateOptimizer(records, optimizer, options?)` - utilidad para tests.
 
 ### `src/selector/exploration.ts`
 
-- `selectOptimizerWithExploration(...)` - V3 wrapper around `selectOptimizer`.
-- Returns `ExplorationResult` with `decision`, `explored` (true if exploration was triggered), and `exploitedOptimizer` (what pure exploitation would have chosen).
-- Inject a `random` function for deterministic tests.
+- `selectOptimizerWithExploration(...)` - envoltorio V3 sobre `selectOptimizer`.
+- Devuelve `ExplorationResult` con `decision`, `explored` (true si se activó la exploración) y `exploitedOptimizer` (lo que habría elegido la explotación pura).
+- Inyecta una función `random` para tests deterministas.
 
 ### `src/klia-discovery.ts`
 
-Dynamic model discovery from the KLIA API.
+Descubrimiento dinámico de modelos desde la API de KLIA.
 
-- `detectKliaApiKey()` - detects the API key in this order:
-  1. `KLIA_API_KEY` env var (must start with `key-`)
-  2. `OPENAI_API_KEY` env var if it starts with `key-`
-  3. `provider.klia.options.apiKey` in `opencode.jsonc` (parsed with JSONC comment stripping)
-- `discoverModelsFromApi(apiKey?)` - calls `GET https://api.klia.tech/v1/models` and returns chat models (embeddings, image, moderation filtered out by `isChatModel`).
-- `discoverModels(apiKey?)` - wraps `discoverModelsFromApi` with a fallback to `SNAPSHOT_MODELS` if the API fails. Returns `{ models, source: 'api' | 'snapshot', error? }`.
-- `SNAPSHOT_MODELS` - static list of 26 KLIA chat models for offline fallback.
+- `detectKliaApiKey()` - detecta la API key en este orden:
+  1. Variable de entorno `KLIA_API_KEY` (debe empezar por `key-`)
+  2. Variable de entorno `OPENAI_API_KEY` si empieza por `key-`
+  3. `provider.klia.options.apiKey` en `opencode.jsonc` (parseado con limpieza de comentarios JSONC)
+- `discoverModelsFromApi(apiKey?)` - llama a `GET https://api.klia.tech/v1/models` y devuelve los modelos de chat (embeddings, image y moderation se filtran con `isChatModel`).
+- `discoverModels(apiKey?)` - envuelve `discoverModelsFromApi` con fallback a `SNAPSHOT_MODELS` si la API falla. Devuelve `{ models, source: 'api' | 'snapshot', error? }`.
+- `SNAPSHOT_MODELS` - lista estática de 26 modelos de chat de KLIA para el fallback sin conexión.
 
 ### `src/history/history-store.ts` (v1)
 
-- `HistoryStore` interface: `add`, `list`, `query`, `queryByFamily`.
-- `JsonHistoryStore` - file-based, with a Promise chain lock to serialize concurrent writes.
-- `queryByFamily(family, taskType, optimizer?)` - returns records matching `modelFamily === family` and `taskType`. Used by the selector for family inheritance.
-- `createExecutionRecord(...)` - builds an `ExecutionRecord` with an `id` of `${Date.now()}-${random}`.
+- Interfaz `HistoryStore`: `add`, `list`, `query`, `queryByFamily`.
+- `JsonHistoryStore` - basado en fichero, con un lock de cadena de Promesas para serializar escrituras concurrentes.
+- `queryByFamily(family, taskType, optimizer?)` - devuelve registros que cumplen `modelFamily === family` y `taskType`. Lo usa el selector para la herencia por familia.
+- `createExecutionRecord(...)` - construye un `ExecutionRecord` con un `id` de `${Date.now()}-${random}`.
 
-This is the store the adaptive router reads to make decisions. Kept for compatibility even after v2.
+Este es el store que lee el router adaptativo para decidir. Se mantiene por compatibilidad incluso después de la v2.
 
 ### `src/history/router-event-store.ts` (v2)
 
-- `RouterEventStore` - file-based store for `RouterEvent`. Promise chain lock, like `JsonHistoryStore`.
-- `createDecisionEvent(...)` - builds a `type: 'decision'` event from a `RouterDecision`.
-- `createExecutionEvent(...)` - builds a `type: 'execution'` event from the `record_execution` payload.
-- `migrateFile()` - migrates the underlying file from v1 to v2 in place (used by the `migrate_history` MCP tool).
-- On read, if v1 records are detected, they are migrated in memory (lazy migration) via `migrateV1ToV2`.
+- `RouterEventStore` - store basado en fichero para `RouterEvent`. Lock de cadena de Promesas, como `JsonHistoryStore`. Las lecturas y escrituras pasan por `src/utils/json.ts` (`stripBom`, `writeFileSyncAtomic`), de modo que escrituras parciales de procesos concurrentes no corrompen el fichero.
+- `createDecisionEvent(...)` - construye un evento `type: 'decision'` a partir de un `RouterDecision`.
+- `createExecutionEvent(...)` - construye un evento `type: 'execution'` a partir del payload de `record_execution`.
+- `migrateFile()` - migra el fichero subyacente de v1 a v2 in situ (lo usa la herramienta MCP `migrate_history`).
+- `compact(options)` - devuelve un `CompactReport` puro basado en `planCompact`; lo llama `router compact` (ver más abajo). Por sí solo no escribe.
+- Al leer, si se detectan registros v1, se migran en memoria (migración perezosa) vía `migrateV1ToV2`.
 
 ### `src/history/migrate.ts`
 
-- `migrateV1ToV2(records, { source })` - turns a v1 `ExecutionRecord[]` into a v2 `RouterEvent[]`. Marks records as `synthetic=true` when they look like benchmark or CLI placeholder data (heuristics on the query text and metrics).
-- `isMigratedToV2(events)` - type guard: returns true if the array is already in v2 schema (`schemaVersion === 2`).
+- `migrateV1ToV2(records, { source })` - convierte un array v1 `ExecutionRecord[]` en events v2 `RouterEvent[]`. Marca los registros como `synthetic=true` cuando parecen datos de benchmark o placeholders de CLI (heurísticas sobre el texto de la query y las métricas).
+- `isMigratedToV2(events)` - type guard: devuelve true si el array ya está en esquema v2 (`schemaVersion === 2`).
 
 ### `src/history/mcp-metrics-store.ts` (legacy)
 
-- `McpMetricsStore` - sync read/write of MCP usage metrics.
-- `summary()` - returns aggregates: `totalDecisions`, `totalExecutions`, `byTaskType`, `byOptimizer`, `byModelFamily`, `avgQuality`, `failureRate`.
+- `McpMetricsStore` - lectura/escritura síncrona de métricas de uso MCP.
+- `summary()` - devuelve agregados: `totalDecisions`, `totalExecutions`, `byTaskType`, `byOptimizer`, `byModelFamily`, `avgQuality`, `failureRate`.
 
 ### `src/pricing/model-pricing.ts`
 
-- `ModelPricing` - `{ inputPerMillion, outputPerMillion }` (USD per 1M tokens).
-- `FAMILY_PRICING` - per-family defaults (glm, deepseek, kimi, qwen, mistral, ...).
-- `MODEL_PRICING` - per-model overrides (e.g. `glm-5.2`, `deepseek-v4-pro`).
-- `FALLBACK_PRICING` - generic fallback when neither model nor family is known.
-- `getPricing(model, family?)` - resolves pricing with the priority: exact model -> family -> fallback.
-- `computeCostUsd(inputTokens, outputTokens, model, family?)` - USD cost of one execution. Used by `record_execution` when `costUsd` is not provided, and by `buildStatsReport` for `savingsUsd`.
+- `ModelPricing` - `{ inputPerMillion, outputPerMillion }` (USD por 1M de tokens).
+- `FAMILY_PRICING` - defaults por familia (glm, deepseek, kimi, qwen, mistral, ...).
+- `MODEL_PRICING` - overrides por modelo (p. ej. `glm-5.2`, `deepseek-v4-pro`).
+- `FALLBACK_PRICING` - fallback genérico cuando ni el modelo ni la familia son conocidos.
+- `getPricing(model, family?)` - resuelve el pricing con la prioridad: modelo exacto -> familia -> fallback.
+- `computeCostUsd(inputTokens, outputTokens, model, family?)` - coste en USD de una ejecución. Lo usa `record_execution` cuando no se proporciona `costUsd`, y `buildStatsReport` para `savingsUsd`.
 
 ### `src/utils/model-family.ts`
 
-- `extractModelFamily(model)` - lowercases and checks against known families: `glm`, `deepseek`, `gpt`, `claude`, `kimi`, `qwen`, `mistral`, `llama`. Falls back to the first alphabetic prefix.
-- `normalizeModel(model)` - normalizes a model id for matching.
-- `isChatModel(id)` - filters out embeddings, image, and moderation models from the KLIA API response.
+- `extractModelFamily(model)` - pasa a minúsculas y comprueba contra las familias conocidas: `glm`, `deepseek`, `gpt`, `claude`, `kimi`, `qwen`, `mistral`, `llama`. En caso de no coincidir, usa el primer prefijo alfabético.
+- `normalizeModel(model)` - normaliza un id de modelo para el matching.
+- `isChatModel(id)` - filtra modelos de embeddings, image y moderation de la respuesta de la API de KLIA.
 
 ### `src/scripts/calibrate.ts`
 
-- `runCalibration(...)` - seeds `history.json` with `BASELINE` records for every model discovered from the KLIA API (or the static snapshot). No synthetic cost matrices.
-- CLI entry: `npm run calibrate -- --history <path> --repetitions N [--models a,b] [--tasks x,y]`.
+- `runCalibration(...)` - siembra `history.json` con registros `BASELINE` para cada modelo descubierto desde la API de KLIA (o el snapshot estático). Sin matrices de coste sintéticas.
+- Entrada CLI: `npm run calibrate -- --history <path> --repetitions N [--models a,b] [--tasks x,y]`.
 
 ### `src/scripts/migrate-history.ts`
 
-- Standalone CLI that migrates `.router-history/history.json` (v1) to `.router-history/events.json` (v2). Prints a summary of synthetic vs. real records. Idempotent.
+- CLI independiente que migra `.router-history/history.json` (v1) a `.router-history/events.json` (v2). Imprime un resumen de registros sintéticos vs. reales. Idempotente.
 
 ### `src/scripts/stats-display.ts`
 
-- `runStatsCli(argv)` - the `router stats` command. Prints 8 ANSI sections: header, executive summary (KPI cards), system health, model ranking, model x task heatmap, per-(model,task) detail, global savings + verdict, confidence calibration + recommendations. Flags: `--model`, `--task`, `--real-only`, `--no-color`.
+- `runStatsCli(argv)` - el comando `router stats`. Imprime 8 secciones ANSI: cabecera, resumen ejecutivo (tarjetas KPI), salud del sistema, ranking de modelos, heatmap modelo x tarea, detalle por (modelo, tarea), ahorro global + veredicto, calibración de confianza + recomendaciones. Flags: `--model`, `--task`, `--real-only`, `--no-color`.
+- `resolveEventsPath(explicit?)` - elige el fichero de eventos en este orden (gana el primer candidato existente): `--events` explícito; `ROUTER_EVENTS_PATH`; `KLIA_STORE_DIR/events.json`; `KLIA_HOME/data/events.json`; `~/.klia/data/events.json`; fallback legacy `<cwd>/.router-history/events.json`.
 
-### `src/index.ts` (public API)
+### `src/scripts/calibrate-display.ts` + `src/scripts/min-confidence-config.ts`
 
-Exports:
+- `runCalibrateCli(argv)` - el comando `router calibrate`. Empareja decisiones y ejecuciones por `sessionId` (reutiliza la calibración de confianza de `buildStatsReport`) y compara la confianza declarada contra la calidad real por modelo:
+  - sobreconfianza (conf > calidad) -> sugiere subir `minConfidence`
+  - infraconfianza -> sugiere bajarlo
+  - alineado -> mantener el valor actual
+- Valor sugerido = `clamp(actual + sobreconfianza, 0.3, 0.95)` redondeado a 0.05. Sin datos emparejados el veredicto es `sin-datos`.
+- Resolución del umbral (el flag explícito gana a la env, que gana al fichero, que gana al default): `--min-confidence` > env `ROUTER_MIN_CONFIDENCE` > valor del fichero de configuración global de OpenCode > `0.6`. El fallback al fichero existe para que la recomendación converja tras `--write`.
+- `min-confidence-config.ts` - `resolveMinConfidence(...)` implementa esa cadena (`KLIA_OPENCODE_CONFIG` sobrescribe el candidato de configuración; candidatos `~/.config/opencode/opencode.json` / `opencode.jsonc`). Aplicar el valor sugerido edita la configuración global de OpenCode con una regex quirúrgica que preserva los comentarios JSONC (clave V2 `mcp.servers['klia-token-optimizer'].environment.ROUTER_MIN_CONFIDENCE` o V1 `mcp[...].env`), creando antes un backup `.bak-<timestamp>`.
 
-- `createAdaptiveRouter(config)` - returns `{ route, recordExecution, inferTaskType }`.
-- `buildContextFromQuery(model, query, base?)` - builds a `RouterContext` with heuristic signals.
-- `buildRecord(ctx, optimizer, metrics, modelFamilyExtractor?)` - builds an `ExecutionRecord` ready to record.
+### `src/scripts/compact-display.ts`
+
+- `runCompactCli(argv)` - el comando `router compact`. Envuelve `RouterEventStore.compact`:
+  - TTL: los eventos más antiguos que `DEFAULT_MAX_AGE_DAYS` (90) caducan; los eventos con timestamp ausente/inválido se consideran caducados.
+  - Purga de huérfanos: las decisiones sin ejecución emparejada se eliminan tras `DEFAULT_ORPHAN_GRACE_DAYS` (7); el emparejamiento es por `sessionId`. Los huérfanos de ejecución se conservan por defecto porque alimentan el aprendizaje de coste; `--drop-orphan-executions` los purga.
+  - Los eventos sintéticos sobreviven al TTL salvo con `--purge-synthetic`.
+  - Rotación: `--rotate` archiva el exceso más antiguo en `<base>.rotated-<stamp>.json`, conservando `DEFAULT_KEEP_EVENTS` (5000).
+  - El modo por defecto es dry-run; `--write` crea un backup `events.backup-*` con timestamp antes de sobrescribir (escritura atómica).
+- Exporta: `CompactOptions`, `CompactStats` (`examined`, `removedExpired`, `removedOrphanDecisions`, `removedOrphanExecutions`, `kept`), `CompactReport` (añade bytes/dryRun/rotación), `planCompact`.
+
+### `src/autopilot/auto-pilot.ts`
+
+- `AutoPilot` - evalúa métricas y devuelve acciones sugeridas **sin ejecutarlas**.
+- Tipos de `AutoPilotAction`: `adjust_confidence`, `force_baseline`, `compact_store`, `alert_burn`, `retrain_classifier` (cada una con `reason` y `payload`).
+- Defaults de `AutoPilotOptions`: `enabled: true`, `burnThresholdTokensPerHour: 500_000`, `failureRateThreshold: 0.4`, `maxStoreSizeBytes: 50 MB`, `cooldownMinutes: 60`.
+- `evaluate(...)` y `checkAndAct(...)`: `alert_burn` si los tokens de la última hora superan el umbral; `force_baseline` si la tasa de fallos de la última hora supera 0.4; `compact_store` si el fichero de eventos supera 50 MB. Un cooldown evita repetir acciones; se exponen `disableUntil`/`enable`.
+- El estado se persiste en `(KLIA_HOME ?? ~/.klia)/data/autopilot-state.json` (se conservan las últimas 100 acciones).
+- CLI: `src/scripts/autopilot-display.ts` calcula tokens/tasa de fallos de la última hora desde `events.json`, llama a `checkAndAct` e imprime las acciones (o `--json`); `--disable` / `--enable` / `--events` / `--json`.
+
+### `src/dashboard/web-dashboard.ts`
+
+- `startWebDashboard({ port, host, eventsPath, benchmarkPath })` - servidor HTTP que sirve el dashboard HTML. Defaults: `127.0.0.1:6283`.
+- `src/dashboard/stats-adapter.ts` - `buildDashboardReport(...)`: construye el reporte de `buildStatsReport` más un `DashboardSummary` (`totalEvents`, `totalDecisions`, `totalExecutions`, `totalTokens`, `avgQuality`, `failureCount`, `avgLatencySeconds`, `optimizerCounts`, `generatedAt`, campos de ahorro, `hasRealData`, `realCount`, `syntheticCount`). Si no hay ejecuciones reales, el ahorro usa los datos de benchmark cuando están disponibles.
+- `src/dashboard/benchmark-adapter.ts` - parsea las filas de `benchmark-results.json` (`taskId`, `model`, `optimizer`, `estimatedTokens`, `latencySeconds`, `quality`, `failed`, ...) y calcula el ahorro por fila vs `BASELINE` agrupado por `taskId`, agrega por optimizador y por grupo (`BenchmarkOptimizerAggregate`, `BenchmarkGroupAggregate`) y deriva `BenchmarkCalibration` (`pairsMatched`, `avgDeclaredConfidence`, `avgActualQuality`, `calibrationScore`, `verdict`, `byOptimizer[]`).
+- CLI: `src/scripts/dashboard-display.ts`. Flags: `--port`, `--host`, `--events`, `--benchmark`, `--detach`, `--child`. `--detach` lanza un proceso hijo desacoplado (log en `~/.klia/logs/dashboard.log`), imprime la URL y el PID, y rechaza arrancar un duplicado si el puerto está ocupado.
+- Dashboard HTML: tarjetas KPI, gráficos de distribución de optimizadores, filas de benchmark (o las top-100 celdas modelo x tarea del reporte), tablas `byModel` / `byModelTask`, formato numérico `es-ES`, auto-refresco.
+
+### `src/scripts/health-check.ts` + `plugins/*/klia-healthcheck.ts`
+
+- `runHealthCheckCli(argv)` - el chequeo de salud al arranque. Flags: `--json`, `--popup`, `--no-popup`, `--force` (se salta el throttle), `--interval-hours N`, `--timeout MS`, `--help`.
+- Chequeos (cada uno produce un `CheckResult` con estado `ok` / `warn` / `fail`):
+  1. Node >= 22.5 (`MIN_NODE_VERSION`).
+  2. CLI del runtime: el primer candidato existente entre `KLIA_ROUTER_CLI_PATH`, `%LOCALAPPDATA%\klia-token-optimizer\dist\router-cli.js` y `KLIA_PROJECT_ROOT/dist/router-cli.js` (`resolveRuntimeCli`).
+  3. Almacén de eventos: sonda de escritura junto al primer candidato de eventos existente (`resolveEventsCandidates`: `ROUTER_EVENTS_PATH`, `KLIA_STORE_DIR`, `KLIA_HOME/data`, `~/.klia/data`, legacy `<cwd>/.router-history`).
+  4. Registro MCP: entradas `repomix` y `semble` buscando (tras quitar BOM y comentarios de línea) en los ficheros de configuración de OpenCode / Kilo.
+  5. Binarios: `rtk`, `repomix` y `semble` responden a `--version` (timeout `DEFAULT_BIN_TIMEOUT_MS`, 10 s).
+  6. Ficheros de plugin: `klia-router-inject.ts`, `klia-auto-record.ts` y `klia-healthcheck.ts` presentes en los directorios de plugins de Kilo / OpenCode v1 / v2 (y AppData).
+- Helpers puros exportados para tests: `severityOf`, `summarize`, `parsePopupPolicy`, `decidePopup`, `formatPopupMessage`, `stripJsonComments`, `hasMcpEntry`.
+- Estado: `HealthState` en `resolveStatePath` (por defecto `~/.klia/data/health-state.json`), escrito de forma atómica. El chequeo completo corre una vez cada `DEFAULT_INTERVAL_HOURS` (24; `KLIA_HEALTH_HOURS`); los arranques cacheados informan desde el estado y no muestran popup.
+- Popup: `showSystemPopup` ejecuta `WScript.Shell.Popup` vía un hijo de PowerShell desacoplado (mensaje UTF-8 pasado en base64; autocierre `DEFAULT_POPUP_TIMEOUT_SECONDS`, 10 s). Política env `KLIA_HEALTH_POPUP`: `always` (por defecto) / `fail-only` / `off`; exit code 1 solo cuando el estado es `fail`.
+- Los plugins finos (`plugins/kilo|opencode|opencode/v2/klia-healthcheck.ts`, uno por API de host) resuelven `dist/scripts/health-check.js` junto a `router-cli.js` y lo lanzan desacoplado con `--popup` en el arranque del host. Si falta el script muestran un aviso de "instalación incompleta" y nunca lanzan excepciones; log de depuración en `~/.klia/logs/healthcheck-debug.log`.
+
+### `src/utils/cli-args.ts` y `src/utils/json.ts`
+
+- `parseCliArgs(tokens, valueFlags)` - parser compartido para los subcomandos de la CLI `router`; devuelve `{ positionals, values, flags }` (los tokens que no empiezan por `--` son posicionales).
+- `ensureJsonFile(path)` - crea el directorio padre y un fichero JSON vacío (array) a demanda.
+- `stripBom(text)` - elimina un U+FEFF inicial (los editores de Windows añaden un BOM que rompe `JSON.parse`).
+- `readJsonSync` / `readJsonAsync` - lecturas JSON tolerantes al BOM.
+- `writeFileSyncAtomic` / `writeFileAtomic` - escribe en `<base>.tmp.<pid>.<ts>.tmp` y renombra, reintentando ante errores transitorios `EPERM`/`EACCES`/`EBUSY` con backoff de 50 ms. Lo usan ambos history stores para que los spawns de la CLI del plugin y el servidor MCP nunca dejen un fichero JSON a medio escribir.
+
+### `src/index.ts` (API pública)
+
+Exporta:
+
+- `createAdaptiveRouter(config)` - devuelve `{ route, recordExecution, inferTaskType }`.
+- `buildContextFromQuery(model, query, base?)` - construye un `RouterContext` con señales heurísticas.
+- `buildRecord(ctx, optimizer, metrics, modelFamilyExtractor?)` - construye un `ExecutionRecord` listo para registrar.
 - Re-exports: `classifyTask`, `extractSignalsFromQuery`, `createExecutionRecord`, `JsonHistoryStore`, `selectOptimizerWithExploration`, `extractModelFamily`, `normalizeModel`, `DEFAULT_ROUTER_OPTIONS`, `McpMetricsStore`, `discoverModels`, `discoverModelsFromApi`, `detectKliaApiKey`, `SNAPSHOT_MODELS`, `isChatModel`.
-- Re-exported types: `RouterContext`, `RouterDecision`, `RouterOptions`, `TaskSignals`, `DiscoveredModel`, `DiscoveryResult`.
+- Tipos re-exportados: `RouterContext`, `RouterDecision`, `RouterOptions`, `TaskSignals`, `DiscoveredModel`, `DiscoveryResult`.
 
 ---
 
-## Data Formats
+## Formatos de datos
 
 ### `ExecutionRecord` (v1)
 
@@ -460,7 +558,7 @@ Exports:
 
 ### `RouterEvent` (v2)
 
-A `decision` event:
+Un evento `decision`:
 
 ```jsonc
 {
@@ -490,11 +588,11 @@ A `decision` event:
 }
 ```
 
-An `execution` event (only the `execution` block differs):
+Un evento `execution` (solo difiere el bloque `execution`):
 
 ```jsonc
 {
-  "...": "...common fields as above...",
+  "...": "...campos comunes como arriba...",
   "type": "execution",
   "execution": {
     "optimizer": "RTK",
@@ -537,85 +635,153 @@ An `execution` event (only the `execution` block differs):
 }
 ```
 
-### History file (v1, `history.json`)
+### Fichero de histórico (v1, `history.json`)
 
-A JSON array of `ExecutionRecord`. Written atomically per `add()` via a Promise chain lock. The file is created on demand; the parent directory is created with `recursive: true`. This is the file the adaptive router reads to make decisions.
+Un array JSON de `ExecutionRecord`. Escrito atómicamente por cada `add()` mediante un lock de cadena de Promesas. El fichero se crea a demanda; el directorio padre se crea con `recursive: true`. Es el fichero que lee el router adaptativo para decidir.
 
-### Events file (v2, `events.json`)
+### Fichero de eventos (v2, `events.json`)
 
-A JSON array of `RouterEvent`. Written by `RouterEventStore` with the same Promise chain lock pattern. This is the source for `get_router_stats` (format=v2) and `router stats`. Migrated lazily from v1 on read.
+Un array JSON de `RouterEvent`. Escrito por `RouterEventStore` con el mismo patrón de lock de cadena de Promesas. Es la fuente de `get_router_stats` (format=v2) y `router stats`. Migrado perezosamente desde v1 al leer.
 
-### MCP metrics file (legacy, `mcp-metrics.json`)
+### Fichero de métricas MCP (legacy, `mcp-metrics.json`)
 
-A JSON array of `McpUsageMetric`. Written synchronously on every `record()` call. Used by `get_router_stats` (format=legacy) for the `mcpUsageSummary` field.
+Un array JSON de `McpUsageMetric`. Escrito síncronamente en cada llamada a `record()`. Lo usa `get_router_stats` (format=legacy) para el campo `mcpUsageSummary`.
 
----
+### `benchmark-results.json` (harness de benchmark, lo consume el dashboard)
 
-## Configuration Reference
+Un array JSON de filas de resultado de benchmark. El adaptador de benchmark del dashboard lo lee cuando se pasa `--benchmark` (o vía defaults del instalador):
 
-### `RouterOptions` (in code)
+```jsonc
+[
+  {
+    "taskId": "Q05",
+    "taskName": "...",
+    "model": "glm-5.2",
+    "optimizer": "REPOMIX",
+    "taskType": "REPO_PACKAGING",
+    "estimatedTokens": 18780,
+    "latencySeconds": 65,
+    "quality": 0.95,
+    "failed": false
+  }
+]
+```
 
-```typescript
+El ahorro por fila se calcula contra la fila `BASELINE` con el mismo `taskId`; los agregados (`BenchmarkOptimizerAggregate`, `BenchmarkGroupAggregate`) y el resumen de calibración (`BenchmarkCalibration`) se derivan en `src/dashboard/benchmark-adapter.ts`.
+
+### Fichero de estado del health check (`health-state.json`)
+
+Un objeto único escrito por `src/scripts/health-check.ts` tras cada chequeo completo:
+
+```jsonc
 {
-  minConfidence: 0.6,        // Minimum confidence to use a learned V2 rule
-  explorationRate: 0.1,      // V3 exploration probability
-  minSamples: 3,             // Minimum samples to trust a rule
-  latencyWeight: 1.0,        // Weight of latency in the cost
-  toolingCostWeight: 1.0,    // Weight of tooling cost in the cost
-  failurePenalty: 5.0,       // Added when failed === true
-  qualityPenalty: 3.0,       // Multiplied by (1 - quality)
-  familyConfidenceWeight: 0.5, // Confidence reduction for family-inherited data
+  "lastRunAt": "2026-10-22T15:12:40.000Z",
+  "status": "ok",            // ok | warn | fail
+  "okCount": 8,
+  "failedCount": 0,
+  "warnCount": 1,
+  "lastMessage": "Resumen: 8 correctas, 1 avisos, 0 fallos",
+  "lastPopupAt": "2026-10-22T15:12:41.000Z",
+  "runs": 42
 }
 ```
 
-### Environment variables (MCP server)
-
-See [README.md - Environment Variables](./README.md#environment-variables). All are parsed with `parseFloat`; invalid values are ignored (fall back to defaults). The full list:
-
-| Variable | Description | Default |
-| -------- | ----------- | ------- |
-| `ROUTER_HISTORY_PATH` | v1 history file (adaptive router learning) | `./.router-history/history.json` |
-| `ROUTER_EVENTS_PATH` | v2 unified events file (reporting) | `./.router-history/events.json` |
-| `ROUTER_METRICS_PATH` | Legacy MCP metrics file | `./.router-history/mcp-metrics.json` |
-| `ROUTER_LOG_PATH` | MCP server JSON log | `./.router-history/mcp-server.log.json` |
-| `ROUTER_MIN_CONFIDENCE` | Minimum confidence for a learned rule | `0.6` |
-| `ROUTER_EXPLORATION_RATE` | V3 exploration rate | `0.1` |
-| `ROUTER_MIN_SAMPLES` | Minimum samples to trust a rule | `3` |
-| `ROUTER_LATENCY_WEIGHT` | Latency weight | `1.0` |
-| `ROUTER_TOOLING_COST_WEIGHT` | Tooling cost weight | `1.0` |
-| `ROUTER_FAILURE_PENALTY` | Failure penalty | `5.0` |
-| `ROUTER_QUALITY_PENALTY` | Lost-quality penalty | `3.0` |
-
-### `tsconfig.json` vs `tsconfig.build.json`
-
-- `tsconfig.json` includes `src/**/*` and `tests/**/*`. Used by Vitest and IDE type checking.
-- `tsconfig.build.json` extends the base, sets `rootDir: ./src`, excludes tests, and emits declarations. Used by `npm run build`.
+El chequeo completo corre cuando el `lastRunAt` almacenado es más antiguo que el intervalo (24 h por defecto); si no, la CLI informa desde este fichero (cacheado solo el resumen) y no muestra popup.
 
 ---
 
-## Debugging
+## Referencia de configuración
 
-### Inspect the v1 history
+### `RouterOptions` (en código)
+
+```typescript
+{
+  minConfidence: 0.6,        // Confianza mínima para usar una regla aprendida V2
+  explorationRate: 0.1,      // Probabilidad de exploración V3
+  minSamples: 3,             // Muestras mínimas para fiarse de una regla
+  latencyWeight: 1.0,        // Peso de la latencia en el coste
+  toolingCostWeight: 1.0,    // Peso del coste de tooling en el coste
+  failurePenalty: 5.0,       // Se añade cuando failed === true
+  qualityPenalty: 3.0,       // Se multiplica por (1 - quality)
+  familyConfidenceWeight: 0.5, // Reducción de confianza para herencia por familia
+}
+```
+
+### Variables de entorno (servidor MCP)
+
+Ver [README.md - Variables de entorno](./README.md#entorno-de-desarrollo). Todas se parsean con `parseFloat`; los valores inválidos se ignoran (se cae al default). La lista completa:
+
+| Variable | Descripción | Default |
+| -------- | ----------- | ------- |
+| `ROUTER_HISTORY_PATH` | Fichero de histórico v1 (aprendizaje del router adaptativo) | `./.router-history/history.json` |
+| `ROUTER_EVENTS_PATH` | Fichero de eventos unificados v2 (reporting) | `./.router-history/events.json` |
+| `ROUTER_METRICS_PATH` | Fichero legacy de métricas MCP | `./.router-history/mcp-metrics.json` |
+| `ROUTER_LOG_PATH` | Log JSON del servidor MCP | `./.router-history/mcp-server.log.json` |
+| `ROUTER_MIN_CONFIDENCE` | Confianza mínima para una regla aprendida | `0.6` |
+| `ROUTER_EXPLORATION_RATE` | Tasa de exploración V3 | `0.1` |
+| `ROUTER_MIN_SAMPLES` | Muestras mínimas para fiarse de una regla | `3` |
+| `ROUTER_LATENCY_WEIGHT` | Peso de la latencia | `1.0` |
+| `ROUTER_TOOLING_COST_WEIGHT` | Peso del coste de tooling | `1.0` |
+| `ROUTER_FAILURE_PENALTY` | Penalización por fallo | `5.0` |
+| `ROUTER_QUALITY_PENALTY` | Penalización por calidad perdida | `3.0` |
+
+### Variables de entorno (CLI e instalador)
+
+| Variable | Descripción | Default |
+| -------- | ----------- | ------- |
+| `KLIA_HOME` | Directorio base para datos y logs de KLIA instalados (lo fija el instalador) | `~/.klia` |
+| `KLIA_STORE_DIR` | Directorio alternativo de eventos/datos usado por `resolveEventsPath` | unset |
+| `KLIA_OPENCODE_CONFIG` | Sobrescribe la ruta del fichero de configuración de OpenCode usada por `router calibrate --write` | unset |
+| `KLIA_HEALTH_POPUP` | Política de popup del health check (`always`, `fail-only`, `off`) | `always` |
+| `KLIA_HEALTH_POPUP_TIMEOUT` | Autocierre del popup, en segundos | `10` |
+| `KLIA_HEALTH_HOURS` | Horas entre chequeos de salud completos | `24` |
+| `KLIA_HEALTH_TIMEOUT` | Timeout del chequeo de binarios, en ms | `10000` |
+| `KLIA_HEALTH_DISABLE` | `1` o `true` desactiva el chequeo de salud al arrancar | unset |
+| `KLIA_HEALTH_STATE_PATH` | Sobrescribe la ruta del fichero de estado del health check | `<KLIA_STORE_DIR ?? ~/.klia/data>/health-state.json` |
+
+### Orden de resolución del fichero de eventos
+
+`router stats`, `compact`, `autopilot` y `dashboard --events` aceptan un `--events` explícito. Sin él, gana el primer candidato existente:
+
+1. `--events` explícito
+2. `ROUTER_EVENTS_PATH`
+3. `KLIA_STORE_DIR/events.json`
+4. `KLIA_HOME/data/events.json`
+5. `~/.klia/data/events.json`
+6. fallback legacy `<cwd>/.router-history/events.json`
+
+`ROUTER_MIN_CONFIDENCE` también puede vivir en la configuración global de OpenCode (`mcp.servers['klia-token-optimizer'].environment.ROUTER_MIN_CONFIDENCE` en JSONC, o `mcp[...].env` en el layout V1); `router calibrate --write` actualiza esa clave.
+
+### `tsconfig.json` vs `tsconfig.build.json`
+
+- `tsconfig.json` incluye `src/**/*` y `tests/**/*`. Lo usan Vitest y el type checking del IDE.
+- `tsconfig.build.json` extiende el base, fija `rootDir: ./src`, excluye los tests y emite declaraciones. Lo usa `npm run build`.
+
+---
+
+## Depuración
+
+### Inspeccionar el histórico v1
 
 ```bash
 node -e "console.table(require('./.router-history/history.json').map(r => ({model: r.model, task: r.taskType, opt: r.optimizer, tokens: r.metrics.tokens, quality: r.metrics.quality})))"
 ```
 
-### Inspect the v2 events
+### Inspeccionar los eventos v2
 
 ```bash
 node -e "const e=require('./.router-history/events.json'); console.log('events:', e.length); console.table(e.slice(-10).map(x => ({type:x.type, model:x.model, task:x.taskType, opt:(x.decision||x.execution||{}).optimizer, synthetic:x.synthetic})))"
 ```
 
-### Inspect MCP metrics
+### Inspeccionar las métricas MCP
 
 ```bash
 node -e "const m = require('./.router-history/mcp-metrics.json'); console.log('decisions:', m.length); console.table(m.slice(-10))"
 ```
 
-### Inspect the cost matrix
+### Inspeccionar la matriz de costes
 
-Use the `get_router_stats` MCP tool (format=legacy), or:
+Usa la herramienta MCP `get_router_stats` (format=legacy), o:
 
 ```typescript
 import { JsonHistoryStore, buildCostMatrix, DEFAULT_ROUTER_OPTIONS } from 'klia-token-optimizer';
@@ -631,62 +797,81 @@ for (const [key, scores] of matrix) {
 }
 ```
 
-### Inspect the enriched v2 report
+### Inspeccionar el reporte enriquecido v2
 
 ```bash
 npm run router -- stats --model glm-5.2 --real-only
 ```
 
-Or call `get_router_stats` with `format=v2` from the MCP server.
+O llama a `get_router_stats` con `format=v2` desde el servidor MCP.
 
-### MCP server logs
+### Probar compact sin escribir
 
-The MCP server writes structured JSON logs to `ROUTER_LOG_PATH` (default `.router-history/mcp-server.log.json`). Each entry has `timestamp`, `level`, `message`, and `meta`. Levels: `debug`, `info`, `error`.
+`router compact` es dry-run por defecto; el informe muestra lo que se eliminaría (TTL, huérfanos, rotación) sin tocar el fichero. Verifica el plan con `--json` antes de añadir `--write`.
 
-### Common issues
+### Logs del servidor MCP
 
-| Symptom | Likely cause | Fix |
-| ------- | ------------ | --- |
-| Decision is always `V0` | History is empty for `(model, task)` | Record executions or run `npm run calibrate`. |
-| Decision is always `V1` | `minSamples` or `minConfidence` not met | Lower thresholds or record more samples. |
-| `SEMBLE` is never selected | Not in `BASE_RULES` for the task, or insufficient evidence / samples | Check `BASE_RULES` and record more executions. |
-| MCP tools not visible | Server not started or `opencode.jsonc` not loaded | Run `npm run mcp-server` and check `opencode.jsonc`. |
-| `get_router_stats` v2 report is empty | `events.json` is empty or all events are synthetic | Call `migrate_history` or record real executions; pass `excludeSynthetic=false` to see synthetic data. |
-| History file grows unbounded | No eviction policy | Prune old records or move to SQLite (see roadmap in `router.md`). |
+El servidor MCP escribe logs JSON estructurados en `ROUTER_LOG_PATH` (por defecto `.router-history/mcp-server.log.json`). Cada entrada tiene `timestamp`, `level`, `message` y `meta`. Niveles: `debug`, `info`, `error`.
 
----
+### Inspeccionar el health check
 
-## Adding an Optimizer
+```bash
+node dist/scripts/health-check.js --force --json
+```
 
-1. Add the optimizer to `Optimizer` in `src/types.ts`.
-2. Add it to `BASE_RULES` in `src/rules/base-rules.ts` for the relevant task types. Order matters: the first entry is the V0 default.
-3. Update the MCP server's `RecordExecutionSchema` enum in `src/mcp-server.ts` to allow the new optimizer in `record_execution`.
-4. Update the `get_router_stats` tool description in `src/mcp-server.ts` if needed.
-5. Add tests:
-   - Selector picks it when it has the lowest relative cost.
-   - Explorer can pick it when unexplored.
-   - `record_execution` accepts it.
-6. Update `README.md`, `README_es.md`, `dev.md`, and `dev_es.md`.
+El estado vive en `~/.klia/data/health-state.json`; los plugins finos escriben su log de depuración en `~/.klia/logs/healthcheck-debug.log`. `KLIA_HEALTH_DISABLE=1` silencia el chequeo al arrancar.
 
-The scorer and history store need no changes; they work generically with any `Optimizer` value. The v2 event store also picks up new optimizers automatically.
+### Problemas comunes
 
----
-
-## Adding a Task Type
-
-1. Add the task type to `TaskType` in `src/types.ts`.
-2. Update `classifyTask` in `src/classifier/task-classifier.ts`. Add the heuristic signals if applicable.
-3. Add an entry to `BASE_RULES` in `src/rules/base-rules.ts`.
-4. Update the `get_router_stats` tool's `taskType` enum in `src/mcp-server.ts` (`GetStatsSchema`).
-5. Update `RouteTaskSchema` if you add new task-specific signals.
-6. Add tests for classification, selection, and exploration.
-7. Update the docs.
+| Síntoma | Causa probable | Solución |
+| ------- | -------------- | -------- |
+| La decisión es siempre `V0` | El histórico está vacío para `(modelo, tarea)` | Registra ejecuciones o ejecuta `npm run calibrate`. |
+| La decisión es siempre `V1` | `minSamples` o `minConfidence` no se cumplen | Baja los umbrales o registra más muestras. |
+| `SEMBLE` nunca se selecciona | No está en `BASE_RULES` para la tarea, o evidencia/muestras insuficientes | Revisa `BASE_RULES` y registra más ejecuciones. |
+| Las herramientas MCP no aparecen | El servidor no está arrancado o `opencode.jsonc` no está cargado | Ejecuta `npm run mcp-server` y revisa `opencode.jsonc`. |
+| El reporte v2 de `get_router_stats` está vacío | `events.json` está vacío o todos los eventos son sintéticos | Llama a `migrate_history` o registra ejecuciones reales; pasa `excludeSynthetic=false` para ver datos sintéticos. |
+| El fichero de histórico crece sin límite | Sin política de expulsión | Ejecuta `npm run router -- compact --write` (TTL 90 días, purga de huérfanos, `--rotate`). |
+| `router stats` no ve datos | El fichero de eventos no está donde lo busca la CLI | Pasa `--events <path>` o fija `KLIA_HOME`/`ROUTER_EVENTS_PATH` (ver el orden de resolución de arriba). |
+| El dashboard no arranca | El puerto 6283 ya está ocupado (u otra instancia del dashboard) | Usa `--port`, o revisa `~/.klia/logs/dashboard.log` tras `--detach`. |
+| El autopilot no imprime nada | No hay ejecuciones en la última hora, o está deshabilitado | Solo reacciona a métricas de la última hora; comprueba con `npm run router -- autopilot --json`; re-habilita con `--enable`. |
+| `router calibrate` sugiere el mismo valor | El umbral viene del fichero de configuración de OpenCode | Aplica la sugerencia con `--write`; verifica con `--min-confidence` para forzar un valor. |
+| `JSON.parse` falla en un fichero del store | Un editor añadió un BOM | `stripBom` en `src/utils/json.ts` lo maneja al leer; re-guarda el fichero sin BOM. |
+| El health check informa de datos antiguos tras un cambio | Los chequeos se limitan a `KLIA_HEALTH_HOURS` (24 h); los cacheados leen `health-state.json` | Ejecuta `node dist/scripts/health-check.js --force --json` para forzar un chequeo fresco. |
+| El popup no aparece al arrancar | `KLIA_HEALTH_POPUP=off` o `KLIA_HEALTH_DISABLE=1`, o el chequeo estaba cacheado | Quita los deshabilitados o re-ejecuta con `--popup --force`; los errores de los plugins van a `~/.klia/logs/healthcheck-debug.log`. |
 
 ---
 
-## Changing the Cost Function
+## Añadir un optimizador
 
-The v1 cost function lives in `computeRecordCost` in `src/scorer/expected-cost-scorer.ts`:
+1. Añade el optimizador a `Optimizer` en `src/types.ts`.
+2. Añádelo a `BASE_RULES` en `src/rules/base-rules.ts` para los tipos de tarea relevantes. El orden importa: la primera entrada es el default V0.
+3. Actualiza el enum de `RecordExecutionSchema` del servidor MCP en `src/mcp-server.ts` para permitir el nuevo optimizador en `record_execution`.
+4. Actualiza la descripción de la herramienta `get_router_stats` en `src/mcp-server.ts` si hace falta.
+5. Añade tests:
+   - El selector lo elige cuando tiene el menor coste relativo.
+   - El explorador puede elegirlo cuando no está explorado.
+   - `record_execution` lo acepta.
+6. Actualiza `README.md`, `README_en.md`, `dev.md` y `dev_es.md`.
+
+El scorer y el history store no necesitan cambios; funcionan genéricamente con cualquier valor de `Optimizer`. El store de eventos v2 también recoge los optimizadores nuevos automáticamente.
+
+---
+
+## Añadir un tipo de tarea
+
+1. Añade el tipo de tarea a `TaskType` en `src/types.ts`.
+2. Actualiza `classifyTask` en `src/classifier/task-classifier.ts`. Añade las señales heurísticas si aplica.
+3. Añade una entrada a `BASE_RULES` en `src/rules/base-rules.ts`.
+4. Actualiza el enum `taskType` de la herramienta `get_router_stats` en `src/mcp-server.ts` (`GetStatsSchema`).
+5. Actualiza `RouteTaskSchema` si añades nuevas señales específicas de la tarea.
+6. Añade tests de clasificación, selección y exploración.
+7. Actualiza la documentación.
+
+---
+
+## Cambiar la función de coste
+
+La función de coste v1 vive en `computeRecordCost` en `src/scorer/expected-cost-scorer.ts`:
 
 ```typescript
 let cost = metrics.tokens;
@@ -696,45 +881,45 @@ if (metrics.failed) cost += options.failurePenalty;
 cost += options.qualityPenalty * (1 - metrics.quality);
 ```
 
-The v2 equivalent is `computeEventCost` in `src/scorer/stats-report.ts` (operates on `RouterEvent` execution events). Keep both in sync if you change one.
+El equivalente v2 es `computeEventCost` en `src/scorer/stats-report.ts` (opera sobre eventos de ejecución `RouterEvent`). Mantén ambos sincronizados si cambias uno.
 
-To change it:
+Para cambiarla:
 
-1. Edit `computeRecordCost` (and `computeEventCost` if you want the v2 report to match).
-2. If you add a new weight, add it to `RouterOptions` and `DEFAULT_ROUTER_OPTIONS` in `src/types.ts`.
-3. Add a corresponding `ROUTER_*` env var in `loadRouterOptionsFromEnv` in `src/mcp-server.ts`.
-4. Add tests in `tests/scorer/`.
-5. Update the docs.
+1. Edita `computeRecordCost` (y `computeEventCost` si quieres que el reporte v2 coincida).
+2. Si añades un nuevo peso, añádelo a `RouterOptions` y `DEFAULT_ROUTER_OPTIONS` en `src/types.ts`.
+3. Añade la variable de entorno `ROUTER_*` correspondiente en `loadRouterOptionsFromEnv` en `src/mcp-server.ts`.
+4. Añade tests en `tests/scorer/`.
+5. Actualiza la documentación.
 
-The relative cost is `avgOptimizerCost / avgBaselineCost` per `(model, task)`. If there is no baseline, the optimizer's own average is used as the denominator, so `relativeCost = 1`. Keep this invariant unless you intentionally want a different normalization.
+El coste relativo es `avgOptimizerCost / avgBaselineCost` por `(modelo, tarea)`. Si no hay baseline, se usa como denominador la media del propio optimizador, con lo que `relativeCost = 1`. Mantén este invariante salvo que quieras deliberadamente otra normalización.
 
 ---
 
-## MCP Server Internals
+## Internos del servidor MCP
 
-The MCP server (`src/mcp-server.ts`, server version `2.0.0`) exposes **four** tools via the Model Context Protocol over stdio:
+El servidor MCP (`src/mcp-server.ts`, versión `2.0.0`) expone **cuatro** herramientas vía el Model Context Protocol sobre stdio:
 
-| Tool | Schema | Effect |
+| Herramienta | Schema | Efecto |
 | ---- | ------ | ------ |
-| `route_task` | `RouteTaskSchema` | Calls `router.route(ctx)`, records a `decision` `RouterEvent`, and records a legacy MCP metric. Returns the decision plus a `sessionId` to pair with `record_execution`. Accepts `sessionId` and `projectId` for pairing. |
-| `record_execution` | `RecordExecutionSchema` | Builds a v1 record via `buildRecord` and calls `router.recordExecution`. Also builds an `execution` `RouterEvent` with split `inputTokens`/`outputTokens`, `costUsd` (estimated via `computeCostUsd` if not provided), `retries`, `errorMessage`, `contextSizeBytesAfter`, `tokensPruned`, `actualToolCalls`, `routerLatencyMs`, `startedAt`, `completedAt`, `source`, `synthetic`. |
-| `get_router_stats` | optional `model`/`taskType`/`excludeSynthetic`/`format` filters | `format=v2` (default): the enriched report (`summary`, `byModel`, `byModelTask`, `globalSavings`). `format=legacy`: total records, unique models, the relative cost matrix, and the MCP usage summary. |
-| `migrate_history` | none | Migrates `events.json` from v1 to v2 in place via `RouterEventStore.migrateFile()`. Returns `{ migrated, migratedCount, eventsPath }`. Idempotent. |
+| `route_task` | `RouteTaskSchema` | Llama a `router.route(ctx)`, registra un `RouterEvent` de `decision` y registra una métrica MCP legacy. Devuelve la decisión más un `sessionId` para emparejar con `record_execution`. Acepta `sessionId` y `projectId` para el emparejamiento. |
+| `record_execution` | `RecordExecutionSchema` | Construye un registro v1 vía `buildRecord` y llama a `router.recordExecution`. Además construye un `RouterEvent` de `execution` con `inputTokens`/`outputTokens` separados, `costUsd` (estimado vía `computeCostUsd` si no se proporciona), `retries`, `errorMessage`, `contextSizeBytesAfter`, `tokensPruned`, `actualToolCalls`, `routerLatencyMs`, `startedAt`, `completedAt`, `source`, `synthetic`. |
+| `get_router_stats` | filtros opcionales `model`/`taskType`/`excludeSynthetic`/`format` | `format=v2` (por defecto): el reporte enriquecido (`summary`, `byModel`, `byModelTask`, `globalSavings`). `format=legacy`: total de registros, modelos únicos, la matriz de costes relativos y el resumen de uso MCP. |
+| `migrate_history` | ninguno | Migra `events.json` de v1 a v2 in situ vía `RouterEventStore.migrateFile()`. Devuelve `{ migrated, migratedCount, eventsPath }`. Idempotente. |
 
-Key behaviors:
+Comportamientos clave:
 
-- **Path resolution**: relative paths are resolved against the project root (found by walking up to the `klia-token-optimizer` package.json). Absolute paths are used as-is.
-- **Exploration**: disabled by default in the MCP server (`enableExploration: false`). Pass `explore: true` in `route_task` to enable V3 for that single call.
-- **Session pairing**: `route_task` returns a `sessionId`. Pass the same `sessionId` to `record_execution` to pair the decision with its execution in the v2 events store.
-- **Pricing**: when `costUsd` is not provided to `record_execution`, it is estimated via `computeCostUsd(inputTokens, outputTokens, model, family)`.
-- **Logging**: structured JSON to `ROUTER_LOG_PATH`. Each tool call logs the request and the result or error.
-- **Error handling**: parse errors and unknown tool names throw; the logger records the error before re-throwing.
+- **Resolución de rutas**: las rutas relativas se resuelven contra la raíz del proyecto (encontrada subiendo hasta el package.json de `klia-token-optimizer`). Las rutas absolutas se usan tal cual.
+- **Exploración**: deshabilitada por defecto en el servidor MCP (`enableExploration: false`). Pasa `explore: true` en `route_task` para habilitar V3 en esa única llamada.
+- **Emparejamiento de sesiones**: `route_task` devuelve un `sessionId`. Pasa el mismo `sessionId` a `record_execution` para emparejar la decisión con su ejecución en el store de eventos v2.
+- **Pricing**: cuando no se proporciona `costUsd` a `record_execution`, se estima vía `computeCostUsd(inputTokens, outputTokens, model, family)`.
+- **Logging**: JSON estructurado a `ROUTER_LOG_PATH`. Cada llamada a herramienta registra la petición y el resultado o error.
+- **Manejo de errores**: los errores de parseo y los nombres de herramienta desconocidos lanzan; el logger registra el error antes de relanzarlo.
 
-### Installing the MCP server in OpenCode
+### Instalar el servidor MCP en OpenCode
 
-The unified installer (`install_klia_tokens.ps1`) handles this automatically. For manual setup:
+El instalador unificado (`install_klia_tokens.ps1`) lo hace automáticamente. Para una instalación manual:
 
-Edit `opencode.jsonc`:
+Edita `opencode.jsonc`:
 
 ```jsonc
 {
@@ -753,56 +938,66 @@ Edit `opencode.jsonc`:
 }
 ```
 
-Run `npm run build` first so `dist/mcp-server.js` exists.
+Ejecuta primero `npm run build` para que exista `dist/mcp-server.js`.
 
-The unified installer also:
-- Writes the `klia-auto-record.ts` plugin (auto-records real metrics after each session via `router-cli.js --record-execution`).
-- Injects the system prompt into `opencode.jsonc`.
-- Adjusts `base-rules.ts` if any optimizer failed to install.
-- Calibrates the history with baseline records.
-
----
-
-## Code Conventions
-
-- **Language**: TypeScript with `strict: true`.
-- **Module system**: CommonJS (`"type": "commonjs"` in `package.json`).
-- **Naming**: descriptive English for symbols, Spanish for comments.
-- **No emojis** in code or documentation.
-- **Single responsibility**: keep modules small.
-- **Tests mirror src**: `tests/scorer/` for `src/scorer/`, etc.
-- **Imports**: relative imports within `src/`; type imports use `import type` where possible.
-- **No global Vitest globals**: import `describe`, `it`, `expect` from `vitest`.
-- **v1 and v2 stay in sync**: when you change the v1 cost function, update the v2 equivalent (`computeEventCost`) so the enriched report matches the adaptive router's decisions.
+El instalador unificado también:
+- Escribe el plugin `klia-auto-record.ts` (auto-registra métricas reales tras cada sesión vía `router-cli.js --record-execution`).
+- Inyecta el system prompt en `opencode.jsonc`.
+- Ajusta `base-rules.ts` si algún optimizador falló al instalarse.
+- Calibra el histórico con registros baseline.
+- Instala los cinco comandos slash `/klia_*` en los directorios de comandos de OpenCode y Kilo (desde `commands/`, reescribiendo los placeholders `__KLIA_INSTALL_DIR__` y `__KLIA_HOME__`).
+- Instala los plugins finos `klia-healthcheck.ts` en los directorios de plugins de Kilo y OpenCode (v1/v2) (fase 16). Ejecutan `dist/scripts/health-check.js --popup` en el arranque del editor y muestran un popup de Windows con el resultado, o con el componente que falló.
 
 ---
 
-## Common Pitfalls
+## Convenciones de código
 
-### Forgetting to record real metrics
+- **Lenguaje**: TypeScript con `strict: true`.
+- **Sistema de módulos**: CommonJS (`"type": "commonjs"` en `package.json`).
+- **Nombres**: Inglés descriptivo para los símbolos, español para los comentarios.
+- **Sin emojis** en código ni documentación.
+- **Responsabilidad única**: mantener los módulos pequeños.
+- **Los tests espejan src**: `tests/scorer/` para `src/scorer/`, etc.
+- **Imports**: imports relativos dentro de `src/`; imports de tipos con `import type` siempre que sea posible.
+- **Sin globales de Vitest**: importa `describe`, `it`, `expect` desde `vitest`.
+- **v1 y v2 sincronizados**: al cambiar la función de coste v1, actualiza el equivalente v2 (`computeEventCost`) para que el reporte enriquecido coincida con las decisiones del router adaptativo.
 
-The router only learns when `recordExecution` is called. If you only ever call `route_task`, decisions stay at V0/V1 forever. The CLIs and MCP server are designed to make recording easy; use them. The `klia-auto-record` plugin closes the loop automatically.
+---
 
-### Editing `tsconfig.json` instead of `tsconfig.build.json`
+## Errores comunes
 
-`tsconfig.json` includes tests and is used by Vitest and the IDE. `tsconfig.build.json` is what produces `dist/`. Editing the wrong file will either ship tests in the build or break type checking in the editor.
+### Olvidar registrar métricas reales
 
-### Concurrent writes to the history file
+El router solo aprende cuando se llama a `recordExecution`. Si solo llamas a `route_task`, las decisiones se quedan en V0/V1 para siempre. Las CLIs y el servidor MCP están diseñados para facilitar el registro; úsalos. El plugin `klia-auto-record` cierra el ciclo automáticamente.
 
-`JsonHistoryStore` and `RouterEventStore` serialize writes with a Promise chain lock, but only within a single process. If you run multiple MCP server instances pointing at the same file, you will get data loss. Run a single server per history file.
+### Editar `tsconfig.json` en lugar de `tsconfig.build.json`
 
-### Relative cost without a baseline
+`tsconfig.json` incluye los tests y lo usan Vitest y el IDE. `tsconfig.build.json` es el que produce `dist/`. Editar el fichero equivocado hará que el build incluya los tests o que falle el type checking del editor.
 
-If no `BASELINE` records exist for a `(model, task)`, `computeRelativeCost` uses the optimizer's own average as the denominator, so `relativeCost = 1`. This means the matrix will show `1.0` for every optimizer, and the selector will fall back to the V0 rule. Record at least one baseline execution per `(model, task)` to get meaningful relative costs.
+### Escrituras concurrentes en el fichero de histórico
 
-### Forgetting to update the MCP enum
+`JsonHistoryStore` y `RouterEventStore` serializan las escrituras con un lock de cadena de Promesas dentro del proceso, y ambos usan `writeFileSyncAtomic` (fichero temporal + rename) de `src/utils/json.ts`, de modo que un crash ya no deja un fichero JSON a medio escribir. Aun así, dos procesos pueden sobrescribirse mutuamente la última escritura; ejecuta un único servidor MCP por fichero de histórico.
 
-When you add an optimizer, you must update `RecordExecutionSchema`'s `optimizer` enum in `src/mcp-server.ts`. Otherwise `record_execution` will reject records for the new optimizer with a Zod validation error.
+### BOM en los ficheros JSON del store
 
-### Mixing v1 and v2 costs
+Algunos editores de Windows añaden un BOM U+FEFF que rompe `JSON.parse`. Los stores leen a través de `readJsonSync`/`readJsonAsync` (tolerantes al BOM), con lo que lo toleran, pero ficheros temp editados a mano o herramientas externas pueden no hacerlo. Guarda los ficheros del store sin BOM o repasa por la API del store.
 
-`computeRecordCost` (v1) and `computeEventCost` (v2) must stay aligned. If you change the v1 cost function and forget the v2 one, the enriched report (`get_router_stats` format=v2 and `router stats`) will diverge from the decisions the adaptive router actually makes.
+### Puerto del dashboard ocupado
+
+`router dashboard` escucha por defecto en `127.0.0.1:6283`. Un segundo arranque (o un hijo `--detach` residual) falla al bindear; cambia el puerto con `--port` o revisa `~/.klia/logs/dashboard.log`.
+
+### Coste relativo sin baseline
+
+Si no existen registros `BASELINE` para un `(modelo, tarea)`, `computeRelativeCost` usa como denominador la media del propio optimizador, con lo que `relativeCost = 1`. Esto significa que la matriz mostrará `1.0` para todos los optimizadores y el selector caerá a la regla V0. Registra al menos una ejecución baseline por `(modelo, tarea)` para obtener costes relativos con sentido.
+
+### Olvidar actualizar el enum del MCP
+
+Cuando añades un optimizador, debes actualizar el enum `optimizer` de `RecordExecutionSchema` en `src/mcp-server.ts`. Si no, `record_execution` rechazará los registros del nuevo optimizador con un error de validación de Zod.
+
+### Mezclar costes v1 y v2
+
+`computeRecordCost` (v1) y `computeEventCost` (v2) deben mantenerse alineados. Si cambias la función de coste v1 y olvidas la v2, el reporte enriquecido (`get_router_stats` format=v2 y `router stats`) divergirá de las decisiones que toma realmente el router adaptativo.
 
 ### `forceConsistentCasingInFileNames`
 
-This is enabled in `tsconfig.json`. On case-insensitive filesystems (Windows, macOS default), inconsistent casing will compile but fail on Linux CI. Be consistent.
+Está habilitado en `tsconfig.json`. En filesystems case-insensitive (Windows, default de macOS), un casing inconsistente compila pero falla en CI de Linux. Sé consistente.

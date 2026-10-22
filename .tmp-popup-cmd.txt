@@ -1,0 +1,1 @@
+$m=[Text.Encoding]::UTF8.GetString([Convert]::FromBase64String('S0xJQSBwcnVlYmE6IGxpbmUxCmxpbmVhMiBjb24gYWNlbnRvcw=='));(New-Object -ComObject WScript.Shell).Popup($m,3,'KLIA Token Optimizer',64)|Out-Null
