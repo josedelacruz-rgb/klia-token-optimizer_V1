@@ -1,0 +1,182 @@
+This file is a merged representation of a subset of the codebase, containing specifically included files, combined into a single document by Repomix.
+The content has been processed where content has been compressed (code blocks are separated by ⋮---- delimiter).
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Only files matching these patterns are included: src/selector/
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Content has been compressed - code blocks are separated by ⋮---- delimiter
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+src/
+  selector/
+    exploration.ts
+    optimizer-selector.ts
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="src/selector/exploration.ts">
+import type { Optimizer, RouterDecision, RouterOptions, TaskType } from '../types';
+import { DEFAULT_ROUTER_OPTIONS } from '../types';
+import { candidatesForTask, defaultOptimizerForTask } from '../rules/base-rules';
+import { selectOptimizer } from './optimizer-selector';
+import type { HistoryStore } from '../history/history-store';
+⋮----
+export interface ExplorationResult {
+  /** Decisión final. */
+  decision: RouterDecision;
+  /** Indica si la decisión fue resultado de exploración forzada. */
+  explored: boolean;
+  /** Optimizador que habría elegido la política pura de explotación. */
+  exploitedOptimizer: Optimizer;
+}
+⋮----
+/** Decisión final. */
+⋮----
+/** Indica si la decisión fue resultado de exploración forzada. */
+⋮----
+/** Optimizador que habría elegido la política pura de explotación. */
+⋮----
+export async function selectOptimizerWithExploration(
+  model: string,
+  taskType: TaskType,
+  deps: { history: HistoryStore },
+  options: RouterOptions = {},
+  random: () => number = Math.random,
+  forcedDefault?: Optimizer,
+): Promise<ExplorationResult>
+⋮----
+// Si ya hay confianza suficiente, explotar directamente... salvo que exista
+// un candidato con muestras insuficientes: sin esto, un saver recomendado
+// por regla base en una celda madura (BASELINE con confianza >= minConfidence)
+// nunca alcanza minSamples y queda en deadlock (no se elige "hasta tener
+// muestras" y no consigue muestras porque no se elige). Se le da su
+// oportunidad con la misma tasa de exploracion controlada (V3).
+⋮----
+// Sin exploración permitida: fallback seguro a baseline.
+⋮----
+// Explorar una alternativa entre los candidatos que no sean el baseline ni el elegido.
+⋮----
+// No hay nada nuevo que explorar; seguir con la decisión base (normalmente baseline).
+</file>
+
+<file path="src/selector/optimizer-selector.ts">
+import type { Optimizer, RouterDecision, RouterOptions, TaskType } from '../types';
+import { DEFAULT_ROUTER_OPTIONS } from '../types';
+import { candidatesForTask, defaultOptimizerForTask } from '../rules/base-rules';
+import { buildCostMatrix, computeRelativeCost, keyFor } from '../scorer/expected-cost-scorer';
+import type { CostScore } from '../scorer/expected-cost-scorer';
+import type { ExecutionRecord } from '../types';
+import { extractModelFamily } from '../utils/model-family';
+import type { HistoryStore } from '../history/history-store';
+⋮----
+export interface OptimizerSelectorDeps {
+  history: HistoryStore;
+}
+⋮----
+/**
+ * Calcula la confianza de una estimacion de coste relativo.
+ *
+ * Es una funcion simple: crece con el numero de muestras hasta un maximo.
+ * Puede reemplazarse por un intervalo de confianza o posterior bayesiano en V3.
+ */
+function confidenceFromSamples(sampleCount: number, minSamples: number): number
+⋮----
+export async function selectOptimizer(
+  model: string,
+  taskType: TaskType,
+  deps: OptimizerSelectorDeps,
+  options: RouterOptions = {},
+  forcedDefault?: Optimizer,
+): Promise<RouterDecision>
+⋮----
+// V0: reglas manuales, sin historico.
+⋮----
+// Si no hay datos del modelo, intentar herencia por familia.
+⋮----
+// Sin datos del modelo ni de la familia -> V0
+⋮----
+// Hay datos de la familia -> usarlos con confianza reducida (V1)
+⋮----
+// Hay datos del modelo -> V2 (o V1 si no hay suficiente confianza)
+⋮----
+/**
+ * Selecciona el mejor optimizador a partir de un conjunto de registros.
+ * Usado tanto para datos del modelo como para datos heredados de la familia.
+ */
+function selectFromRecords(
+  records: ExecutionRecord[],
+  model: string,
+  taskType: TaskType,
+  opts: Required<RouterOptions>,
+  baseline: Optimizer,
+  candidates: Optimizer[],
+  defaultVersion: 'V1' | 'V2',
+  sourceLabel: string,
+  confidenceMultiplier: number,
+): RouterDecision
+⋮----
+// Si los registros son heredados, la clave del modelo no existira en la matriz.
+// Construir scores directamente desde los registros.
+⋮----
+// Preparar alternativas con coste relativo.
+⋮----
+// Ordenar alternativas por coste relativo.
+⋮----
+// Cold-start del default (V0): si la celda tiene historial pero el default
+// de la regla base nunca se ha ejecutado (sin muestras usables), se entrega
+// el default en vez de BASELINE para que pueda crear evidencia. Sin esto,
+// un saver recomendado por regla base muere en un bucle: nunca se elige
+// "hasta tener muestras" y nunca gana muestras porque nunca se elige.
+// Solo se activa el gate cuando el ganador aprendido es BASELINE; si otro
+// saver con muestras ganó la celda, se respeta esa evidencia.
+⋮----
+/**
+ * Calcula el coste relativo de un optimizador candidato sin depender de history.query.
+ * Util para tests y para componentes que ya tienen los registros cargados.
+ */
+export function evaluateOptimizer(
+  records: ExecutionRecord[],
+  optimizer: Optimizer,
+  options: RouterOptions = {},
+): ReturnType<typeof computeRelativeCost>
+</file>
+
+</files>

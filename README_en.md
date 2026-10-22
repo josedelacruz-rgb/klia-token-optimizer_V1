@@ -18,6 +18,106 @@
 
 ---
 
+## Measured savings: 25.9% fewer tokens versus the baseline
+
+Klia Token Optimizer reduces avoidable context usage by selecting the strategy that fits each task type.
+
+The figures below come from the reproducible benchmark included in this repository, run on this same project with the same model, the same repository and the same query set in both modes. There are no untraceable aggregate numbers: **every figure comes from a per-query result file**, linked at the end of the section.
+
+### How it was measured
+
+| Parameter | Value |
+| --- | --- |
+| Queries | 32 (10 categories: search, packaging, documentation) |
+| Model | `klia/GLM-5.2` in both modes |
+| Baseline mode | Optimizers **disabled**: no `repomix`/`semble` MCP, no `context-mode`, no `klia-*` plugins, no router directive |
+| Optimizer mode | Optimizers **enabled**: `repomix` and `semble` MCP registered, `klia-router-inject`, `klia-auto-record`, `openrtk` and DCP plugins loaded, router directive injected into the prompt |
+| Metrics | JSON stream from `kilocode run --format json` (tokens, latency, tools) |
+| Repetitions | 1 per query (the benchmark accepts `-Repetitions N`) |
+
+### Overall result (27 comparable queries)
+
+Only the queries that complete in both modes can be compared token by token.
+
+| Metric | Baseline | Optimizer | Difference |
+| --- | --- | --- | --- |
+| Total tokens | 963,517 | 713,839 | **−249,678 (−25.9%)** |
+| Average latency | 121 s | 61 s | −50% |
+| Maximum latency | 282 s | 118 s | −58% |
+| Tool calls | 103 | 66 | −36% |
+| Output tokens | 20,085 | 17,795 | −11% |
+
+- **Median saving per query: −3.3%.** **Mean: +10.4%.**
+- Optimizer mode wins on **13 of 27** queries and loses or ties on **14**.
+- On top of that, **5 baseline queries never finish** (Q21, Q22, Q24, Q28, Q32): they run out of time. With optimizers **all 32 queries complete**.
+
+### Savings by category
+
+| Category | n | Baseline | Optimizer | Saving | Latency (base → opt) |
+| --- | --- | --- | --- | --- | --- |
+| BUSQUEDA_REFERENCIAS | 8 | 346,367 | 160,258 | **−53.7%** | 116 s → 59 s |
+| EMPAQUETADO_REPO | 5 | 187,363 | 133,260 | **−28.9%** | 153 s → 65 s |
+| BUSQUEDA_FUNCION | 8 | 248,620 | 223,037 | −10.3% | 99 s → 55 s |
+| DOCUMENTACION | 6 | 181,167 | 197,284 | **+8.9%** | 132 s → 69 s |
+
+### What explains the result
+
+- The saving concentrates where the model would otherwise read the whole repository by hand: `BUSQUEDA_REFERENCIAS` and `EMPAQUETADO_REPO`. With repomix, packaging the repository fits in one call instead of dozens of reads.
+- In `DOCUMENTACION` optimizer mode is **worse** (+8.9%): the task only needed two or three files, so the fixed cost of the registered MCPs is paid without being amortized.
+- The negative median comes from the same cause: on a trivial query the tool overhead is paid and never recovered. The positive global balance comes from the category mix, not from every query improving.
+- The most solid benefit is not only tokens: **5 queries that hang in baseline mode do get solved** with optimizers.
+
+### Verify every figure
+
+The benchmark result files are versioned in the repository. Each `.md` includes the prompt, category, `TaskType`, model, duration, status and metrics (input, output and total tokens, latency, tools used), so any figure in this README can be checked against its source:
+
+- [Benchmark instructions](./Berchmark/benchmark_separado_kilocode/README.md) — how to run it and what each status means.
+- [Full results (baseline and optimizer)](./Berchmark/benchmark_separado_kilocode/results/) — one file per query and mode.
+- [run-baseline.ps1](./Berchmark/benchmark_separado_kilocode/run-baseline.ps1) / [run-optimizer.ps1](./Berchmark/benchmark_separado_kilocode/run-optimizer.ps1) — execution scripts.
+
+| Query | Baseline (optimizers OFF) | Optimizer (optimizers ON) |
+| --- | --- | --- |
+| Q01 | [baseline01.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline01.md) | [optimizer01.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer01.md) |
+| Q02 | [baseline02.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline02.md) | [optimizer02.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer02.md) |
+| Q03 | [baseline03.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline03.md) | [optimizer03.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer03.md) |
+| Q04 | [baseline04.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline04.md) | [optimizer04.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer04.md) |
+| Q05 | [baseline05.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline05.md) | [optimizer05.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer05.md) |
+| Q06 | [baseline06.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline06.md) | [optimizer06.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer06.md) |
+| Q07 | [baseline07.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline07.md) | [optimizer07.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer07.md) |
+| Q08 | [baseline08.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline08.md) | [optimizer08.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer08.md) |
+| Q09 | [baseline09.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline09.md) | [optimizer09.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer09.md) |
+| Q10 | [baseline10.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline10.md) | [optimizer10.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer10.md) |
+| Q11 | [baseline11.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline11.md) | [optimizer11.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer11.md) |
+| Q12 | [baseline12.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline12.md) | [optimizer12.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer12.md) |
+| Q13 | [baseline13.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline13.md) | [optimizer13.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer13.md) |
+| Q14 | [baseline14.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline14.md) | [optimizer14.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer14.md) |
+| Q15 | [baseline15.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline15.md) | [optimizer15.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer15.md) |
+| Q16 | [baseline16.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline16.md) | [optimizer16.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer16.md) |
+| Q17 | [baseline17.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline17.md) | [optimizer17.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer17.md) |
+| Q18 | [baseline18.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline18.md) | [optimizer18.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer18.md) |
+| Q19 | [baseline19.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline19.md) | [optimizer19.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer19.md) |
+| Q20 | [baseline20.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline20.md) | [optimizer20.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer20.md) |
+| Q21 | [baseline21.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline21.md) | [optimizer21.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer21.md) |
+| Q22 | [baseline22.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline22.md) | [optimizer22.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer22.md) |
+| Q23 | [baseline23.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline23.md) | [optimizer23.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer23.md) |
+| Q24 | [baseline24.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline24.md) | [optimizer24.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer24.md) |
+| Q25 | [baseline25.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline25.md) | [optimizer25.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer25.md) |
+| Q26 | [baseline26.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline26.md) | [optimizer26.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer26.md) |
+| Q27 | [baseline27.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline27.md) | [optimizer27.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer27.md) |
+| Q28 | [baseline28.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline28.md) | [optimizer28.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer28.md) |
+| Q29 | [baseline29.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline29.md) | [optimizer29.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer29.md) |
+| Q30 | [baseline30.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline30.md) | [optimizer30.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer30.md) |
+| Q31 | [baseline31.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline31.md) | [optimizer31.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer31.md) |
+| Q32 | [baseline32.md](./Berchmark/benchmark_separado_kilocode/results/baseline/baseline32.md) | [optimizer32.md](./Berchmark/benchmark_separado_kilocode/results/optimizer/optimizer32.md) |
+
+> **Scope of the data.**
+>
+> - Only the 27 queries that complete in both modes are compared. The other 5 ran out of time in baseline mode (Q21, Q22, Q24, Q28, Q32) and their files record no tokens, so they are excluded from the overall table; their optimizer values are still in the link table.
+> - Q13 and Q17 also ran out of time on the first baseline pass and were repeated with a 10-minute budget: 73,772 and 128,064 tokens respectively. They are the two largest savings and explain much of the aggregate.
+> - One repetition per query: the category split and the individual percentages carry variance. The benchmark accepts `-Repetitions N` to stabilize the measurement.
+> - Savings were measured with the `klia/GLM-5.2` model and this repository as target project. Other models, repositories and task mixes produce different numbers.
+> - Fewer context tokens do not necessarily mean a proportionally lower total API cost, and on trivial queries optimizer mode can consume more tokens than baseline.
+
 ## What if every task used the right strategy?
 
 Not every coding task needs the same context or benefits from the same tool. Klia Token Optimizer helps select among different strategies based on task type, model, and available execution history.
@@ -212,9 +312,12 @@ npm test
 
 ## Documentation
 
-- [OpenCode usage guide](./OPENCODE_USAGE.md)
+- [OpenCode usage guide](./docs/md/OPENCODE_USAGE.md)
 - [Installer details](./instaladores/install.md)
 - [Project conventions](./AGENTS.md)
+- [Router documentation](./docs/md/router.md)
+- [Baseline vs. optimizer benchmark: instructions](./Berchmark/benchmark_separado_kilocode/README.md)
+- [Benchmark results, one file per query and mode](./Berchmark/benchmark_separado_kilocode/results/)
 
 ## License
 

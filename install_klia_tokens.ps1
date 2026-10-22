@@ -14,14 +14,15 @@
 # instalacion previa, su configuracion residual se limpia automaticamente.
 #
 # Uso:
-#   .\install_v2.ps1                          # Desatendido. Instala los 4 optimizadores + router.
-#   .\install_v2.ps1 -StackOnly -StackProfile repomix
-#   .\install_v2.ps1 -StackOnly -StackProfile minimo
-#   .\install_v2.ps1 -Interactive             # Menu interactivo (8 opciones)
-#   .\install_v2.ps1 -DryRun                  # Simula sin tocar nada
-#   .\install_v2.ps1 -SkipBackup              # No genera .bak-* antes de modificar
-#   .\install_v2.ps1 -Force                   # Reinstala sin pedir confirmacion
-#   .\install_v2.ps1 -Uninstall              # Desinstala el router + los optimizadores
+#   .\install_klia_token_optimizer.ps1                          # Desatendido. Instala los 4 optimizadores + router.
+#   .\install_klia_token_optimizer.ps1 -StackOnly -StackProfile repomix
+#   .\install_klia_token_optimizer.ps1 -StackOnly -StackProfile minimo
+#   .\install_klia_token_optimizer.ps1 -Interactive             # Menu interactivo (8 opciones)
+#   .\install_klia_token_optimizer.ps1 -DryRun                  # Simula sin tocar nada
+#   .\install_klia_token_optimizer.ps1 -SkipBackup              # No genera .bak-* antes de modificar
+#   .\install_klia_token_optimizer.ps1 -Force                   # Reinstala RTK y otros componentes aunque ya esten presentes
+#   .\install_klia_token_optimizer.ps1 -Help                    # Muestra la ayuda y sale
+#   .\install_klia_token_optimizer.ps1 -Uninstall               # Desinstala el router + los optimizadores
 #
 # Requisitos:
 #   - Node.js >= 22.5 (requerido por Context Mode)
@@ -40,8 +41,21 @@ param(
     [switch]$Uninstall,
     [switch]$StackOnly,
     [switch]$Interactive,
+    # Muestra la ayuda y sale sin instalar nada (equivale a --help).
+    [switch]$Help,
     [ValidateSet('','minimo','repomix','all')]
-    [string]$StackProfile = ''
+    [string]$StackProfile = '',
+    # Override manual de la version de OpenCode a configurar: 1 = linea 1.x
+    # (mcp directo, clave plugin), 2 = linea 2.x (mcp.servers, clave plugins).
+    # Vacio = autodetectar (opencode --version + sniffing de la config).
+    [ValidateSet('','1','2')]
+    [string]$OpenCodeMajor = '',
+    # Registra el MCP klia-token-optimizer (route_task/record_execution/
+    # get_router_stats). Desactivado por defecto: en el modelo plugin-directo
+    # (klia-router-inject + klia-auto-record con .router-pending.json) no hay
+    # nada que pase por el MCP y evitamos su overhead fijo por sesion. El
+    # instalador retira el MCP si quedo de una instalacion previa.
+    [switch]$RouterMcp
 )
 
 $ErrorActionPreference = "Stop"
@@ -93,20 +107,55 @@ function Save-Config {
     $Config | ConvertTo-Json -Depth 10 | Out-File $Path -Encoding UTF8
 }
 
-function Set-McpEntry {
-    param([object]$Config, [string]$Name, [object]$Entry)
-    if (-not $Config.PSObject.Properties.Name -contains 'mcp') {
+function Get-McpContainer {
+    # Contenedor de los MCP entries segun el formato de OpenCode:
+    #   v1 (linea 1.x):  mcp.{name}          (mcp directo)
+    #   v2 (linea 2.x):  mcp.servers.{name}  (la doc v2 lo exige literal)
+    param([object]$Config, [int]$Major = 1)
+    if (-not ($Config.PSObject.Properties.Name -contains 'mcp')) {
         $Config | Add-Member -NotePropertyName 'mcp' -NotePropertyValue ([PSCustomObject]@{}) -Force
     }
-    if ($Config.mcp.PSObject.Properties.Name -contains $Name) {
-        $Config.mcp.$Name = $Entry
+    if ($Major -ge 2) {
+        if ($null -eq $Config.mcp -or -not ($Config.mcp.PSObject.Properties.Name -contains 'servers')) {
+            $Config.mcp | Add-Member -NotePropertyName 'servers' -NotePropertyValue ([PSCustomObject]@{}) -Force
+        }
+        return $Config.mcp.servers
+    }
+    return $Config.mcp
+}
+
+function Set-McpEntry {
+    param([object]$Config, [string]$Name, [object]$Entry, [int]$Major = 1)
+    $container = Get-McpContainer $Config $Major
+    if ($container.PSObject.Properties.Name -contains $Name) {
+        $container.$Name = $Entry
     } else {
-        $Config.mcp | Add-Member -NotePropertyName $Name -NotePropertyValue $Entry -Force
+        $container | Add-Member -NotePropertyName $Name -NotePropertyValue $Entry -Force
     }
 }
 
 function Remove-McpEntry {
-    param([object]$Config, [string]$Name)
+    param([object]$Config, [string]$Name, [int]$Major = 1)
+    if ($Major -ge 2) {
+        # v2: la entrada vive en mcp.servers.{name}. Se limpia ademas el
+        # formato legacy v1 (mcp.{name} directo) para instalaciones viejas.
+        if ($Config.mcp -and ($Config.mcp.PSObject.Properties.Name -contains 'servers') -and $null -ne $Config.mcp.servers) {
+            $servers = $Config.mcp.servers
+            if ($servers.PSObject.Properties.Name -contains $Name) {
+                $servers.PSObject.Properties.Remove($Name)
+            }
+            # Si mcp se queda con un servers vacio y sin mas hijos, se saca.
+            $mcpProps = @($Config.mcp.PSObject.Properties.Name | Where-Object { $_ -ne 'servers' })
+            if ($mcpProps.Count -eq 0 -and @($servers.PSObject.Properties.Name).Count -eq 0) {
+                $Config.PSObject.Properties.Remove('mcp')
+            }
+        }
+        # Legacy v1 embebido en la misma config
+        if ($Config.mcp -and ($Config.mcp.PSObject.Properties.Name -contains $Name)) {
+            $Config.mcp.PSObject.Properties.Remove($Name)
+        }
+        return
+    }
     if ($Config.mcp -and ($Config.mcp.PSObject.Properties.Name -contains $Name)) {
         $Config.mcp.PSObject.Properties.Remove($Name)
     }
@@ -125,47 +174,124 @@ function _PluginBase {
     return $Plugin
 }
 
+# Base de un entry de plugin tolerante a los dos formatos: en v2 el array
+# "plugins" admite objetos { package, options } ademas de strings. Sin este
+# tratamiento, un objeto en el array haria saltar .StartsWith al normalizar.
+function _PluginEntryBase {
+    param($Entry)
+    if ($null -eq $Entry) { return '' }
+    if ($Entry -is [string]) { return _PluginBase $Entry }
+    foreach ($prop in @('package', 'name', 'id')) {
+        $val = $Entry.PSObject.Properties[$prop]
+        if ($val -and $val.Value -is [string]) { return _PluginBase $val.Value }
+    }
+    return ''
+}
+
+# Clave de la config que lleva los plugins de OpenCode: "plugin" en v1,
+# "plugins" en v2 (la doc v2 renombra la clave).
+function Get-OpenCodePluginKey {
+    param([int]$Major = 1)
+    if ($Major -ge 2) { return 'plugins' }
+    return 'plugin'
+}
+
 function Add-PluginEntry {
-    param([object]$Config, [string]$Plugin)
+    param([object]$Config, [string]$Plugin, [int]$Major = 1)
+    $key = Get-OpenCodePluginKey $Major
     $base = _PluginBase $Plugin
     $invalid = @('', 'list')
     $existing = @()
-    if ($Config.PSObject.Properties.Name -contains 'plugin' -and $null -ne $Config.plugin) {
-        $existing = @($Config.plugin | Where-Object {
-            $_ -and ($_ -notin $invalid) -and ((_PluginBase $_) -ne $base)
+    if ($Config.PSObject.Properties.Name -contains $key -and $null -ne $Config.$key) {
+        $existing = @($Config.$key | Where-Object {
+            $_ -and ($_ -notin $invalid) -and ((_PluginEntryBase $_) -ne $base)
         })
     }
     $newArray = @($existing) + $Plugin
-    $Config | Add-Member -NotePropertyName 'plugin' -NotePropertyValue $newArray -Force
+    $Config | Add-Member -NotePropertyName $key -NotePropertyValue $newArray -Force
 }
 
 function Remove-PluginEntry {
-    param([object]$Config, [string]$Plugin)
-    if ($Config.PSObject.Properties.Name -contains 'plugin' -and $null -ne $Config.plugin) {
+    param([object]$Config, [string]$Plugin, [int]$Major = 1)
+    $key = Get-OpenCodePluginKey $Major
+    if ($Config.PSObject.Properties.Name -contains $key -and $null -ne $Config.$key) {
         $base = _PluginBase $Plugin
-        $new = @($Config.plugin | Where-Object { $_ -and ($_ -ne $Plugin) -and ((_PluginBase $_) -ne $base) })
+        $new = @($Config.$key | Where-Object { $_ -and ($_ -ne $Plugin) -and ((_PluginEntryBase $_) -ne $base) })
         if ($new.Count -eq 0) {
-            $Config.PSObject.Properties.Remove('plugin')
+            $Config.PSObject.Properties.Remove($key)
         } else {
-            $Config | Add-Member -NotePropertyName 'plugin' -NotePropertyValue $new -Force
+            $Config | Add-Member -NotePropertyName $key -NotePropertyValue $new -Force
         }
     }
 }
 
 function Test-McpExists {
-    param([object]$Config, [string]$Name)
-    if ($Config -and $Config.mcp -and ($Config.mcp.PSObject.Properties.Name -contains $Name)) { return $true }
+    param([object]$Config, [string]$Name, [int]$Major = 1)
+    if (-not ($Config -and ($Config.PSObject.Properties.Name -contains 'mcp') -and $Config.mcp)) { return $false }
+    if ($Major -ge 2) {
+        if (($Config.mcp.PSObject.Properties.Name -contains 'servers') -and $null -ne $Config.mcp.servers -and
+            ($Config.mcp.servers.PSObject.Properties.Name -contains $Name)) { return $true }
+        # Formato legacy v1 puede seguir en la misma config
+        if ($Config.mcp.PSObject.Properties.Name -contains $Name) { return $true }
+        return $false
+    }
+    if ($Config.mcp.PSObject.Properties.Name -contains $Name) { return $true }
     return $false
 }
 
 function Test-PluginExists {
-    param([object]$Config, [string]$Plugin)
-    if (-not ($Config -and $Config.PSObject.Properties.Name -contains 'plugin')) { return $false }
+    param([object]$Config, [string]$Plugin, [int]$Major = 1)
+    $key = Get-OpenCodePluginKey $Major
+    if (-not ($Config -and ($Config.PSObject.Properties.Name -contains $key))) { return $false }
     $base = _PluginBase $Plugin
-    foreach ($p in @($Config.plugin)) {
-        if (($p -eq $Plugin) -or ((_PluginBase $p) -eq $base)) { return $true }
+    foreach ($p in @($Config.$key)) {
+        if (($p -eq $Plugin) -or ((_PluginEntryBase $p) -eq $base)) { return $true }
     }
     return $false
+}
+
+# Devuelve el entry MCP {name} en cualquiera de los dos formatos (v1/v2),
+# para checks que validan campos concretos (command, type...) de la entrada.
+function Get-McpEntry {
+    param([object]$Config, [string]$Name, [int]$Major = 1)
+    if (-not ($Config -and ($Config.PSObject.Properties.Name -contains 'mcp') -and $Config.mcp)) { return $null }
+    if ($Major -ge 2 -and ($Config.mcp.PSObject.Properties.Name -contains 'servers') -and $null -ne $Config.mcp.servers -and
+        ($Config.mcp.servers.PSObject.Properties.Name -contains $Name)) { return $Config.mcp.servers.$Name }
+    if ($Config.mcp.PSObject.Properties.Name -contains $Name) { return $Config.mcp.$Name }
+    return $null
+}
+
+# --- HELPERS PARA UNINSTALL (v1+v2 a la vez, sin depender de la deteccion) ---
+
+function Remove-McpEntryDual {
+    # Limpia {name} del formato v1 (mcp.X) y del v2 (mcp.servers.X) de la
+    # misma config: el desinstalador no debe depender de que la deteccion
+    # acierte, ni dejar restos de un formato distinto al previsto.
+    param([object]$Config, [string]$Name)
+    Remove-McpEntry $Config $Name 1
+    Remove-McpEntry $Config $Name 2
+}
+
+function Remove-PluginEntryDual {
+    param([object]$Config, [string]$Plugin)
+    Remove-PluginEntry $Config $Plugin 1
+    Remove-PluginEntry $Config $Plugin 2
+}
+
+# Entry MCP de OpenCode correcto para la version detectada: v1 lleva
+# "enabled": true y el campo de variables se llama "environment" (la FASE 11
+# historica escribía "env", campo que v1 no reconoce). En v2 no existe
+# "enabled" (habilitar es el default; deshabilitar es "disabled": true).
+function New-OpenCodeMcpEntry {
+    param([string[]]$Command, [object]$Environment = $null)
+    if ($Script:OcMajor -ge 2) {
+        $e = [ordered]@{ type = 'local'; command = $Command }
+        if ($Environment) { $e.environment = $Environment }
+        return [PSCustomObject]$e
+    }
+    $e = [ordered]@{ type = 'local'; command = $Command; enabled = $true }
+    if ($Environment) { $e.environment = $Environment }
+    return [PSCustomObject]$e
 }
 
 # --- HELPERS KILOCODE ---
@@ -225,6 +351,63 @@ function Backup-OpenCode {
     return $backupDir
 }
 
+function Install-KliaPluginFile {
+    # Copia un plugin Klia desde su fuente canonica del repo al directorio de
+    # plugins del host (auto-descubiertos: {plugin,plugins}/*.{ts,js}, sin
+    # entrada en la config). Con backup previo si el fichero ya existia.
+    param([string]$SourcePath, [string]$TargetDir, [string]$Phase = '13')
+    if (-not (Test-Path -LiteralPath $SourcePath)) {
+        Write-Warn "Fuente de plugin ausente: $SourcePath"
+        return $false
+    }
+    if ($DryRun) { Write-Warn "[DryRun] Se copiaria $SourcePath -> $TargetDir"; return $true }
+    if (-not (Test-Path -LiteralPath $TargetDir)) {
+        New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+    }
+    $target = Join-Path $TargetDir (Split-Path $SourcePath -Leaf)
+    New-FileBackup -Path $target -Phase $Phase | Out-Null
+    Copy-Item -LiteralPath $SourcePath -Destination $target -Force
+    Write-Ok "Plugin instalado: $target"
+    return $true
+}
+
+function Install-TuiBadge {
+    # Instala el paquete del badge TUI (KLIA System Status + badge naranja)
+    # para hosts con la API legacy de slots ({id,tui} + slots snake_case:
+    # KiloCode y OpenCode 1.x). Los plugins TUI NO se autodetectan: copia el
+    # dir-paquete a <TargetDir>\klia-badge y registra la ruta absoluta de
+    # index.tsx en el tui.json indicado (creandolo si falta).
+    param([string]$SourceDir, [string]$TargetDir, [string]$TuiJsonPath, [string]$Phase = '14')
+    $indexSrc = Join-Path $SourceDir "index.tsx"
+    if (-not (Test-Path -LiteralPath $indexSrc)) {
+        Write-Warn "Falta la fuente del badge TUI: $indexSrc"
+        return $false
+    }
+    $badgeTarget = Join-Path $TargetDir "klia-badge"
+    $entryPath = ((Join-Path $badgeTarget "index.tsx") -replace '\\', '/')
+    if ($DryRun) {
+        Write-Warn "[DryRun] Se copiaria el badge TUI a $badgeTarget y se registraria en $TuiJsonPath"
+        return $true
+    }
+    if (-not (Test-Path -LiteralPath $badgeTarget)) {
+        New-Item -ItemType Directory -Path $badgeTarget -Force | Out-Null
+    }
+    Copy-Item -Path (Join-Path $SourceDir "*") -Destination $badgeTarget -Recurse -Force
+    # Registrar la entrada en el tui.json (se crea con su schema si falta)
+    $tuiCfg = $null
+    if (Test-Path -LiteralPath $TuiJsonPath) {
+        New-FileBackup -Path $TuiJsonPath -Phase $Phase | Out-Null
+        $tuiCfg = Load-Config $TuiJsonPath
+    } else {
+        $tuiCfg = [PSCustomObject]@{ '$schema' = 'https://opencode.ai/tui.json' }
+        Write-Ok "tui.json creado: $TuiJsonPath"
+    }
+    Add-PluginEntry $tuiCfg $entryPath 1
+    Save-KiloConfig $TuiJsonPath $tuiCfg
+    Write-Ok "Badge TUI instalado: $badgeTarget (registrado en $TuiJsonPath)"
+    return $true
+}
+
 function Restore-OpenCode {
     param([string]$BackupDir, [string]$ConfigPath, [string]$AgentsPath)
     if ($BackupDir -and (Test-Path "$BackupDir/opencode.jsonc")) {
@@ -269,6 +452,44 @@ $kiloConfigFiles = @(
     (Join-Path $kiloConfigDir "kilo.json"),
     (Join-Path $kiloConfigDir "config.json")
 )
+
+# === RUTAS KLIA RUNTIME + PLUGINS ===
+# Runtime global autocontenido: la ruta que resuelven los plugins Klia al
+# cargar (LOCALAPPDATA\klia-token-optimizer\dist\router-cli.js). Sin esta
+# copia, los plugins se cargan pero cada consulta al router muere en
+# silencio (fallo historico: "sin recomendacion del router", 0 directivas
+# [KLIA] en KiloCode). FASE 13 la publica; el desinstalador la borra.
+$kliaRuntimeDir  = Join-Path $env:LOCALAPPDATA "klia-token-optimizer"
+$kiloPluginDir   = Join-Path $kiloConfigDir "plugin"
+$ocPluginDirXdg     = Join-Path $ocDir "plugin"
+$ocPluginDirAppData = Join-Path $env:APPDATA "opencode/plugin"
+# OpenCode v2 auto-descubre en el directorio PLURAL (doc v2: ~/.config/opencode/plugins/);
+# v1 sigue con el singular plugin/ que ya usa la instalacion existente.
+$ocPluginDirXdgV2     = Join-Path $ocDir "plugins"
+$ocPluginDirAppDataV2 = Join-Path $env:APPDATA "opencode/plugins"
+# Fuentes canonicas de los plugins dentro del repo (Kilo API V1 / OpenCode API V2)
+$pluginsRepoDir      = Join-Path $projectRoot "plugins"
+$pluginsRepoKilo     = Join-Path $pluginsRepoDir "kilo"
+$pluginsRepoOpencode = Join-Path $pluginsRepoDir "opencode"
+# Variante con la API de plugins de OpenCode v2 (Plugin.define): la API V1
+# (export const X: Plugin = async ({client}) => ({hooks})) NO se ejecuta en
+# OpenCode 2.x, asi que la instalacion v2 usa estos ficheros.
+$pluginsRepoOpencodeV2 = Join-Path $pluginsRepoOpencode "v2"
+
+# === BADGE TUI (badge naranja 'KLIA <tipo>' + panel 'KLIA System Status') ===
+# Variante legacy (Kilo y OpenCode 1.x comparten la API {id,tui} + slots
+# snake_case): los plugins TUI NO se autodetectan por directorio, deben
+# registrarse con ruta absoluta en el tui.json (clave plugin).
+# Variante v2 (OpenCode 2.x): dir-paquete con index (server no-op) + tui.tsx,
+# auto-descubierto en ~/.config/opencode/plugins/.
+$ocTuiJson    = Join-Path $ocDir "tui.json"
+$ocTuiJsonc   = Join-Path $ocDir "tui.jsonc"
+$ocTuiDir     = Join-Path $ocDir "tui"
+$kiloTuiJson  = Join-Path $kiloConfigDir "tui.json"
+$kiloTuiJsonc = Join-Path $kiloConfigDir "tui.jsonc"
+$kiloTuiDir   = Join-Path $kiloConfigDir "tui"
+$pluginsRepoKiloTuiBadge    = Join-Path $pluginsRepoKilo "tui/klia-badge"
+$pluginsRepoOpencodeV2Badge = Join-Path $pluginsRepoOpencodeV2 "klia-badge"
 
 # === CONTENIDO EMBEDIDO: AGENTS.md (reglas minimas) ===
 $AGENTS_MD_CONTENT = @'
@@ -560,8 +781,7 @@ incompleta, la prueba no es PASS.
 # === HELPERS SEMBLE ===
 function Test-SembleMcpEntry {
     param([object]$Config)
-    if ($Config.mcp -and $Config.mcp.PSObject.Properties.Name -contains 'semble') { return $true }
-    return $false
+    return (Test-McpExists $Config 'semble' $Script:OcMajor)
 }
 
 function Test-SembleBlockInAgents {
@@ -1098,11 +1318,7 @@ function Install-Semble {
         if ($LASTEXITCODE -ne 0) {
             Write-Warn "semble install fallo. Configurando manualmente..."
             $cfg = Load-Config $ocConfig
-            Set-McpEntry $cfg "semble" ([PSCustomObject]@{
-                type    = 'local'
-                command = @("uvx", "--from", "semble[mcp]==$SembleVersion", "semble")
-                enabled = $true
-            })
+            Set-McpEntry $cfg "semble" (New-OpenCodeMcpEntry -Command @("uvx", "--from", "semble[mcp]==$SembleVersion", "semble")) $Script:OcMajor
             Save-Config $ocConfig $cfg
             Create-SembleSubAgent
             Write-Ok "Configuracion manual aplicada (MCP + sub-agente)"
@@ -1115,11 +1331,7 @@ function Install-Semble {
     else {
         Write-Warn "MCP entry faltante. Forzando..."
         if (-not $DryRun) {
-            Set-McpEntry $cfg "semble" ([PSCustomObject]@{
-                type    = 'local'
-                command = @("uvx", "--from", "semble[mcp]==$SembleVersion", "semble")
-                enabled = $true
-            })
+            Set-McpEntry $cfg "semble" (New-OpenCodeMcpEntry -Command @("uvx", "--from", "semble[mcp]==$SembleVersion", "semble")) $Script:OcMajor
             Save-Config $ocConfig $cfg
             Write-Ok "MCP entry forzado en opencode.jsonc"
         }
@@ -1160,7 +1372,7 @@ function Uninstall-Semble {
         if (-not $DryRun) { Remove-Item -Recurse -Force $venvPath; Write-Ok "venv legacy eliminado" }
     }
     $cfg = Load-Config $ocConfig
-    Remove-McpEntry $cfg "semble"
+    Remove-McpEntryDual $cfg "semble"
     if (-not $DryRun) { Save-Config $ocConfig $cfg; Write-Ok "MCP entry semble removido de opencode.jsonc" }
     if (Test-Path $agentsMd) {
         if (-not $DryRun) {
@@ -1201,18 +1413,18 @@ function Install-ContextMode {
 
     $cfg = Load-Config $ocConfig
 
-    # Eliminar configuracion MCP legacy si existe
-    if ($cfg.mcp -and $cfg.mcp.PSObject.Properties.Name -contains 'context_mode') {
+    # Eliminar configuracion MCP legacy si existe (v1: mcp directo; v2: mcp.servers)
+    if (Test-McpExists $cfg 'context_mode' $Script:OcMajor) {
         Write-Warn "Detectada entrada MCP legacy mcp.context_mode. Eliminando..."
-        Remove-McpEntry $cfg "context_mode"
+        Remove-McpEntryDual $cfg "context_mode"
     }
-    if ($cfg.mcp -and $cfg.mcp.PSObject.Properties.Name -contains 'context-mode') {
+    if (Test-McpExists $cfg 'context-mode' $Script:OcMajor) {
         Write-Warn "Detectada entrada MCP legacy mcp.context-mode. Eliminando..."
-        Remove-McpEntry $cfg "context-mode"
+        Remove-McpEntryDual $cfg "context-mode"
     }
 
-    # Registrar como plugin
-    Add-PluginEntry $cfg "context-mode"
+    # Registrar como plugin (v1: clave plugin; v2: clave plugins)
+    Add-PluginEntry $cfg "context-mode" $Script:OcMajor
     if (-not $DryRun) {
         New-FileBackup -Path $ocConfig -Phase 'ctx' | Out-Null
         Save-Config $ocConfig $cfg
@@ -1281,9 +1493,9 @@ function Uninstall-ContextMode {
         try { & npm uninstall -g context-mode --silent 2>$null | Out-Null } catch {}
     }
     $cfg = Load-Config $ocConfig
-    Remove-PluginEntry $cfg "context-mode"
-    Remove-McpEntry $cfg "context_mode"
-    Remove-McpEntry $cfg "context-mode"
+    Remove-PluginEntryDual $cfg "context-mode"
+    Remove-McpEntryDual $cfg "context_mode"
+    Remove-McpEntryDual $cfg "context-mode"
     if (-not $DryRun) {
         New-FileBackup -Path $ocConfig -Phase 'ctx' | Out-Null
         Save-Config $ocConfig $cfg
@@ -1383,7 +1595,7 @@ function Install-Dcp {
     }
 
     $cfg = Load-Config $ocConfig
-    Add-PluginEntry $cfg $DcpPackage
+    Add-PluginEntry $cfg $DcpPackage $Script:OcMajor
     if (-not $DryRun) {
         New-FileBackup -Path $ocConfig -Phase 'dcp' | Out-Null
         Save-Config $ocConfig $cfg
@@ -1425,7 +1637,7 @@ function Uninstall-Dcp {
         Write-Ok "$DcpPackage desinstalado de npm global"
     }
     $cfg = Load-Config $ocConfig
-    Remove-PluginEntry $cfg $DcpPackage
+    Remove-PluginEntryDual $cfg $DcpPackage
     if (-not $DryRun) {
         New-FileBackup -Path $ocConfig -Phase 'dcp' | Out-Null
         Save-Config $ocConfig $cfg
@@ -1592,6 +1804,9 @@ function Write-RtkPlugin {
     Write-Step "RTK" "Fase 2: Escribiendo plugin/openrtk.ts (version parcheada)"
     Write-RtkLog "fase2: plugin/openrtk.ts"
     if ($DryRun) { Write-Warn "[DryRun] Se escribiria $RtkPluginPath"; return $true }
+    if ($Script:OcMajor -ge 2) {
+        Write-Warn "OpenCode v2: openrtk.ts es API v1 (hooks de objeto); OpenCode v2 no lo cargara. El binario rtk + config.toml + bloques AGENTS.md/RTK.md si se instalan."
+    }
     if (Test-Path -LiteralPath $RtkPluginPath) { New-RtkBackup -Path $RtkPluginPath | Out-Null }
     if (-not (Test-Path $RtkPluginDir)) { New-Item -ItemType Directory -Path $RtkPluginDir -Force | Out-Null }
     Set-Content -LiteralPath $RtkPluginPath -Value $RTK_PLUGIN_CONTENT -Encoding UTF8 -NoNewline
@@ -1743,14 +1958,13 @@ function New-RepomixBackup { param([Parameter(Mandatory)][string]$Path) return N
 
 function Test-RepomixMcpEntry {
     param([object]$Config)
-    if (-not $Config.mcp) { return $false }
-    if (-not ($Config.mcp.PSObject.Properties.Name -contains 'repomix')) { return $false }
-    $entry = $Config.mcp.repomix
+    $entry = Get-McpEntry $Config 'repomix' $Script:OcMajor
+    if (-not $entry) { return $false }
     if ($entry.type -ne 'local') { return $false }
     if (-not $entry.command) { return $false }
-    $cmd = $entry.command -join ' '
-    if ($cmd -notmatch 'repomix') { return $false }
-    if ($cmd -notmatch '--mcp') { return $false }
+    $entryCmd = @($entry.command) -join ' '
+    if ($entryCmd -notmatch 'repomix') { return $false }
+    if ($entryCmd -notmatch '--mcp') { return $false }
     return $true
 }
 
@@ -1819,17 +2033,13 @@ function Install-Repomix {
     if (Test-RepomixMcpEntry $cfg) {
         Write-Ok "Entrada MCP mcp.repomix ya presente y correcta"
     } else {
-        if ($DryRun) { Write-Warn "[DryRun] Se inyectaria entrada mcp.repomix en $ocConfig" }
+        if ($DryRun) { Write-Warn "[DryRun] Se inyectaria entrada mcp repomix en $ocConfig" }
         else {
             New-RepomixBackup $ocConfig | Out-Null
-            $entry = [PSCustomObject]@{
-                type    = 'local'
-                command = @('npx', '-y', 'repomix', '--mcp')
-                enabled = $true
-            }
-            Set-McpEntry $cfg "repomix" $entry
+            $entry = New-OpenCodeMcpEntry -Command @('npx', '-y', 'repomix', '--mcp')
+            Set-McpEntry $cfg "repomix" $entry $Script:OcMajor
             Save-Config $ocConfig $cfg
-            Write-Ok "Entrada MCP mcp.repomix inyectada en $ocConfig"
+            Write-Ok "Entrada MCP repomix inyectada en $ocConfig (formato OpenCode v$Script:OcMajor)"
         }
     }
 
@@ -1884,15 +2094,15 @@ function Uninstall-Repomix {
         Write-Ok "repomix desinstalado de npm global"
     }
     $cfg = Load-Config $ocConfig
-    if ($cfg.mcp -and $cfg.mcp.PSObject.Properties.Name -contains 'repomix') {
-        if ($DryRun) { Write-Warn "[DryRun] Se removeria entrada mcp.repomix de $ocConfig" }
+    if (Test-McpExists $cfg 'repomix' $Script:OcMajor) {
+        if ($DryRun) { Write-Warn "[DryRun] Se removeria entrada MCP repomix de $ocConfig" }
         else {
             New-RepomixBackup $ocConfig | Out-Null
-            Remove-McpEntry $cfg "repomix"
+            Remove-McpEntryDual $cfg "repomix"
             Save-Config $ocConfig $cfg
-            Write-Ok "Entrada mcp.repomix removida de opencode.jsonc"
+            Write-Ok "Entrada MCP repomix removida de opencode.jsonc"
         }
-    } else { Write-Warn "Entrada mcp.repomix no encontrada en opencode.jsonc" }
+    } else { Write-Warn "Entrada MCP repomix no encontrada en opencode.jsonc" }
     if (Test-Path $RepomixConfigPath) {
         if ($DryRun) { Write-Warn "[DryRun] Se eliminaria $RepomixConfigPath" }
         else { New-RepomixBackup $RepomixConfigPath | Out-Null; Remove-Item -LiteralPath $RepomixConfigPath -Force; Write-Ok "repomix.config.json eliminado" }
@@ -1945,17 +2155,17 @@ function Remove-SerenaArtifacts {
     param([switch]$RemovePackage)
     Write-Step "SERENA" "Limpiando configuracion residual de Serena (no se instala)"
 
-    # 1. OpenCode: entrada MCP mcp.serena
+    # 1. OpenCode: entrada MCP serena (v1: mcp.serena; v2: mcp.servers.serena)
     $cfg = Load-Config $ocConfig
-    if ($cfg.mcp -and ($cfg.mcp.PSObject.Properties.Name -contains 'serena')) {
-        if ($DryRun) { Write-Warn "[DryRun] Se removeria entrada mcp.serena de $ocConfig" }
+    if (Test-McpExists $cfg 'serena' $Script:OcMajor) {
+        if ($DryRun) { Write-Warn "[DryRun] Se removeria entrada MCP serena de $ocConfig" }
         else {
             New-FileBackup -Path $ocConfig -Phase 'serena' | Out-Null
-            Remove-McpEntry $cfg 'serena'
+            Remove-McpEntryDual $cfg 'serena'
             Save-Config $ocConfig $cfg
-            Write-Ok "Entrada mcp.serena removida de opencode.jsonc"
+            Write-Ok "Entrada MCP serena removida de opencode.jsonc"
         }
-    } else { Write-Ok "Sin entrada mcp.serena en opencode.jsonc" }
+    } else { Write-Ok "Sin entrada MCP serena en opencode.jsonc" }
 
     # 2. KiloCode: entrada MCP mcp.serena
     foreach ($file in (Get-KiloConfigFiles)) {
@@ -2005,27 +2215,37 @@ function Remove-SerenaArtifacts {
 # Serena esta excluida del stack: su configuracion siempre se elimina.
 
 function Set-OptimalPluginList {
-    Write-Step "OPT" "Normalizando array plugin (context-mode + DCP + openrtk)"
-    if ($DryRun) { Write-Warn "[DryRun] Se reescribiria plugin conservando context-mode, DCP y openrtk"; return }
+    # v1: el array de plugins vive en la clave "plugin"; v2 lo renombra a
+    # "plugins" y ademas admite objetos {package, options}. En v2 los ficheros
+    # klia no van al array: se auto-descubren del directorio plugins/ (FASE 12b).
+    $key = Get-OpenCodePluginKey $Script:OcMajor
+    Write-Step "OPT" "Normalizando plugins de OpenCode (clave '$key': context-mode + DCP + openrtk + klia)"
+    if ($DryRun) { Write-Warn "[DryRun] Se reescribiria $key conservando context-mode, DCP y openrtk"; return }
     $cfg = Load-Config $ocConfig
     $kept = @()
-    if ($cfg.PSObject.Properties.Name -contains 'plugin' -and $null -ne $cfg.plugin) {
-        foreach ($p in @($cfg.plugin)) {
-            $base = _PluginBase $p
+    if ($cfg.PSObject.Properties.Name -contains $key -and $null -ne $cfg.$key) {
+        foreach ($p in @($cfg.$key)) {
+            $base = _PluginEntryBase $p
             if ($base -eq 'context-mode') { $kept += 'context-mode' }
-            if ($base -eq '@tarquinen/opencode-dcp') { $kept += '@tarquinen/opencode-dcp' }
-            if ($p -match 'openrtk\.ts$') { $kept += $p }
-            if ($p -match 'klia-auto-record\.ts$') { $kept += $p }
-            if ($p -match 'klia-router-inject\.ts$') { $kept += $p }
+            if ($base -eq $DcpPackage) { $kept += $DcpPackage }
+            if (($p -is [string]) -and ($p -match 'openrtk\.ts$|klia-auto-record\.ts$|klia-router-inject\.ts$')) { $kept += $p }
+            if ($p -isnot [string]) { $kept += $p }
+        }
+    }
+    if ($Script:OcMajor -ge 2) {
+        $tsEntries = @($kept | Where-Object { ($_ -is [string]) -and ($_ -match '\.ts$') })
+        if ($tsEntries.Count -gt 0) {
+            Write-Warn "OpenCode v2: quitando del array '$key' las entradas de ficheros .ts heredadas ($($tsEntries -join ', ')). Los ficheros de plugins se auto-descubren del directorio plugins/."
+            $kept = @($kept | Where-Object { ($_ -isnot [string]) -or ($_ -notmatch '\.ts$') })
         }
     }
     # Asegurar que context-mode siempre este presente
     if ($kept -notcontains 'context-mode') { $kept = @('context-mode') + $kept }
     $kept = @($kept | Select-Object -Unique)
-    $cfg | Add-Member -NotePropertyName 'plugin' -NotePropertyValue $kept -Force
+    $cfg | Add-Member -NotePropertyName $key -NotePropertyValue $kept -Force
     New-FileBackup -Path $ocConfig -Phase 'opt' | Out-Null
     Save-Config $ocConfig $cfg
-    Write-Ok "plugin = [$($kept -join ', ')]"
+    Write-Ok "$key = [$($kept -join ', ')]"
 }
 
 # La configuracion de "ahorro" de OpenCode (truncacion, compaction, pruning,
@@ -2073,27 +2293,32 @@ function Set-OptimalMcpList {
 
     # En modo 'all' NO eliminamos repomix (sin exclusividad)
     if ($Profile -ne 'all') {
-        if ($Profile -ne 'repomix' -and (Test-McpExists $cfg 'repomix')) {
-            Remove-McpEntry $cfg 'repomix'; Write-Warn "MCP repomix removido (Perfil=$Profile)"
+        if ($Profile -ne 'repomix' -and (Test-McpExists $cfg 'repomix' $Script:OcMajor)) {
+            Remove-McpEntryDual $cfg 'repomix'; Write-Warn "MCP repomix removido (Perfil=$Profile)"
         }
     }
 
     # Serena esta excluida del stack: su MCP nunca debe existir
-    if (Test-McpExists $cfg 'serena') {
-        Remove-McpEntry $cfg 'serena'; Write-Warn "MCP serena removido (Serena esta excluida del stack)"
+    if (Test-McpExists $cfg 'serena' $Script:OcMajor) {
+        Remove-McpEntryDual $cfg 'serena'; Write-Warn "MCP serena removido (Serena esta excluida del stack)"
     }
 
-    # Asegurar los MCP fijos del router (no se tocan si existen)
-    foreach ($must in @('router-klia', 'klia-token-optimizer')) {
-        if (-not (Test-McpExists $cfg $must)) {
-            Write-Warn "MCP $must ausente en config (se anadira en la fase del router)"
+    # MCP del router: solo exigible si se pide el modo MCP (-RouterMcp).
+    # Con el modelo plugin-directo (default) su ausencia es lo esperado.
+    # 'router-klia' jamas se registro (nombre legacy sin fase que lo anadiera):
+    # su check permanente genera un warn falso, se retira.
+    if ($RouterMcp) {
+        if (-not (Test-McpExists $cfg 'klia-token-optimizer' $Script:OcMajor)) {
+            Write-Warn "MCP klia-token-optimizer ausente en config (se anadira en la fase del router)"
         }
+    } elseif (Test-McpExists $cfg 'klia-token-optimizer' $Script:OcMajor) {
+        Write-Ok "MCP klia-token-optimizer presente de una instalacion previa (se retirara en la FASE 11 salvo -RouterMcp)"
     }
 
     # Limpiar MCPs que se solapan con Semble si quedaron activos
     foreach ($conflict in @('llmlingua', 'context-mode', 'context_mode')) {
-        if (Test-McpExists $cfg $conflict) {
-            Remove-McpEntry $cfg $conflict; Write-Warn "MCP conflictivo '$conflict' removido"
+        if (Test-McpExists $cfg $conflict $Script:OcMajor) {
+            Remove-McpEntryDual $cfg $conflict; Write-Warn "MCP conflictivo '$conflict' removido"
         }
     }
 
@@ -2109,41 +2334,17 @@ function Set-OptimalMcpList {
 $systemPromptText = @'
 Eres un agente de codificacion asistido por un router adaptativo de optimizacion de contexto llamado klia-token-optimizer.
 
-AL ARRANCAR una sesion, antes de cualquier otra cosa, haz una verificacion automatica:
-1. Invoca la MCP tool route_task de klia-token-optimizer con:
-   - model: el modelo que estas usando
-   - query: "verificacion de arranque"
-   - fileCount: 0
-   - contextSizeBytes: 0
-2. Si route_task responde con un optimizador y un taskType, informa al usuario de forma breve:
-   "klia-token-optimizer activo: router responde OK (optimizador=<valor>, taskType=<valor>)."
-3. Si route_task no responde o falla, informa al usuario:
-   "klia-token-optimizer NO responde. Revisa la instalacion del servidor MCP en ~/.config/opencode/mcp.json."
-Esta verificacion solo se hace una vez por sesion, al inicio.
+NO llames a ninguna MCP tool de klia-token-optimizer (route_task, record_execution): todo el sistema funciona con plugins:
+- klia-router-inject: antes de cada mensaje clasifica la tarea (CLI directo del router) e inyecta en tu prompt una directiva compacta [KLIA] con el aplicativo a usar (RTK, SEMBLE, REPOMIX, CONTEXT_MODE o DCP). La directiva debe respetarse al pie de la letra.
+- klia-auto-record: registra automaticamente las metricas reales (tokens, latencia, coste) al terminar cada tarea. No necesitas hacer nada.
 
-ANTES de ejecutar cualquier tarea significativa (refactor, busqueda en repo, comandos de terminal, tareas multistep, o contextos grandes), DEBES invocar la MCP tool route_task de klia-token-optimizer con estos parametros:
-- model: el modelo actual que estas usando
-- query: descripcion breve de la tarea
-- fileCount: numero de archivos implicados
-- contextSizeBytes: tamano estimado del contexto en bytes
-- toolCallsExpected: low | medium | high
-- hasTerminalCommands: true si hay comandos de terminal
-- isRefactor: true si es refactor
-- isRepositorySearch: true si es busqueda en repo
-- isMultistep: true si son muchos pasos
+Directivas que veras en el prompt:
+- [KLIA] <tipo>: aplica el optimizador indicado (comprime salidas de CLI con rtk, usa parece.search para busquedas de codigo, etc.).
+- [KLIA] Contexto podado (...)...: resultados de busqueda ya pre-computados; NO repitas la busqueda con grep/glob.
+- [KLIA] RETRY: ...: el prompt es similar a uno reciente y el resultado no sirvio; cambia de enfoque.
+- Sin directiva [KLIA]: tarea pequena o sin saver; usa read/grep/glob nativos, no savers de contexto.
 
-La tool devolvera un optimizador recomendado: BASELINE, DCP, RTK, CONTEXT_MODE, REPOMIX o SEMBLE. Aplica la estrategia correspondiente:
-- BASELINE: ejecuta normalmente.
-- DCP: activa compresion dinamica de contexto.
-- RTK: intercepta y reduce salidas de CLI.
-- CONTEXT_MODE: usa indices/docs de Context Mode.
-- REPOMIX: empaqueta el repositorio de forma selectiva.
-- SEMBLE: usa busqueda semantica de codigo.
-
-DESPUES de ejecutar, las metricas reales (tokens, latencia, coste) se registran automaticamente
-via el plugin klia-auto-record. No necesitas invocar record_execution manualmente.
-
-No ignores esta instruccion. Si no estas seguro de que optimizador usar, consulta siempre route_task.
+Si el router no esta disponible veras un aviso [KLIA] Router no disponible: sigue trabajando normalmente con las herramientas nativas.
 '@
 
 # ====================================================================
@@ -2307,8 +2508,18 @@ function Show-Help {
     Write-Host "  .\install_klia_token_optimizer.ps1 -Interactive             Menu interactivo (8 opciones)."
     Write-Host "  .\install_klia_token_optimizer.ps1 -DryRun                  Simula sin tocar nada."
     Write-Host "  .\install_klia_token_optimizer.ps1 -SkipBackup              No genera .bak-* antes de modificar."
-    Write-Host "  .\install_klia_token_optimizer.ps1 -Force                   Reinstala sin pedir confirmacion."
+    Write-Host "  .\install_klia_token_optimizer.ps1 -Force                   Reinstala componentes aunque ya esten presentes."
     Write-Host "  .\install_klia_token_optimizer.ps1 -Uninstall               Desinstala el router + los 4 optimizadores."
+    Write-Host "  .\install_klia_token_optimizer.ps1 -Help                    Muestra esta ayuda y sale."
+    Write-Host "  .\install_klia_token_optimizer.ps1 -OpenCodeMajor 2         Fuerza la version de OpenCode a configurar."
+    Write-Host "  .\install_klia_token_optimizer.ps1 -RouterMcp               Registra el MCP klia-token-optimizer (opcional, default sin MCP)."
+    Write-Host ""
+    Write-Host "OPENCODE V1 vs V2" -ForegroundColor Yellow
+    Write-Host "  El formato de configuracion cambia entre la linea 1.x (v1: mcp"
+    Write-Host "  directo + clave plugin) y la 2.x (v2: mcp.servers + clave plugins"
+    Write-Host "  + API de plugins Plugin.define). El instalador autodetecta la"
+    Write-Host "  version (opencode --version, luego sniffing de la config). Si la"
+    Write-Host "  deteccion falla, fuerza el formato con -OpenCodeMajor 1 o 2."
     Write-Host ""
     Write-Host "REQUISITOS" -ForegroundColor Yellow
     Write-Host "    - Node.js >= 22.5 (requerido por Context Mode)"
@@ -2322,31 +2533,19 @@ function Show-Help {
     Write-Host "================================================================" -ForegroundColor Cyan
 }
 
+if ($Help) { Show-Help; exit 0 }
+
 Show-Help
 
 if ($DryRun)   { Write-Warn "DRY-RUN activo: no se haran cambios reales." }
-if ($Force)    { Write-Warn "Force activo: reinstala sin pedir confirmacion." }
+if ($Force)    { Write-Warn "Force activo: reinstala componentes aunque ya esten presentes." }
 if ($SkipBackup) { Write-Warn "SkipBackup activo: no se generaran .bak-* antes de modificar." }
 if ($Interactive) { Write-Warn "Interactive activo: se usara el menu interactivo." }
 if ($StackOnly) { Write-Warn "StackOnly activo: solo se instalara el stack (no el router)." }
 if ($StackProfile -and $StackProfile -ne 'all') { Write-Warn "StackProfile: $StackProfile" }
 
-# Pregunta de confirmacion (no preguntar si -Force, -DryRun o -Uninstall)
-$needConfirm = $true
-if ($Force)   { $needConfirm = $false }
-if ($DryRun)  { $needConfirm = $false }
-if ($Uninstall) { $needConfirm = $false }
-if ($Interactive) { $needConfirm = $false }
-
-if ($needConfirm) {
-    Write-Host ""
-    $resp = Read-Host "Deseas continuar con la instalacion? [s/n]"
-    if ($resp -ne 's' -and $resp -ne 'S' -and $resp -ne 'y' -and $resp -ne 'Y') {
-        Write-Host "Instalacion cancelada por el usuario." -ForegroundColor Yellow
-        exit 0
-    }
-    Write-Host ""
-}
+# Sin confirmacion interactiva: el instalador corre desatendido por defecto
+# (se cancela con Ctrl+C). -Help muestra la ayuda y sale sin instalar nada.
 
 # ====================================================================
 # FAST-PATH: -Uninstall
@@ -2362,9 +2561,11 @@ if ($Uninstall) {
     Uninstall-Repomix
     # Serena no se instala: solo se limpian restos (config + paquete)
     Remove-SerenaArtifacts -RemovePackage
-    # Remover MCP klia-token-optimizer de opencode.jsonc
+    # Remover MCP klia-token-optimizer de opencode.jsonc (v1 y v2 a la vez:
+    # el desinstalador no debe depender de acertar la version detectada)
     $cfg = Load-Config $ocConfig
-    Remove-McpEntry $cfg 'klia-token-optimizer'
+    if ($DryRun) { Write-Warn "[DryRun] Se removeria entrada MCP klia-token-optimizer de $ocConfig (formatos v1 y v2 a la vez)" }
+    Remove-McpEntryDual $cfg 'klia-token-optimizer'
     if (-not $DryRun) { Save-Config $ocConfig $cfg; Write-Ok "MCP klia-token-optimizer removido de opencode.jsonc" }
     # Remover MCP klia-token-optimizer de la config de KiloCode
     foreach ($file in (Get-KiloConfigFiles)) {
@@ -2383,6 +2584,44 @@ if ($Uninstall) {
     if (Test-Path -LiteralPath $kliaPluginPath) {
         if (-not $DryRun) { Remove-Item -LiteralPath $kliaPluginPath -Force; Write-Ok "plugin/klia-auto-record.ts eliminado" }
     }
+    # Remover el runtime global autocontenido (lo publica FASE 13)
+    if (Test-Path -LiteralPath $kliaRuntimeDir) {
+        if (-not $DryRun) {
+            Remove-Item -LiteralPath $kliaRuntimeDir -Recurse -Force
+            Write-Ok "Runtime global eliminado: $kliaRuntimeDir"
+        } else { Write-Warn "[DryRun] Se eliminaria $kliaRuntimeDir" }
+    }
+    # Remover los plugins Klia de Kilo y de OpenCode (singular v1 y plural v2)
+    foreach ($dir in @($kiloPluginDir, $ocPluginDirXdg, $ocPluginDirAppData, $ocPluginDirXdgV2, $ocPluginDirAppDataV2)) {
+        foreach ($name in @('klia-router-inject.ts', 'klia-auto-record.ts')) {
+            $p = Join-Path $dir $name
+            if (Test-Path -LiteralPath $p) {
+                if (-not $DryRun) { Remove-Item -LiteralPath $p -Force; Write-Ok "Plugin eliminado: $p" }
+                else { Write-Warn "[DryRun] Se eliminaria $p" }
+            }
+        }
+    }
+    # Remover los paquetes del badge TUI (Kilo, OpenCode v1 y v2)
+    foreach ($badgeDir in @((Join-Path $kiloTuiDir "klia-badge"), (Join-Path $ocTuiDir "klia-badge"), (Join-Path $ocPluginDirXdgV2 "klia-badge"), (Join-Path $ocPluginDirAppDataV2 "klia-badge"))) {
+        if (Test-Path -LiteralPath $badgeDir) {
+            if (-not $DryRun) { Remove-Item -LiteralPath $badgeDir -Recurse -Force; Write-Ok "Badge TUI eliminado: $badgeDir" }
+            else { Write-Warn "[DryRun] Se eliminaria $badgeDir" }
+        }
+    }
+    # Remover la entrada klia-badge del tui.json (Kilo y OpenCode v1)
+    foreach ($tuiFile in @($kiloTuiJson, $kiloTuiJsonc, $ocTuiJson, $ocTuiJsonc)) {
+        if (-not (Test-Path -LiteralPath $tuiFile)) { continue }
+        $tcfg = Load-Config $tuiFile
+        if ($tcfg.plugin -and (@($tcfg.plugin | Where-Object { "$_" -like "*klia-badge*" }).Count -gt 0)) {
+            if ($DryRun) { Write-Warn "[DryRun] Se removeria la entrada klia-badge de $tuiFile" }
+            else {
+                $kept = @($tcfg.plugin | Where-Object { "$_" -notlike "*klia-badge*" })
+                $tcfg | Add-Member -NotePropertyName 'plugin' -NotePropertyValue $kept -Force
+                Save-KiloConfig $tuiFile $tcfg
+                Write-Ok "Entrada klia-badge removida de $tuiFile"
+            }
+        }
+    }
     Write-Host ""
     Write-Host "Desinstalacion completada." -ForegroundColor Green
     Write-Host "Nota: el binario rtk no se borra (winget/cargo/GitHub)." -ForegroundColor Yellow
@@ -2395,29 +2634,17 @@ if ($Uninstall) {
 # ====================================================================
 Write-Step "0" "Pre-checks"
 
-# 0a. opencode
+# 0a. opencode (si falta se instala automaticamente: modo desatendido)
 if (Test-Command "opencode") {
     Write-Ok "opencode ya esta instalado"
 } else {
     Write-Warn "opencode no esta instalado"
-    if ($Force) {
-        Write-Step "0" "Instalando opencode (Force)"
-        if (-not $DryRun) {
-            & npm install -g opencode-ai
-            if ($LASTEXITCODE -ne 0) { Write-Err "Fallo la instalacion de opencode"; exit 1 }
-        }
+    Write-Step "0" "Instalando opencode"
+    if (-not $DryRun) {
+        & npm install -g opencode-ai
+        if ($LASTEXITCODE -ne 0) { Write-Err "Fallo la instalacion de opencode"; exit 1 }
     } else {
-        $resp = Read-Host "Deseas instalarlo ahora via npm install -g opencode-ai? [s/n]"
-        if ($resp -eq 's' -or $resp -eq 'S' -or $resp -eq 'y' -or $resp -eq 'Y') {
-            Write-Step "0" "Instalando opencode"
-            if (-not $DryRun) {
-                & npm install -g opencode-ai
-                if ($LASTEXITCODE -ne 0) { Write-Err "Fallo la instalacion de opencode"; exit 1 }
-            }
-        } else {
-            Write-Err "opencode es obligatorio. Abortando."
-            exit 1
-        }
+        Write-Warn "[DryRun] Se instalaria opencode-ai via npm install -g"
     }
     if (-not $DryRun -and -not (Test-Command "opencode")) {
         Write-Err "opencode sigue sin estar en PATH. Reinicia la terminal y vuelve a ejecutar."
@@ -2441,9 +2668,9 @@ elseif ($nodeMajor -eq 22 -and $nodeMinor -lt 5) { $nodeOk = $false }
 if ($nodeOk) {
     Write-Ok "Node.js $nodeVer (>= 22.5)"
 } else {
+    # Requisito duro: en modo desatendido se aborta sin preguntar
     Write-Err "Node.js $nodeVer no cumple el requisito (>= 22.5). Actualiza Node."
-    $resp = Read-Host "Continuar de todos modos? [s/n]"
-    if ($resp -ne 's' -and $resp -ne 'S') { exit 1 }
+    exit 1
 }
 
 # 0c. npm
@@ -2452,6 +2679,73 @@ if (Test-Command "npm") { Write-Ok "npm presente" } else { Write-Err "npm no enc
 # 0d. uv (necesario para Semble; se instala automaticamente si falta)
 if (Test-Command "uv") { Write-Ok "uv presente (necesario para Semble)" }
 else { Write-Warn "uv no presente (se instalara automaticamente en la fase de Semble)" }
+
+# ====================================================================
+# VERSION DE OPENCODE: v1 (linea 1.x) vs v2 (linea 2.x)
+# ====================================================================
+# v1 y v2 difieren en el formato de la config (mcp vs mcp.servers,
+# plugin vs plugins, permission vs permissions) y en la API de plugins
+# (hooks de objeto API V1 vs Plugin.define API v2). Configurar OpenCode
+# con el formato equivocado deja el router sin activar. Deteccion:
+#   1. opencode --version: major 1 => v1, major >= 2 => v2. Las builds
+#      prerelease (0.0.0-*) no permiten inferir la linea y caen al paso 2.
+#   2. Sniffing del config global: 'plugins' o 'mcp.servers' o
+#      'permissions' => v2; 'plugin' o mcp directo => v1.
+#   3. Sin senales: se asume v1 (aviso con el override -OpenCodeMajor).
+
+function Get-OpenCodeMajorFromVersion {
+    if (-not (Test-Command "opencode")) { return 0 }
+    try { $out = (& opencode --version 2>$null | Out-String).Trim() } catch { return 0 }
+    if (-not $out) { return 0 }
+    if ($out -match '^\s*(\d+)\.') { return [int]$Matches[1] }
+    if ($out -match 'v(\d+)\.') { return [int]$Matches[1] }
+    return 0
+}
+
+function Get-OpenCodeMajorFromConfig {
+    $cfg = Load-Config $ocConfig
+    if (-not ($cfg -and $cfg.PSObject.Properties)) { return 0 }
+    $names = @($cfg.PSObject.Properties.Name)
+    if ($names -contains 'plugins') { return 2 }
+    if ($names -contains 'plugin') { return 1 }
+    if ($names -contains 'mcp') {
+        if ($cfg.mcp) {
+            $mcpNames = @($cfg.mcp.PSObject.Properties.Name)
+            if ($mcpNames -contains 'servers') { return 2 }
+            $realEntries = @($mcpNames | Where-Object { $_ -ne 'servers' })
+            if ($realEntries.Count -gt 0) { return 1 }
+        }
+    }
+    if ($names -contains 'permissions') { return 2 }
+    if ($names -contains 'permission') { return 1 }
+    return 0
+}
+
+$Script:OcMajor = 0
+$Script:OcMajorVia = ''
+if ($OpenCodeMajor -ne '') {
+    $Script:OcMajor = [int]$OpenCodeMajor
+    $Script:OcMajorVia = 'parametro -OpenCodeMajor (forzado)'
+} else {
+    $Script:OcMajor = Get-OpenCodeMajorFromVersion
+    if ($Script:OcMajor -in @(1, 2)) {
+        $Script:OcMajorVia = 'opencode --version'
+    } else {
+        $Script:OcMajor = 0
+        $Script:OcMajor = Get-OpenCodeMajorFromConfig
+        $Script:OcMajorVia = 'sniffing de opencode.jsonc'
+        if ($Script:OcMajor -eq 0) {
+            $Script:OcMajor = 1
+            $Script:OcMajorVia = 'default v1 (sin senales: usar -OpenCodeMajor 2 si esta maquina es v2)'
+        }
+    }
+}
+Write-Step "0e" "Version de OpenCode detectada: v$Script:OcMajor (via $Script:OcMajorVia)"
+if ($Script:OcMajor -ge 2) {
+    Write-Warn "OpenCode v2: el config usara mcp.servers + clave plugins, y la FASE 12 instalara los plugins con la API v2 (Plugin.define) en el directorio plugins/."
+} else {
+    Write-Ok "OpenCode v1: formato mcp directo + clave plugin (API de plugins hooks de objeto)."
+}
 
 # ====================================================================
 # FASE 1-5: Instalar optimizadores
@@ -2677,19 +2971,17 @@ if (-not $DryRun) {
 }
 
 # ====================================================================
-# FASE 11: Registrar MCP klia-token-optimizer en opencode.jsonc
+# FASE 11: MCP klia-token-optimizer en opencode.jsonc (OPCIONAL, solo
+# con -RouterMcp: el modelo plugin-directo no lo necesita)
 # ====================================================================
-Write-Step "11" "Instalando configuracion MCP en OpenCode"
+Write-Step "11" "Configuracion MCP del router (opcional, solo con -RouterMcp)"
 
-if ($DryRun) {
-    Write-Warn "[DryRun] Se registraria klia-token-optimizer en $ocConfig"
-} else {
-    $cfg = Load-Config $ocConfig
-    $mcpEntry = [PSCustomObject]@{
-        type    = 'local'
-        command = @('node', "$projectRoot\dist\mcp-server.js" -replace '\\', '/')
-        enabled = $true
-        env = [PSCustomObject]@{
+$cfg = Load-Config $ocConfig
+if ($RouterMcp) {
+    if ($DryRun) {
+        Write-Warn "[DryRun] Se registraria MCP klia-token-optimizer en $ocConfig (formato OpenCode v$Script:OcMajor)"
+    } else {
+        $envEntry = [PSCustomObject]@{
             ROUTER_HISTORY_PATH      = ($historyPath -replace '\\', '/')
             ROUTER_METRICS_PATH      = ($metricsPath -replace '\\', '/')
             ROUTER_MIN_CONFIDENCE    = '0.6'
@@ -2700,10 +2992,32 @@ if ($DryRun) {
             ROUTER_FAILURE_PENALTY   = '5.0'
             ROUTER_QUALITY_PENALTY   = '3.0'
         }
+        # New-OpenCodeMcpEntry decide enabled/environment segun la version:
+        # v1: enabled=true + environment (el 'env' historico de esta FASE no era
+        #     un campo real de la config v1; el campo correcto es 'environment').
+        # v2: mcp.servers.{name} sin 'enabled' (habilitar es el default en v2).
+        $mcpEntry = New-OpenCodeMcpEntry -Command @('node', "$projectRoot\dist\mcp-server.js" -replace '\\', '/') -Environment $envEntry
+        Set-McpEntry $cfg 'klia-token-optimizer' $mcpEntry $Script:OcMajor
+        Save-Config $ocConfig $cfg
+        Write-Ok "Configuracion MCP instalada en: $ocConfig (formato OpenCode v$Script:OcMajor)"
+        if ($Script:OcMajor -eq 1) { Write-Ok "Campo de variables 'environment' (corregido el 'env' historico, campo inexistente en v1)" }
     }
-    Set-McpEntry $cfg 'klia-token-optimizer' $mcpEntry
-    Save-Config $ocConfig $cfg
-    Write-Ok "Configuracion MCP instalada en: $ocConfig"
+} else {
+    # Modelo plugin-directo (default): la decision corre por los plugins y el
+    # auto-record cierra el bucle via .router-pending.json; el MCP solo
+    # anadiria overhead fijo por sesion. Si quedo de una instalacion previa,
+    # se retira (en v1 y en v2 a la vez, sin fiarse de la deteccion).
+    if (Test-McpExists $cfg 'klia-token-optimizer' $Script:OcMajor) {
+        if ($DryRun) {
+            Write-Warn "[DryRun] Se retiraria el MCP klia-token-optimizer de $ocConfig (opcional con -RouterMcp; solo aporta route_task/get_router_stats)"
+        } else {
+            Remove-McpEntryDual $cfg 'klia-token-optimizer'
+            Save-Config $ocConfig $cfg
+            Write-Warn "MCP klia-token-optimizer retirado de opencode.jsonc (no lo usa el modelo plugin-directo; opcional con -RouterMcp)"
+        }
+    } else {
+        Write-Ok "Sin MCP klia-token-optimizer (modelo plugin-directo; opcional con -RouterMcp)"
+    }
 }
 
 # ====================================================================
@@ -2711,10 +3025,33 @@ if ($DryRun) {
 # ====================================================================
 Write-Step "12" "Configurando system prompt y plugin en OpenCode"
 
-if ($DryRun) {
-    Write-Warn "[DryRun] Se inyectaria systemPrompt en $ocConfig y se escribiria plugin/klia-auto-record.ts"
+# Seleccion del directorio/fuente de plugins de OpenCode (vale para DryRun):
+#   v1: API de hooks de objeto, directorio plugin/ (singular).
+#   v2: API Plugin.define, directorio plugins/ (plural, auto-descubierto
+#       por OpenCode v2; no se anaden entradas al array de config).
+if ($Script:OcMajor -ge 2) {
+    $ocPluginTargetDir = $ocPluginDirXdgV2
+    $pluginsRepoTarget = $pluginsRepoOpencodeV2
+    $fallbackEmb = $null  # no hay contenido embebido con la API v2
 } else {
-    # 12a. Inyectar systemPrompt en opencode.jsonc
+    $ocPluginTargetDir = $RtkPluginDir
+    $pluginsRepoTarget = $pluginsRepoOpencode
+    $fallbackEmb = $KLIA_PLUGIN_CONTENT
+}
+
+if ($DryRun) {
+    if ($Script:OcMajor -ge 2) {
+        Write-Warn "[DryRun] OpenCode v2: se omitiria systemPrompt (no existe en el schema de config v2) y se instalarian los plugins KLIA v2 (Plugin.define) en $ocPluginTargetDir"
+    } else {
+        Write-Warn "[DryRun] Se inyectaria systemPrompt (solo plugins, sin route_task) en $ocConfig y se escribiria plugin/klia-auto-record.ts"
+    }
+} else {
+    # 12a. Inyectar systemPrompt en opencode.jsonc (solo OpenCode v1: el
+    # schema de config de v2 no documenta esta clave; en v2 el texto va en
+    # AGENTS.md o en 'instructions').
+    if ($Script:OcMajor -ge 2) {
+        Write-Warn "OpenCode v2: systemPrompt omitido (la clave no existe en el schema v2). Usar AGENTS.md o 'instructions'."
+    } else {
     $systemPromptJson = $systemPromptText -replace '\\', '\\' -replace '"', '\"' -replace "`r`n", '\n' -replace "`n", '\n'
 
     if (-not (Test-Path -LiteralPath $ocConfig)) {
@@ -2737,15 +3074,165 @@ if ($DryRun) {
         Set-Content -LiteralPath $ocConfig -Value $newContent -NoNewline -Encoding UTF8
         Write-Ok "Configuracion guardada en: $ocConfig"
     }
-
-    # 12b. Escribir plugin/klia-auto-record.ts
-    if (-not (Test-Path -LiteralPath $RtkPluginDir)) {
-        New-Item -ItemType Directory -Path $RtkPluginDir -Force | Out-Null
     }
-    $pluginPath = Join-Path $RtkPluginDir "klia-auto-record.ts"
-    Set-Content -LiteralPath $pluginPath -Value $KLIA_PLUGIN_CONTENT -Encoding UTF8
-    Write-Ok "Plugin instalado en: $pluginPath"
+
+    # 12b. Escribir los plugins Klia de OpenCode con la API de su version
+    # (v1: hooks de objeto en plugin/; v2: Plugin.define en plugins/, que
+    # OpenCode v2 auto-descubre).
+    if (-not (Test-Path -LiteralPath $ocPluginTargetDir)) {
+        New-Item -ItemType Directory -Path $ocPluginTargetDir -Force | Out-Null
+    }
+    $autoRecordRepo = Join-Path $pluginsRepoTarget "klia-auto-record.ts"
+    $autoRecordEmb  = Join-Path $ocPluginTargetDir "klia-auto-record.ts"
+    $autoRecordSource = $null
+    if (Test-Path -LiteralPath $autoRecordRepo) { $autoRecordSource = 'repo' }
+    elseif ($fallbackEmb) { $autoRecordSource = 'embebido' }
+    if (-not $DryRun) { New-FileBackup -Path $autoRecordEmb -Phase '12b' | Out-Null }
+    if ($autoRecordSource -eq 'repo') {
+        Set-Content -LiteralPath $autoRecordEmb -Value (Get-Content -LiteralPath $autoRecordRepo -Raw) -Encoding UTF8
+        Write-Ok "Plugin instalado desde el repo: $autoRecordEmb (API OpenCode v$Script:OcMajor)"
+    } elseif ($autoRecordSource -eq 'embebido') {
+        Set-Content -LiteralPath $autoRecordEmb -Value $fallbackEmb -Encoding UTF8
+        Write-Ok "Plugin instalado (contenido embebido): $autoRecordEmb"
+    } else {
+        Write-Err "Falta la fuente del plugin klia-auto-record para OpenCode v$Script:OcMajor ($autoRecordRepo). KiloCode seguira grabando metricas pero OpenCode no."
+    }
+    $okInj = Install-KliaPluginFile (Join-Path $pluginsRepoTarget "klia-router-inject.ts") $ocPluginTargetDir '12b'
+    if (-not $okInj) { Write-Warn "Sin klia-router-inject OpenCode no recibira directivas [KLIA]" }
     Write-Ok "El plugin registrara automaticamente las metricas de cada tarea"
+}
+
+# ====================================================================
+# FASE 13: Runtime global autocontenido + plugins Klia (KiloCode)
+# ====================================================================
+Write-Step "13" "Publicando runtime global e instalando plugins Klia"
+
+# 13a. Publicar el runtime en %LOCALAPPDATA%\klia-token-optimizer.
+# Es la ruta que resuelven los plugins al cargar; si falta, en KiloCode
+# cada mensaje acaba en "sin recomendacion del router" sin ninguna directiva
+# [KLIA] y sin error visible (exactamente el fallo que trae esta fase).
+$runtimePublished = $false
+if ($DryRun) {
+    Write-Warn "[DryRun] Se publicaria el runtime global en $kliaRuntimeDir (dist + package.json + node_modules de produccion)"
+} else {
+    try {
+        if (-not (Test-Path -LiteralPath $kliaRuntimeDir)) {
+            New-Item -ItemType Directory -Path $kliaRuntimeDir -Force | Out-Null
+            Write-Ok "Directorio creado: $kliaRuntimeDir"
+        }
+        if (-not (Test-Path -LiteralPath (Join-Path $projectRoot "dist"))) {
+            throw "dist/ no existe (fallo de FASE 9); no hay nada que publicar"
+        }
+        $rtDist = Join-Path $kliaRuntimeDir "dist"
+        if (Test-Path -LiteralPath $rtDist) { Remove-Item -LiteralPath $rtDist -Recurse -Force }
+        Copy-Item -LiteralPath (Join-Path $projectRoot "dist") -Destination $rtDist -Recurse -Force
+        Write-Ok "dist/ publicado en $rtDist"
+
+        # package.json minimo (solo dependencies): para npm install --omit=dev
+        $pkgRaw = Get-Content -LiteralPath (Join-Path $projectRoot "package.json") -Raw | ConvertFrom-Json
+        $rtPkg = [PSCustomObject]@{
+            name         = $pkgRaw.name
+            version      = $pkgRaw.version
+            private      = $true
+            type         = "commonjs"
+            dependencies = $pkgRaw.dependencies
+        }
+        Save-KiloConfig (Join-Path $kliaRuntimeDir "package.json") $rtPkg
+
+        # Datos de calibracion del clasificador, si existen
+        $trainSrc = Join-Path $projectRoot "src\classifier\training-data.json"
+        if (Test-Path -LiteralPath $trainSrc) {
+            $trainDstDir = Join-Path $kliaRuntimeDir "classifier"
+            New-Item -ItemType Directory -Path $trainDstDir -Force | Out-Null
+            Copy-Item -LiteralPath $trainSrc -Destination (Join-Path $trainDstDir "training-data.json") -Force
+            Write-Ok "classifier/training-data.json publicado"
+        }
+
+        Write-Host "  Instalando dependencias de produccion del runtime (1-2 min la primera vez)..." -ForegroundColor DarkGray
+        # 2>&1 con EAP=Stop en PS 5.1 lanza si npm escribe en stderr (warnings);
+        # se baja EAP solo para esta llamada y se captura la salida completa.
+        $prevEap = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $rtNpmOut = & npm install --omit=dev --no-audit --no-fund --prefix $kliaRuntimeDir 2>&1
+        } finally {
+            $ErrorActionPreference = $prevEap
+        }
+        if ($LASTEXITCODE -ne 0) {
+            $rtNpmOut | Select-Object -Last 5 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+            throw "npm install del runtime fallo (exit $LASTEXITCODE)"
+        }
+        Write-Ok "Dependencias de produccion instaladas en el runtime"
+        $runtimePublished = $true
+    } catch {
+        Write-Err "Publicando el runtime global: $($_.Exception.Message)"
+        Write-Err "Sin runtime global los plugins aun cargan pero el router no responde (0 directivas [KLIA])."
+    }
+}
+
+# 13b. Verificar la ruta exacta que los plugins van a resolver
+$runtimeCliPath = Join-Path $kliaRuntimeDir "dist\router-cli.js"
+if ($runtimePublished -and -not (Test-Path -LiteralPath $runtimeCliPath)) {
+    Write-Err "Verificacion fallida: NO existe $runtimeCliPath (la ruta que resuelven los plugins)."
+    Write-Err "Los plugins cargaran pero cada consulta al router fallara."
+}
+
+# 13c. Plugins Klia en KiloCode (~/.config/kilo/plugin): auto-descubiertos,
+# no requieren entrada en la config. Son los que reciben el fallo del
+# runtime ausente en silencio; desde FASE 13 avisan en router-inject-error.log.
+if ($DryRun) {
+    Write-Warn "[DryRun] Se instalarian klia-router-inject.ts y klia-auto-record.ts en $kiloPluginDir"
+} elseif (Test-Path -LiteralPath $pluginsRepoKilo) {
+    $okKiloInj = Install-KliaPluginFile (Join-Path $pluginsRepoKilo "klia-router-inject.ts") $kiloPluginDir '13c'
+    $okKiloRec = Install-KliaPluginFile (Join-Path $pluginsRepoKilo "klia-auto-record.ts") $kiloPluginDir '13c'
+    if ($okKiloInj -and $okKiloRec) {
+        Write-Ok "Plugins Klia instalados en KiloCode (auto-descubiertos, sin entrada en config)"
+    } else {
+        Write-Warn "Faltan fuentes en ${pluginsRepoKilo}: los plugins de Kilo quedaran como esten"
+    }
+} else {
+    Write-Warn "Directorio ${pluginsRepoKilo} ausente: los plugins de Kilo quedaran como esten"
+}
+
+# ====================================================================
+# FASE 14: Badge TUI (badge naranja 'KLIA <tipo>' + panel
+# 'KLIA System Status' en la sidebar). API bifurcada:
+#   - KiloCode + OpenCode 1.x: variante legacy {id,tui} + slots
+#     snake_case, NO autodetectada -> copia + tui.json.
+#   - OpenCode 2.x: dir-paquete (index no-op + tui.tsx) auto-descubierto.
+# La instruccion naranja de abajo del prompt no la dibuja el badge: la
+# inyecta klia-router-inject como texto (FASE 12b/13c) y funciona en
+# ambas lineas de OpenCode.
+# ====================================================================
+Write-Step "14" "Instalando badge TUI (panel KLIA System Status)"
+
+# 14a. KiloCode (constante, independiente de la version de OpenCode)
+$kiloTuiTarget = $kiloTuiJson
+if (Test-Path -LiteralPath $kiloTuiJsonc) { $kiloTuiTarget = $kiloTuiJsonc }
+Install-TuiBadge $pluginsRepoKiloTuiBadge $kiloTuiDir $kiloTuiTarget '14a'
+
+# 14b. OpenCode (segun la version detectada)
+if ($Script:OcMajor -ge 2) {
+    $badgeV2Target = Join-Path $ocPluginDirXdgV2 "klia-badge"
+    if ($DryRun) {
+        Write-Warn "[DryRun] Se copiaria el badge TUI v2 a $badgeV2Target (dir-paquete auto-descubierto)"
+    } elseif (-not (Test-Path -LiteralPath $pluginsRepoOpencodeV2Badge)) {
+        Write-Warn "Falta la fuente del badge v2: $pluginsRepoOpencodeV2Badge"
+    } else {
+        if (-not (Test-Path -LiteralPath $ocPluginDirXdgV2)) {
+            New-Item -ItemType Directory -Path $ocPluginDirXdgV2 -Force | Out-Null
+        }
+        if (Test-Path -LiteralPath $badgeV2Target) {
+            Remove-Item -LiteralPath $badgeV2Target -Recurse -Force
+        }
+        Copy-Item -Path (Join-Path $pluginsRepoOpencodeV2Badge "*") -Destination $badgeV2Target -Recurse -Force
+        Write-Ok "Badge TUI v2 instalado: $badgeV2Target (auto-descubierto, sin entrada en config)"
+    }
+} else {
+    # v1: misma variante legacy que Kilo; el tui.json puede ser .json o .jsonc
+    $ocTuiTarget = $ocTuiJson
+    if (Test-Path -LiteralPath $ocTuiJsonc) { $ocTuiTarget = $ocTuiJsonc }
+    Install-TuiBadge $pluginsRepoKiloTuiBadge $ocTuiDir $ocTuiTarget '14b'
 }
 
 # ====================================================================
@@ -2785,6 +3272,34 @@ if ($DryRun) {
     }
 }
 
+# SMOKE TEST del runtime publicado: el comando EXACTO que ejecutan los
+# plugins de Kilo/OpenCode cuando les llega un mensaje (node
+# %LOCALAPPDATA%\klia-token-optimizer\dist\router-cli.js). Si esto responde,
+# el fallo historico del runtime ausente queda descartado.
+if (-not $DryRun) {
+    Write-Step "ST" "Smoke test del runtime global"
+    if (Test-Path -LiteralPath $runtimeCliPath) {
+        $rtStore = Join-Path $env:USERPROFILE ".klia/data"
+        $prevEap = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = 'Continue'
+            $rtOut = & node $runtimeCliPath --model glm-5.2 --query "refactoriza el modulo de autenticacion" --files 12 --size 250000 --history (Join-Path $rtStore "history.json") --events (Join-Path $rtStore "events.json") --session-id smoke-runtime 2>&1
+        } finally {
+            $ErrorActionPreference = $prevEap
+        }
+        if ($LASTEXITCODE -eq 0 -and ($rtOut | Select-String "OPTIMIZER=")) {
+            Write-Ok "El runtime global responde: los plugins ya pueden invocar el router desde su ruta."
+        } else {
+            Write-Err "El router del runtime global no respondio correctamente."
+            Write-Host "  Salida:" -ForegroundColor DarkGray
+            $rtOut | Select-Object -Last 5 | ForEach-Object { Write-Host "    $_" -ForegroundColor DarkGray }
+        }
+    } else {
+        Write-Err "Runtime global ausente en $runtimeCliPath"
+        Write-Err "Los plugins de Kilo cargaran pero sin directivas [KLIA] (fallo historico)."
+    }
+}
+
 # ====================================================================
 # RESUMEN FINAL
 # ====================================================================
@@ -2793,13 +3308,25 @@ Write-Host "==================================================" -ForegroundColor
 Write-Host " Instalacion completada" -ForegroundColor Green
 Write-Host "==================================================" -ForegroundColor Green
 Write-Host ""
-Write-Host " Servidor MCP:    klia-token-optimizer" -ForegroundColor White
+if ($RouterMcp) {
+    Write-Host " Servidor MCP:    klia-token-optimizer (registrado con -RouterMcp)" -ForegroundColor Green
+} else {
+    Write-Host " Servidor MCP:    ninguno (modelo plugin-directo; opcional con -RouterMcp)" -ForegroundColor White
+}
 Write-Host " Compilado en:    $projectRoot\dist" -ForegroundColor White
 Write-Host " Historico:       $historyPath" -ForegroundColor White
 Write-Host " Metricas:        $metricsPath" -ForegroundColor White
-Write-Host " Config OpenCode: $ocConfig" -ForegroundColor White
-Write-Host " System prompt:   inyectado automaticamente" -ForegroundColor Green
-Write-Host " Plugin auto-record: $RtkPluginDir\klia-auto-record.ts" -ForegroundColor Green
+Write-Host " Config OpenCode: $ocConfig (formato v$Script:OcMajor)" -ForegroundColor White
+if ($Script:OcMajor -ge 2) {
+    Write-Host " System prompt:   omitido (la clave no existe en el schema de OpenCode v2)" -ForegroundColor Yellow
+} else {
+    Write-Host " System prompt:   inyectado automaticamente" -ForegroundColor Green
+}
+Write-Host " Plugin auto-record: $(Join-Path $ocPluginTargetDir 'klia-auto-record.ts')" -ForegroundColor Green
+Write-Host " Plugin router-inject: $(Join-Path $ocPluginTargetDir 'klia-router-inject.ts')" -ForegroundColor Green
+Write-Host " Runtime global:  $kliaRuntimeDir" -ForegroundColor Green
+Write-Host " Plugins Kilo:    $kiloPluginDir (klia-router-inject + klia-auto-record)" -ForegroundColor Green
+Write-Host " Badge TUI:       $(Join-Path $kiloTuiDir 'klia-badge') (Kilo) + $(if ($Script:OcMajor -ge 2) { Join-Path $ocPluginDirXdgV2 'klia-badge' } else { Join-Path $ocTuiDir 'klia-badge' })" -ForegroundColor Green
 Write-Host ""
 Write-Host " Optimizadores instalados:" -ForegroundColor Cyan
 if ($installResults.ContainsKey('SEMBLE') -and $installResults['SEMBLE']) { Write-Host "   [OK] Semble" -ForegroundColor Green }
@@ -2820,7 +3347,7 @@ if ($unavailableOptimizers.Count -gt 0) {
     Write-Host " Optimizadores ajustados a BASELINE en base-rules.ts: $($unavailableOptimizers -join ', ')" -ForegroundColor Yellow
 }
 Write-Host " Unico paso que queda:" -ForegroundColor Cyan
-Write-Host "   Reinicia OpenCode para que cargue el servidor MCP, el system prompt, los plugins y los MCP" -ForegroundColor White
+Write-Host "   Reinicia OpenCode y KiloCode para que carguen MCP, system prompt y plugins" -ForegroundColor White
 Write-Host ""
 Write-Host " Comandos utiles:" -ForegroundColor Cyan
 Write-Host "   npm run router -- --model glm-5.2 --query ""refactoriza auth"" --files 12 --size 250000" -ForegroundColor Gray
