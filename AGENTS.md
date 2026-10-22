@@ -91,8 +91,11 @@ Tabla sintetizada de benchmarks propios y documentacion anterior (RTK.md, PLAN_T
 | Repomix --compress | Empaquetado del repo en firmas tree-sitter | ~64% | Benchmark AGENTS.md |
 | Repomix sin --compress | Repo completo para LLM externo | ~52.6% | Benchmark AGENTS.md |
 | Context Mode | Recuperacion repetida de docs/APIs indexadas (FTS5) | Variable | AGENTS.md + README.md |
-| Serena | Operaciones estructurales LSP (find_references, rename) | Indirecto | AGENTS.md |
 | Headroom | Compresion de contexto a nivel de proxy | Variable (manual de 25 pruebas) | Manual_pruebas_Headroom |
+
+Nota: Serena esta EXCLUIDA del stack instalado. El instalador no la instala ni
+escribe su configuracion (ni en OpenCode ni en KiloCode) y el router no la
+considera como optimizador.
 
 Mapeo a tipo de tarea implementado en `src/rules/base-rules.ts`:
 - BUSQUEDA (REPOSITORY_SEARCH) -> SEMBLE (~98%; REPOMIX prohibido en busquedas: gasto +17k medido en Q01/Q03).

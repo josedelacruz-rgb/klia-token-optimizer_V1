@@ -1,4 +1,4 @@
-﻿# Developer Guide
+# Developer Guide
 
 > Technical documentation for developers contributing to or extending the `klia-token-optimizer` adaptive context optimizer router.
 
@@ -33,7 +33,7 @@
 - npm
 - TypeScript 7 (installed as a dev dependency)
 - Vitest 5 (installed as a dev dependency)
-- uv (for Semble and Serena; auto-installed by the unified installer if missing)
+- uv (for Semble; auto-installed by the unified installer if missing)
 
 ### Initial setup
 
@@ -45,10 +45,10 @@ npm install
 
 ### Unified installer (recommended for full environment)
 
-The unified installer `install_klia_token_optimizer.ps1` installs the router plus all 5 context optimizers (Semble, Context Mode, RTK, Repomix, Serena), the auto-record plugin, and the system prompt:
+The unified installer `install_klia_tokens.ps1` installs the router plus all 4 context optimizers (Semble, Context Mode, RTK, Repomix), the auto-record plugin, and the system prompt:
 
 ```powershell
-.\install_klia_token_optimizer.ps1
+.\install_klia_tokens.ps1
 ```
 
 This is idempotent and generates `.bak-<phase>-<timestamp>` backups. See [instaladores/install.md](./instaladores/install.md) for full details. After running it, the project is compiled to `dist/`, the history is calibrated, and the MCP server is registered in `opencode.jsonc`.
@@ -99,7 +99,7 @@ klia-token-optimizer/
     types.ts                   # Shared types + DEFAULT_ROUTER_OPTIONS + RouterEvent (v2)
   tests/                       # Mirror of src/, plus integration tests
   instaladores/                # Installer documentation (install.md, opencode.json)
-  install_klia_token_optimizer.ps1  # Unified installer (router + 5 optimizers + auto-record plugin)
+  install_klia_tokens.ps1          # Unified installer (router + 4 optimizers + auto-record plugin)
   tsconfig.json                # Base config (includes tests)
   tsconfig.build.json          # Build config (src only, declarations)
   package.json
@@ -732,7 +732,7 @@ Key behaviors:
 
 ### Installing the MCP server in OpenCode
 
-The unified installer (`install_klia_token_optimizer.ps1`) handles this automatically. For manual setup:
+The unified installer (`install_klia_tokens.ps1`) handles this automatically. For manual setup:
 
 Edit `opencode.jsonc`:
 

@@ -5,39 +5,56 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T16:38:24Z
-**Duracion:** 61s
+**Fecha:** 2026-10-22T07:25:22Z
+**Duracion:** 48s
 **Estado:** success
-**Router KLIA:** SEMBLE/REPOSITORY_SEARCH
+**Router KLIA:** BASELINE/REPOSITORY_SEARCH
 
 ## Respuesta
 
-La función `classifyTask` está en `src/classifier/task-classifier.ts:45`.
+## Función `classifyTask`
 
-**Qué hace:** Clasifica una tarea en uno de los tipos del router (`TaskType`) a partir de un objeto `TaskSignals` (con opciones configurables). Orden de prioridad:
+**Ubicación:** `src/classifier/task-classifier.ts:45-102`
 
-1. **Señales explícitas** — devuelve el tipo directamente:
-   - `isRefactor` → `REFACTOR`
-   - `isMultistep` → `MULTISTEP`
-   - `hasTerminalCommands` → `TERMINAL`
-   - `isRepositorySearch` → `REPOSITORY_SEARCH`
-2. **Tamaño de contexto** — delega a `classifyContextSize`: si supera el umbral (1 MB / 5 MB) → `LARGE_CONTEXT`
-3. **Muchos archivos** — `fileCount >= manyFilesThreshold` (default 8) → `REPOSITORY_SEARCH`
-4. **Tarea pequeña** — `fileCount <= 3`, contexto pequeño y pocas tool calls esperadas → `SMALL_CODE`
-5. **Fallback** → `UNKNOWN`
+**Qué hace:** Clasifica una tarea entrante en uno de los tipos del router (`TaskType`) a partir de las señales de la tarea (`TaskSignals`), aplicando un orden de prioridad estricto:
 
-Los umbrales (`largeContextThresholdBytes`, `extremeContextThresholdBytes`, `manyFilesThreshold`) se definen en `DEFAULTS` (task-classifier.ts:12) y pueden sobrescribirse vía `opts`.
+| Prioridad | Señal | Tipo devuelto |
+|-----------|-------|---------------|
+| 1 | `isRefactor` | `REFACTOR` |
+| 2 | `isMultistep` | `MULTISTEP` |
+| 3 | `hasTerminalCommands` | `TERMINAL` |
+| 4 | `isPackaging` | `REPO_PACKAGING` |
+| 5 | `isRepositorySearch` + `isLiteralSearch` | `LITERAL_SEARCH` |
+| 6 | `isRepositorySearch` | `REPOSITORY_SEARCH` |
+| 7 | Contexto ≥ 1 MB | `LARGE_CONTEXT` |
+| 8 | `fileCount ≥ 8` | `REPOSITORY_SEARCH` |
+| 9 | ≤3 archivos + contexto pequeño + pocas tool calls | `SMALL_CODE` |
+| — | (ninguna señal) | `UNKNOWN` |
 
-Consumidores principales: `src/index.ts:44` (router) y `src/mcp-server.ts` (vía import dinámico de `classifyContextSize`).
+**Cómo encaja en el sistema:**
+- Llamada desde `src/index.ts:44` para determinar el `taskType` antes de seleccionar el optimizador.
+- El `taskType` se pasa a `candidatesForTask()` (`src/rules/base-rules.ts`) que devuelve los optimizadores candidatos ordenados por prioridad (los priors de la tabla de evidencia del AGENTS.md).
+- El selector (`src/selector/exploration.ts`) usa ese orden + el histórico para elegir el ganador.
+
+**Orden de prioridad justificado (comentarios en el código):**
+- `REPO_PACKAGING` va antes que `REPOSITORY_SEARCH`: empaquetar = *generar* un paquete (territorio REPOMIX), no buscar.
+- `LITERAL_SEARCH` se separa de `REPOSITORY_SEARCH`: un grep nativo resuelve búsquedas de texto literal con coste mínimo; mandarlas a un buscador semántico (SEMBLE) es sobrecoste sin ganancia. El discriminador es `isLiteralSearch` (cue de literalidad SIN identificador de código).
+
+**Umbral por defecto** (`DEFAULTS`):
+- Contexto grande: 1 MB (`largeContextThresholdBytes`)
+- Contexto extremo: 5 MB (`extremeContextThresholdBytes`)
+- Muchos archivos: 8 (`manyFilesThreshold`)
+
+Estos umbrales son configurables vía `TaskClassifierOptions`.
 
 ## Metricas
 
-- tokens_input: 27187
-- tokens_output: 499
-- tokens_reasoning: 38
+- tokens_input: 26259
+- tokens_output: 728
+- tokens_reasoning: 160
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 27724
+- tokens_total: 27147
 - cost_usd: 0
 - tool_calls: 2
 - tools_usadas: semble_search, read

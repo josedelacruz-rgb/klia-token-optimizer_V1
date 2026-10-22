@@ -141,14 +141,14 @@ Results depend on configuration and recorded metrics. To demonstrate real saving
 The repository includes a PowerShell installer to set up the router and the optimizers supported by the project.
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File install_klia_token_optimizer.ps1
+powershell -ExecutionPolicy Bypass -File install_klia_tokens.ps1
 ```
 
 The documented installer supports profiles and a dry run:
 
 ```powershell
-.\install_klia_token_optimizer.ps1 -StackProfile minimo
-.\install_klia_token_optimizer.ps1 -DryRun
+.\install_klia_tokens.ps1 -StackProfile minimo
+.\install_klia_tokens.ps1 -DryRun
 ```
 
 > Project-listed requirements: Node.js `>= 22.5`, npm, and `uv` for tools that require it. Review the installer instructions before running it in a work environment.

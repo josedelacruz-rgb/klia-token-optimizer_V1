@@ -1,4 +1,4 @@
-﻿# Guía de desarrollo
+# Guía de desarrollo
 
 > Documentación técnica para desarrolladores que contribuyen o extienden el router adaptativo de optimizadores de contexto `klia-token-optimizer`.
 
@@ -33,7 +33,7 @@
 - npm
 - TypeScript 7 (instalado como dependencia de desarrollo)
 - Vitest 5 (instalado como dependencia de desarrollo)
-- uv (para Semble y Serena; auto-instalado por el instalador unificado si falta)
+- uv (para Semble; auto-instalado por el instalador unificado si falta)
 
 ### Configuración inicial
 
@@ -45,10 +45,10 @@ npm install
 
 ### Instalador unificado (recomendado para entorno completo)
 
-El instalador unificado `install_klia_token_optimizer.ps1` instala el router mas los 5 optimizadores de contexto (Semble, Context Mode, RTK, Repomix, Serena), el plugin de auto-registro y el system prompt:
+El instalador unificado `install_klia_tokens.ps1` instala el router mas los 4 optimizadores de contexto (Semble, Context Mode, RTK, Repomix), el plugin de auto-registro y el system prompt:
 
 ```powershell
-.\install_klia_token_optimizer.ps1
+.\install_klia_tokens.ps1
 ```
 
 Es idempotente y genera backups `.bak-<fase>-<timestamp>`. Ver [instaladores/install.md](./instaladores/install.md) para detalles completos. Tras ejecutarlo, el proyecto queda compilado en `dist/`, el histórico calibrado y el servidor MCP registrado en `opencode.jsonc`.
@@ -99,7 +99,7 @@ klia-token-optimizer/
     types.ts                   # Shared types + DEFAULT_ROUTER_OPTIONS + RouterEvent (v2)
   tests/                       # Mirror of src/, plus integration tests
   instaladores/                # Installer documentation (install.md, opencode.json)
-  install_klia_token_optimizer.ps1  # Unified installer (router + 5 optimizers + auto-record plugin)
+  install_klia_tokens.ps1          # Unified installer (router + 4 optimizers + auto-record plugin)
   tsconfig.json                # Base config (includes tests)
   tsconfig.build.json          # Build config (src only, declarations)
   package.json
@@ -732,7 +732,7 @@ Key behaviors:
 
 ### Installing the MCP server in OpenCode
 
-The unified installer (`install_klia_token_optimizer.ps1`) handles this automatically. For manual setup:
+The unified installer (`install_klia_tokens.ps1`) handles this automatically. For manual setup:
 
 Edit `opencode.jsonc`:
 

@@ -5,40 +5,42 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T16:41:09Z
-**Duracion:** 45s
+**Fecha:** 2026-10-22T07:27:06Z
+**Duracion:** 27s
 **Estado:** success
-**Router KLIA:** BASELINE/SMALL_CODE (refused -> native)
+**Router KLIA:** BASELINE/REPOSITORY_SEARCH
 
 ## Respuesta
 
-`RouterEvent` se usa en los siguientes archivos:
+Archivos que usan el tipo `RouterEvent`:
 
-**Definición del tipo** (`src/types.ts:203`):
-- `src/types.ts` — define `RouterEvent`, `RouterEventSource`, `RouterEventSignals`, `RouterEventDecision`, `RouterEventExecution`.
+**Definición:**
+- `src/types.ts` — definición del tipo (`RouterEvent`, `RouterEventSource`, `RouterEventSignals`, `RouterEventDecision`, `RouterEventExecution`)
 
-**Fuente (src/)**:
-- `src/history/router-event-store.ts` — store v2 (`RouterEventStore`) + fábricas `createDecisionEvent` / `createExecutionEvent`.
-- `src/history/migrate.ts` — conversión v1 (ExecutionRecord / métrica MCP) → `RouterEvent`.
-- `src/scorer/stats-report.ts` — cálculo de coste y reporting sobre `RouterEvent`.
-- `src/scripts/migrate-history.ts` — script de migración que usa `RouterEventStore`.
-- `src/scripts/stats-display.ts` — reporting que instancia `RouterEventStore`.
-- `src/router-cli.ts` — CLI v2 que registra decisiones.
-- `src/mcp-server.ts` — servidor MCP (`route_task`, `record_execution`, `migrate_history`).
+**Implementación:**
+- `src/history/router-event-store.ts` — store v2 (`RouterEventStore`, `createDecisionEvent`, `createExecutionEvent`)
+- `src/history/migrate.ts` — migrador v1 → v2 (`migrateRecord`, `migrateMcpMetric`)
+- `src/scorer/stats-report.ts` — reporting (`computeEventCost`, agregaciones)
 
-**Tests**:
-- `tests/scorer/stats-report.test.ts` — fábrica de eventos y casos de reporting.
-- `tests/history/router-event-store.test.ts` — tests del store v2.
-- `tests/history/migrate-v1-to-v2.test.ts` — tests de migración v1→v2.
+**Puntos de entrada / CLI:**
+- `src/mcp-server.ts` — servidor MCP
+- `src/router-cli.ts` — CLI unificado v2
+- `src/scripts/stats-display.ts` — display de estadísticas
+- `src/scripts/migrate-history.ts` — script de migración
+
+**Tests:**
+- `tests/scorer/stats-report.test.ts`
+- `tests/history/router-event-store.test.ts`
+- `tests/history/migrate-v1-to-v2.test.ts`
 
 ## Metricas
 
-- tokens_input: 17229
-- tokens_output: 376
+- tokens_input: 16431
+- tokens_output: 322
 - tokens_reasoning: 19
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 17624
+- tokens_total: 16772
 - cost_usd: 0
 - tool_calls: 1
 - tools_usadas: grep

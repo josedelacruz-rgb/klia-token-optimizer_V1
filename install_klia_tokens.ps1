@@ -1344,7 +1344,7 @@ function Install-ContextModeKilo {
         }
 
         New-FileBackup -Path $file -Phase 'ctx-kilo' | Out-Null
-        Save-Config $file $cfg
+        Save-KiloConfig $file $cfg
         if ($removedLegacy) { Write-Ok "Entradas MCP legacy de context-mode eliminadas de $file" }
     }
     return $ok
@@ -1360,7 +1360,7 @@ function Uninstall-ContextModeKilo {
         if (Test-PluginExists $cfg "context-mode") {
             Remove-KiloPluginEntry $cfg "context-mode"
             New-FileBackup -Path $file -Phase 'ctx-kilo' | Out-Null
-            Save-Config $file $cfg
+            Save-KiloConfig $file $cfg
             Write-Ok "context-mode removido de $file"
         }
     }
@@ -1966,7 +1966,7 @@ function Remove-SerenaArtifacts {
             else {
                 New-FileBackup -Path $file -Phase 'serena' | Out-Null
                 Remove-KiloMcpEntry $kcfg 'serena'
-                Save-Config $file $kcfg
+                Save-KiloConfig $file $kcfg
                 Write-Ok "Entrada mcp.serena removida de $file"
             }
         }
@@ -2016,6 +2016,7 @@ function Set-OptimalPluginList {
             if ($base -eq '@tarquinen/opencode-dcp') { $kept += '@tarquinen/opencode-dcp' }
             if ($p -match 'openrtk\.ts$') { $kept += $p }
             if ($p -match 'klia-auto-record\.ts$') { $kept += $p }
+            if ($p -match 'klia-router-inject\.ts$') { $kept += $p }
         }
     }
     # Asegurar que context-mode siempre este presente
@@ -2372,7 +2373,7 @@ if ($Uninstall) {
         if ($kcfg.mcp -and ($kcfg.mcp.PSObject.Properties.Name -contains 'klia-token-optimizer')) {
             if (-not $DryRun) {
                 Remove-KiloMcpEntry $kcfg 'klia-token-optimizer'
-                Save-Config $file $kcfg
+                Save-KiloConfig $file $kcfg
                 Write-Ok "MCP klia-token-optimizer removido de $file"
             }
         }

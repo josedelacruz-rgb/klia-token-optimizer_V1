@@ -5,50 +5,38 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-21T14:17:26Z
-**Duracion:** 50s
+**Fecha:** 2026-10-22T08:20:53Z
+**Duracion:** 49s
 **Estado:** success
 
 ## Respuesta
 
-## `classifyTask` — ubicación y comportamiento
+La función `classifyTask` está en `src/classifier/task-classifier.ts:45` y clasifica una tarea (a partir de `TaskSignals`) en uno de los tipos del router, siguiendo este orden de prioridad:
 
-**Ubicación:** `src/classifier/task-classifier.ts:45`
+1. `isRefactor` → `REFACTOR`
+2. `isMultistep` → `MULTISTEP`
+3. `hasTerminalCommands` → `TERMINAL`
+4. `isPackaging` → `REPO_PACKAGING` (generar paquete del repo, territorio REPOMIX)
+5. `isRepositorySearch && isLiteralSearch` → `LITERAL_SEARCH` (grep nativo, sin SEMBLE)
+6. `isRepositorySearch` → `REPOSITORY_SEARCH` (SEMBLE)
+7. Contexto grande/extremo → `LARGE_CONTEXT`
+8. `fileCount >= manyFilesThreshold` (8) → `REPOSITORY_SEARCH`
+9. Pocos archivos (≤3), contexto pequeño y `toolCallsExpected` bajo → `SMALL_CODE`
+10. Resto → `UNKNOWN`
 
-La función `classifyTask(signals: TaskSignals, opts: TaskClassifierOptions): TaskType` clasifica una tarea en una de las categorías del router aplicando un **orden de prioridad estricto**:
+Recibe `TaskSignals` (señales extraídas de la query y del entorno) y opciones configurables: umbrales de contexto grande (1 MB) y extremo (5 MB) y umbral de "muchos archivos" (8). Se usa desde `src/index.ts` (API pública) y la importa el test `tests/classifier/task-classifier.test.ts:4`.
 
-1. **`REFACTOR`** — si `signals.isRefactor` (task-classifier.ts:51)
-2. **`MULTISTEP`** — si `signals.isMultistep` (:55)
-3. **`TERMINAL`** — si `signals.hasTerminalCommands` (:59)
-4. **`REPOSITORY_SEARCH`** — si `signals.isRepositorySearch` (:63)
-5. **`LARGE_CONTEXT`** — si el tamaño de contexto supera los umbrales (1 MB normal / 5 MB extremo), consultando a `classifyContextSize` (:67)
-6. **`REPOSITORY_SEARCH`** — si `fileCount >= manyFilesThreshold` (8 archivos, :72)
-7. **`SMALL_CODE`** — si hay ≤3 archivos, contexto < 1 MB y pocas tool calls esperadas (:77)
-8. **`UNKNOWN`** — fallback por defecto (:85)
-
-### Detalles relevantes
-- Los umbrales están en `DEFAULTS` (:12): 1 MB contexto, 5 MB extremo, 8 archivos.
-- `classifyContextSize` (:31) es una función auxiliar que devuelve `LARGE_CONTEXT` o `LARGE_CONTEXT_EXTREME` según el tamaño, pensada para que el selector priorice SEMBLE en casos extremos.
-- Las señales pueden derivarse de texto con `extractSignalsFromQuery` (:92), que detecta patrones en inglés y español (refactor, ejecuta, busca, plan, etc.).
-- Se consume desde `src/index.ts:40,44,97` y se exporta en la API pública (`:109`).
-
-### Uso típico
-```ts
-const signals = extractSignalsFromQuery("refactoriza el módulo de auth");
-const taskType = classifyTask(signals); // → 'REFACTOR'
-```
-
-El resultado (`TaskType`) alimenta después a `BASE_RULES` (`src/rules/base-rules.ts`) para determinar los optimizadores candidatos de esa tarea.
+Curiosidad: tu query es exactamente el caso del test `tests/classifier/task-classifier.test.ts:103`, que verifica que `"Busca la funcion classifyTask..."` cae en `REPOSITORY_SEARCH`.
 
 ## Metricas
 
-- tokens_input: 19996
-- tokens_output: 713
-- tokens_reasoning: 32
+- tokens_input: 23608
+- tokens_output: 481
+- tokens_reasoning: 30
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 20741
+- tokens_total: 24119
 - cost_usd: 0
-- tool_calls: 3
-- tools_usadas: grep, glob, read
+- tool_calls: 2
+- tools_usadas: grep, read
 - assistant_messages: 3

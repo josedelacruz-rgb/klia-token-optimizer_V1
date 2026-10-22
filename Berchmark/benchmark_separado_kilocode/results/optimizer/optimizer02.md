@@ -5,8 +5,8 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T16:39:25Z
-**Duracion:** 48s
+**Fecha:** 2026-10-22T07:26:10Z
+**Duracion:** 25s
 **Estado:** success
 **Router KLIA:** BASELINE/REPOSITORY_SEARCH
 
@@ -29,12 +29,12 @@ Devuelve un `AdaptiveRouter` con los métodos `route`, `recordExecution` e `infe
 
 ## Metricas
 
-- tokens_input: 23621
-- tokens_output: 268
-- tokens_reasoning: 81
+- tokens_input: 22735
+- tokens_output: 230
+- tokens_reasoning: 29
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 23970
+- tokens_total: 22994
 - cost_usd: 0
 - tool_calls: 1
 - tools_usadas: grep

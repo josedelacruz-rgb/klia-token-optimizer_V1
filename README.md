@@ -55,7 +55,7 @@ En lugar de empezar desde cero con cada optimizador, puedes iniciar el proceso c
 Abre PowerShell en el directorio del proyecto y ejecuta:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File install_klia_token_optimizer.ps1
+powershell -ExecutionPolicy Bypass -File install_klia_tokens.ps1
 ```
 
 ### 2. Selecciona el perfil adecuado
@@ -63,8 +63,8 @@ powershell -ExecutionPolicy Bypass -File install_klia_token_optimizer.ps1
 El proyecto documenta opciones para utilizar un perfil mínimo o simular las operaciones antes de aplicarlas:
 
 ```powershell
-.\install_klia_token_optimizer.ps1 -StackProfile minimo
-.\install_klia_token_optimizer.ps1 -DryRun
+.\install_klia_tokens.ps1 -StackProfile minimo
+.\install_klia_tokens.ps1 -DryRun
 ```
 
 ### 3. Utiliza el router y mide los resultados

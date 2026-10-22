@@ -7,8 +7,9 @@
     - Context Mode (via npm)
     - RTK (plugin + configuracion + openrtk via npm)
     - Repomix (via npm)
-    - Serena (via uv tool)
+    - Serena (via uv tool) - solo limpia restos: Serena esta EXCLUIDA del stack
     - Entradas MCP y de plugin en OpenCode (en opencode.json Y opencode.jsonc si existen)
+    - Entradas MCP y de plugin en KiloCode (~/.config/kilo/kilo.jsonc, kilo.json, config.json)
     - Plugins de Klia globales y copias locales (klia-auto-record, klia-router-inject, openrtk)
     - Bloques de AGENTS.md (SEMBLE, RTK, REPOMIX, SERENA y KLIA_ROUTER)
     - Comando slash /klia-stats (fichero .md, no vive en el config)
@@ -58,6 +59,9 @@ $RepomixConfigPath = Join-Path $ocDir "repomix.config.json"
 $RepomixIgnorePath = Join-Path $ocDir ".repomixignore"
 $NpmGlobalModules = Join-Path $env:APPDATA "npm/node_modules"
 $UvToolsDir = Join-Path $env:APPDATA "uv/tools"
+
+# KiloCode: config global (kilo.jsonc/kilo.json canonicos, config.json legacy)
+$kiloConfigDir = Join-Path $env:USERPROFILE ".config/kilo"
 
 # ==========================================
 # Estado de la ejecucion (para el resumen real)
@@ -380,7 +384,9 @@ Remove-AgentsBlock "REPOMIX" "REPOMIX"
 # ==========================================
 # 5. DESINSTALAR SERENA
 # ==========================================
-Write-Step "SERENA" "Desinstalando Serena"
+# Serena esta EXCLUIDA del stack: el instalador ya no la instala. Aqui solo
+# se limpian restos de instalaciones anteriores (config + paquete).
+Write-Step "SERENA" "Limpiando restos de Serena (no se instala)"
 Uninstall-UvTool "SERENA" "serena-agent"
 Remove-McpEntryReported "SERENA" "serena"
 Remove-AgentsBlock "SERENA" "SERENA"
@@ -464,7 +470,53 @@ foreach ($t in $script:Targets) {
 }
 
 # ==========================================
-# 8. LIMPIAR ENTRADAS DE KLIA EN LOS PERFILES
+# 8. LIMPIAR LA CONFIGURACION DE KILOCODE
+# ==========================================
+# KiloCode se configura en ~/.config/kilo (kilo.jsonc/kilo.json canonicos y
+# config.json legacy). Se eliminan las entradas del stack y de Klia.
+Write-Step "KILO" "Limpiando configuracion de KiloCode"
+
+$kiloConfigPaths = @()
+foreach ($p in @('kilo.jsonc', 'kilo.json', 'config.json')) {
+    $full = Join-Path $kiloConfigDir $p
+    if (Test-Path -LiteralPath $full) { $kiloConfigPaths += $full }
+}
+
+if ($kiloConfigPaths.Count -eq 0) {
+    Write-Info "No hay config global de KiloCode en $kiloConfigDir"
+    Add-Result "KILO" "config de KiloCode" 'YaNoExistia'
+} else {
+    foreach ($kp in $kiloConfigPaths) {
+        $script:ConfigBroken = $false
+        $kcfg = Load-Config $kp
+        if ($script:ConfigBroken) {
+            Write-Warn "$kp no parsea como JSON; no se tocara"
+            Add-Result "KILO" (Split-Path $kp -Leaf) 'Fallo'
+            continue
+        }
+        $dirty = $false
+        foreach ($mcpName in @('serena', 'context-mode', 'context_mode', 'klia-token-optimizer', 'router-klia')) {
+            if (Remove-McpEntry $kcfg $mcpName) { $dirty = $true }
+        }
+        foreach ($pat in @('context-mode', 'serena')) {
+            if (Remove-PluginEntry $kcfg $pat) { $dirty = $true }
+        }
+        if ($dirty) {
+            if (Save-Config $kp $kcfg $script:ConfigBroken) {
+                Write-Ok "Config de KiloCode limpiada: $(Split-Path $kp -Leaf)"
+                Add-Result "KILO" (Split-Path $kp -Leaf) 'Eliminado'
+            } else {
+                Add-Result "KILO" (Split-Path $kp -Leaf) 'Fallo'
+            }
+        } else {
+            Write-Info "$(Split-Path $kp -Leaf) sin entradas del stack de Klia"
+            Add-Result "KILO" (Split-Path $kp -Leaf) 'YaNoExistia'
+        }
+    }
+}
+
+# ==========================================
+# 9. LIMPIEZA ENTRADAS DE KLIA EN LOS PERFILES
 # ==========================================
 Write-Step "PROFILES" "Limpiando perfiles de OpenCode"
 if (Test-Path -LiteralPath $profilesDir) {
@@ -503,7 +555,7 @@ if (Test-Path -LiteralPath $profilesDir) {
 }
 
 # ==========================================
-# 9. GUARDAR CONFIG GLOBAL (solo si hubo cambios)
+# 10. GUARDAR CONFIG GLOBAL (solo si hubo cambios)
 # ==========================================
 Write-Step "SAVE" "Guardando configuracion global"
 $anySaved = $false
@@ -526,7 +578,7 @@ foreach ($t in $script:Targets) {
 if (-not $anySaved) { Write-Info "Config global sin cambios" }
 
 # ==========================================
-# 10. LIMPIEZA / NOTAS FINALES
+# 11. LIMPIEZA / NOTAS FINALES
 # ==========================================
 Write-Step "FIN" "Notas finales"
 if (Test-Path -LiteralPath $ctxDocsMd) {

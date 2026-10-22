@@ -5,36 +5,34 @@
 **TaskType:** LARGE_CONTEXT
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T16:44:12Z
-**Duracion:** 49s
+**Fecha:** 2026-10-22T07:29:11Z
+**Duracion:** 39s
 **Estado:** success
-**Router KLIA:** BASELINE/SMALL_CODE (refused -> native)
+**Router KLIA:** BASELINE/LITERAL_SEARCH
 
 ## Respuesta
 
-## `src/classifier/` — Clasificación de tareas
+## `src/classifier/`
 
-Determina el **tipo de tarea** (`TaskType`) a partir de señales (`TaskSignals`) para que el router pueda elegir el optimizador de contexto adecuado. Es la entrada del pipeline: sin clasificación no hay enrutado.
+Módulo encargado de **clasificar la tarea entrante en uno de los `TaskType` del router** antes de que el selector elija un optimizador. Es la puerta de entrada del pipeline: convierte señales sueltas (`TaskSignals`) en una categoría discreta (`REFACTOR`, `MULTISTEP`, `TERMINAL`, `REPO_PACKAGING`, `REPOSITORY_SEARCH`, `LITERAL_SEARCH`, `LARGE_CONTEXT`, `SMALL_CODE` o `UNKNOWN`), aplicando un orden de prioridad fijo (señales explícitas → heurísticas de tamaño/archivos → fallback `UNKNOWN`).
 
 ### Archivos principales
 
-- **`task-classifier.ts`** — Único archivo del módulo. Contiene:
-  - `classifyTask`: asigna un `TaskType` (REFACTOR, MULTISTEP, TERMINAL, REPOSITORY_SEARCH, LARGE_CONTEXT, SMALL_CODE, UNKNOWN) aplicando prioridad: señales explícitas → heurísticas de tamaño/archivos → fallback UNKNOWN.
-  - `classifyContextSize`: clasifica el contexto como `LARGE_CONTEXT` o `LARGE_CONTEXT_EXTREME` (umbral 1 MB / 5 MB) para que el selector priorice SEMBLE en casos extremos.
-  - `isSmallTrivialTask`: gate que devuelve `true` cuando la tarea no tiene señales de coste, para ejecutarla con herramientas nativas sin cargar el router/MCP.
-  - `extractSignalsFromQuery`: heurística que inspecciona la query de texto (regex EN/ES) para inferir `hasTerminalCommands`, `isMultistep`, `isRefactor`, `isRepositorySearch` (incluye detección de "empaqueta/compacta/repomix").
+| Archivo | Descripción |
+|---|---|
+| `task-classifier.ts` | Clasifica una tarea (`classifyTask`) en un `TaskType` por orden de prioridad, infiere señales desde una query de texto (`extractSignalsFromQuery`), mide el tamaño de contexto (`classifyContextSize`) y aplica un gate de tareas triviales (`isSmallTrivialTask`) para no enrutar trabajo que el overhead del router no compensa. |
 
-Configurable vía `TaskClassifierOptions` (umbrales de bytes y archivos).
+Es el único archivo del módulo; todo el razonamiento heurístico (regex bilingües ES/EN, umbrales de bytes y número de archivos, discriminador literal-vs-semántico) vive ahí.
 
 ## Metricas
 
-- tokens_input: 25082
-- tokens_output: 447
-- tokens_reasoning: 41
+- tokens_input: 24762
+- tokens_output: 446
+- tokens_reasoning: 66
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 25570
+- tokens_total: 25274
 - cost_usd: 0
 - tool_calls: 2
-- tools_usadas: glob, read
+- tools_usadas: read, read
 - assistant_messages: 3

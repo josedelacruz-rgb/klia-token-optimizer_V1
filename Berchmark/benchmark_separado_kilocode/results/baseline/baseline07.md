@@ -5,31 +5,27 @@
 **TaskType:** LARGE_CONTEXT
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-21T14:26:16Z
-**Duracion:** 71s
+**Fecha:** 2026-10-22T08:29:16Z
+**Duracion:** 75s
 **Estado:** success
 
 ## Respuesta
 
-## Módulo `src/classifier/`
+El módulo `src/classifier/` es la puerta de entrada del router: clasifica cada tarea del agente en un `TaskType` a partir de señales (`TaskSignals`) extraídas de la query y del contexto, para que el selector sepa qué optimizador aplicar.
 
-**Propósito:** Clasifica cada tarea entrante en uno de los `TaskType` del router (REFACTOR, MULTISTEP, TERMINAL, REPOSITORY_SEARCH, LARGE_CONTEXT, SMALL_CODE, UNKNOWN) a partir de `TaskSignals` (banderas explícitas) o heurísticas sobre la query, el tamaño de contexto y el número de archivos. Es el primer paso del pipeline: el resultado de la clasificación determina qué reglas y candidatos de optimizador aplican después el selector.
+**Archivo principal:**
 
-### Archivos principales
-
-- **`task-classifier.ts`** — Implementa `classifyTask` (prioridad de señales → heurísticas → fallback UNKNOWN), `classifyContextSize` (large vs large extremo para priorizar SEMBLE) y `extractSignalsFromQuery` (extrae señales heurísticas desde texto EN/ES).
-
-Es el único archivo del módulo.
+- `src/classifier/task-classifier.ts` — Implementa `classifyTask` (decide el tipo de tarea con prioridad de señales: REFACTOR → MULTISTEP → TERMINAL → REPO_PACKAGING → LITERAL_SEARCH → REPOSITORY_SEARCH → LARGE_CONTEXT → SMALL_CODE → UNKNOWN), `classifyContextSize` (umbral 1 MB / 5 MB para LARGE_CONTEXT / EXTREME), `isSmallTrivialTask` (gate que rechaza tareas triviales sin pasar por el router) y `extractSignalsFromQuery` (heurísticas de texto EN/ES para detectar refactor, multistep, terminal, empaquetado, búsqueda literal vs semántica y documentación).
 
 ## Metricas
 
-- tokens_input: 19551
-- tokens_output: 323
-- tokens_reasoning: 61
+- tokens_input: 22803
+- tokens_output: 366
+- tokens_reasoning: 45
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 19935
+- tokens_total: 23214
 - cost_usd: 0
 - tool_calls: 2
-- tools_usadas: glob, read
+- tools_usadas: read, read
 - assistant_messages: 3

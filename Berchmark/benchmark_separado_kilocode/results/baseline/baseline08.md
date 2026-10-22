@@ -5,58 +5,66 @@
 **TaskType:** SMALL_CODE
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-21T14:27:27Z
-**Duracion:** 81s
+**Fecha:** 2026-10-22T08:30:31Z
+**Duracion:** 148s
 **Estado:** success
 
 ## Respuesta
 
-## `extractModelFamily`
+## Qué hace `extractModelFamily`
 
-**Qué hace** (`src/utils/model-family.ts:43`): Extrae la familia de un modelo a partir de su identificador. Pasa a minúsculas y busca contra una lista de familias conocidas (deepseek, nemotron, devstral, codestral, minimax, ministral, magistral, mistral, cosmos, gemma, kimi, qwen, glm, ami, llama). Si no hay match, hace fallback al primer prefijo alfabético, y si no hay ninguno devuelve `'unknown'`.
+Función pura en `src/utils/model-family.ts:43` que, dado el identificador de un modelo, devuelve su **familia** en minúsculas. Proceso:
 
-```ts
-extractModelFamily('GLM-5.2')              // -> 'glm'
-extractModelFamily('deepseek-v4-pro')      // -> 'deepseek'
-extractModelFamily('Cosmos3-Super-Reasoner') // -> 'cosmos'
-extractModelFamily('foo-bar-1')            // -> 'foo' (fallback)
-extractModelFamily('123-model')            // -> 'unknown'
-```
+1. Normaliza a minúsculas.
+2. Recorre una lista de familias conocidas ordenadas por especificidad (`deepseek`, `nemotron`, `glm`, `kimi`, `qwen`, `mistral`...). Devuelve la primera que aparezca como subcadena.
+3. Fallback: primer bloque de letras (`/^[a-z]+/`), o `'unknown'` si no hay letras.
 
-**Dónde se usa** (solo código fuente, ignorando logs/benchmarks/docs):
+Ejemplos: `GLM-5.2 → glm`, `deepseek-v4-pro → deepseek`, `Cosmos3-Super-Reasoner → cosmos`, `123-model → unknown`.
 
-| Archivo | Línea | Uso |
-|---|---|---|
-| `src/index.ts` | 36, 93, 114 | Default de `modelFamilyExtractor` en `createAdaptiveRouter`; re-exportada en la API pública |
-| `src/selector/optimizer-selector.ts` | 43 | **Herencia por familia**: cuando un modelo no tiene historial propio, consulta `queryByFamily(extractModelFamily(model), taskType)` para usar datos de la familia con confianza reducida (V1) |
-| `src/mcp-server.ts` | 260, 321, 347, 378, 399, 433 | Rellena `modelFamily` en `RouterEvent` de `route_task` y `record_execution` |
-| `src/router-cli.ts` | 156, 188, 222, 278 | Calcula `costUsd` (vía `computeCostUsd`) y rellena `modelFamily` en eventos del CLI v2 |
-| `src/klia-discovery.ts` | 218, 237, 243 | Asigna `family` a cada modelo descubierto desde `/v1/models` y a `SNAPSHOT_MODELS` |
-| `tests/mcp-metrics.test.ts` | 10-24 | Tests unitarios |
+## Dónde se usa
 
-**Ejemplo de llamada real** (herencia por familia, `src/selector/optimizer-selector.ts:43`):
+La función se exporta y se inyecta en el router para soportar la **herencia por familia** (decisión arquitectónica #8 del AGENTS.md): cuando un modelo no tiene historial propio, el router consulta datos de su familia con confianza reducida.
+
+- **`src/selector/optimizer-selector.ts:43`** — núcleo de la herencia: extrae la familia del modelo para llamar a `queryByFamily` cuando no hay `records` del modelo.
+- **`src/index.ts:36, 93`** — la expone como `modelFamilyExtractor` configurable en `RouterConfig` (se puede inyectar otra, con fallback a `extractModelFamily`).
+- **`src/mcp-server.ts`** (líneas 280, 343, 373, 431, 452, 486) — al registrar eventos `RouterEvent`: rellena `modelFamily` en `record_execution` y la usa para herencia al enrutar.
+- **`src/router-cli.ts`** (líneas 157, 189, 223, 279) — al registrar decisiones CLI con `modelFamily`.
+- **`src/klia-discovery.ts`** (líneas 218, 237, 243) — clasifica modelos descubiertos en `/v1/models` por familia.
+- **`tests/mcp-metrics.test.ts`** — tests unitarios del comportamiento.
+
+## Ejemplo de llamada
+
+En `src/selector/optimizer-selector.ts:42-44`, dentro de `selectOptimizer`, cuando el modelo no tiene registros propios:
 
 ```ts
 const records = await deps.history.query(model, taskType);
 
 if (records.length === 0) {
-  const family = extractModelFamily(model);             // 'glm' para 'GLM-5.2'
+  const family = extractModelFamily(model);              // p.ej. 'glm-5.2' -> 'glm'
   const familyRecords = await deps.history.queryByFamily(family, taskType);
-  // ...usa familyRecords con confianza reducida (V1)
+  ...
 }
 ```
 
-Es la pieza clave que permite el punto 8 de las decisiones arquitectónicas del AGENTS.md: **herencia por familia** cuando un modelo nuevo aún no tiene historial propio.
+Llamada directa equivalente:
+
+```ts
+import { extractModelFamily } from './utils/model-family';
+
+extractModelFamily('GLM-5.2');   // => 'glm'
+extractModelFamily('deepseek-v4-pro');  // => 'deepseek'
+extractModelFamily('123-model'); // => 'unknown'
+```
 
 ## Metricas
 
-- tokens_input: 40936
-- tokens_output: 879
-- tokens_reasoning: 365
+- tokens_input: 30399
+- tokens_output: 1003
+- tokens_reasoning: 61
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 42180
+- tokens_total: 31463
 - cost_usd: 0
-- tool_calls: 3
-- tools_usadas: grep, read, read
-- assistant_messages: 3
+- tool_calls: 5
+- tools_usadas: grep, grep, grep, read, read
+- assistant_messages: 4

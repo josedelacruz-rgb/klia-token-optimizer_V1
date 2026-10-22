@@ -5,33 +5,31 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** optimizer
-**Fecha:** 2026-10-21T16:40:13Z
-**Duracion:** 55s
+**Fecha:** 2026-10-22T07:26:36Z
+**Duracion:** 30s
 **Estado:** success
 **Router KLIA:** BASELINE/REPOSITORY_SEARCH
 
 ## Respuesta
 
-Archivos de código fuente donde se llama o importa `computeCostUsd`:
-
 **Definición:**
 - `src/pricing/model-pricing.ts:84`
 
-**Importaciones + llamadas:**
-- `src/mcp-server.ts:28` (import), `:407` (uso en `record_execution`)
-- `src/router-cli.ts:13` (import), `:157` (uso para calcular `costUsd`)
-- `src/scorer/stats-report.ts:8` (import, usado en `buildStatsReport` para `savingsUsd`)
+**Importaciones + llamadas (código fuente):**
+- `src/router-cli.ts` — import `:13`, llamada `:157`
+- `src/mcp-server.ts` — import `:28`, llamada `:432`
+- `src/scorer/stats-report.ts` — import `:8` (usada en `buildStatsReport` para `savingsUsd`)
 
-(Otros matches en `dev.md`, `dev_es.md`, y `Berchmark/` son solo referencias documentales/logs, no código fuente.)
+*(El resto de coincidencias son benchmarks, logs y docs `dev.md`/`dev_es.md`, solo referencias textuales).*
 
 ## Metricas
 
-- tokens_input: 26257
-- tokens_output: 235
-- tokens_reasoning: 180
+- tokens_input: 25846
+- tokens_output: 172
+- tokens_reasoning: 154
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 26672
+- tokens_total: 26172
 - cost_usd: 0
 - tool_calls: 1
 - tools_usadas: grep
