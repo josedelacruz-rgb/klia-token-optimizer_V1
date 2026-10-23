@@ -495,7 +495,10 @@ function Invoke-Benchmark {
 
         [string]$BenchDir,
 
-        [int]$Repetitions = 1
+        [int]$Repetitions = 1,
+
+    [int]$Count
+
     )
 
     $config = Get-BenchConfig -BenchDir $BenchDir
@@ -521,7 +524,30 @@ function Invoke-Benchmark {
     Write-Host "Proyecto: $ProjectDir" -ForegroundColor DarkGray
 
     $selectedIds = $null
-    if ($Queries) {
+    $promptsFile = ""
+    if ($Count) {
+        $promptsFile = Join-Path $BenchDir "selected_prompts.json"
+        if (Test-Path -LiteralPath $promptsFile) {
+            $saved = Get-Content -LiteralPath $promptsFile -Raw | ConvertFrom-Json
+            $selectedIds = @($saved.ids)
+        } else {
+            $allIds = @($config.queries.id)
+            if ($Count -ge $allIds.Count) {
+                $selectedIds = @($allIds)
+            } else {
+                $selectedIds = @()
+                while ($selectedIds.Count -lt $Count) {
+                    $random = Get-Random -Minimum 0 -Maximum $allIds.Count
+                    $id = $allIds[$random]
+                    if ($id -notin $selectedIds) {
+                        $selectedIds += $id
+                    }
+                }
+            }
+            $saved = @{ ids = $selectedIds }
+            $saved | ConvertTo-Json -Depth 3 | Out-File -LiteralPath $promptsFile -Encoding UTF88 -NoNewline
+        }
+    } elseif ($Queries) {
         $selectedIds = @()
         $Queries -split ',' | ForEach-Object {
             $n = $_.Trim() -replace '^Q',''

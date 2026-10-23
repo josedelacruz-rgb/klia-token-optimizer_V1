@@ -5,30 +5,30 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-22T08:21:42Z
-**Duracion:** 48s
+**Fecha:** 2026-10-23T07:24:20Z
+**Duracion:** 27s
 **Estado:** success
 
 ## Respuesta
 
-`createAdaptiveRouter` se define en `src/index.ts:32`.
+La función está definida en `src/index.ts:32`. Veamos la firma y el tipo de parámetro:La función `createAdaptiveRouter` se define en `src/index.ts:32` y recibe un único parámetro `config` de tipo `AdaptiveRouterOptions` (definido en `src/index.ts:21`), con estos campos:
 
-Recibe un único parámetro `config` de tipo `AdaptiveRouterOptions` (definido en `src/index.ts:21-30`):
+- `historyPath: string` — ruta del JSON de histórico.
+- `routerOptions?: RouterOptions` — opciones por defecto del router (se mezclan con `DEFAULT_ROUTER_OPTIONS`).
+- `enableExploration?: boolean` — si es `false` desactiva la exploración automática V3 (por defecto `true`).
+- `modelFamilyExtractor?: (model: string) => string | undefined` — función para extraer la familia del modelo (por defecto `extractModelFamily`).
 
-- `historyPath: string` — ruta del archivo JSON de histórico (obligatorio).
-- `routerOptions?: RouterOptions` — opciones por defecto del router.
-- `enableExploration?: boolean` — si es `false`, desactiva la exploración automática (V3). Por defecto `true`.
-- `modelFamilyExtractor?: (model: string) => string | undefined` — función para extraer la familia de un modelo. Por defecto usa `extractModelFamily`.
+Devuelve un `AdaptiveRouter` con los métodos `route`, `recordExecution` e `inferTaskType`.
 
 ## Metricas
 
-- tokens_input: 42806
-- tokens_output: 487
-- tokens_reasoning: 69
+- tokens_input: 37491
+- tokens_output: 498
+- tokens_reasoning: 36
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 43362
+- tokens_total: 38025
 - cost_usd: 0
-- tool_calls: 5
-- tools_usadas: grep, grep, grep, read, read
-- assistant_messages: 6
+- tool_calls: 4
+- tools_usadas: grep, grep, grep, read
+- assistant_messages: 5

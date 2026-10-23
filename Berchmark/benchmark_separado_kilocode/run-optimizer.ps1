@@ -44,7 +44,8 @@ param(
     [string]$Queries,
     [string]$ProjectDir,
     [string]$Model,
-    [int]$Repetitions = 1
+    [int]$Repetitions = 1,
+    [int]$Count
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,4 +59,5 @@ Invoke-Benchmark -Mode "optimizer" `
     -ProjectDir $ProjectDir `
     -Model $Model `
     -Repetitions $Repetitions `
+    -Count $Count `
     -BenchDir $benchDir

@@ -5,33 +5,37 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-22T08:22:30Z
-**Duracion:** 54s
+**Fecha:** 2026-10-23T07:24:47Z
+**Duracion:** 32s
 **Estado:** success
 
 ## Respuesta
 
-Voy a verificar también los tests para completar el listado:Archivos donde se llama o importa `computeCostUsd` (solo código fuente, descartando docs/benchmarks/logs):
+Archivos de código fuente donde se define, importa o llama `computeCostUsd`:
 
 **Definición:**
-- `src/pricing/model-pricing.ts:84`
+- `src/pricing/model-pricing.ts:84` — `export function computeCostUsd(...)`
 
-**Importaciones + usos:**
-- `src/router-cli.ts:13` (import), `:157` (uso: cálculo de `costUsd` para eventos del CLI v2)
-- `src/mcp-server.ts:28` (import), `:432` (uso: estimación de `costUsd` en `record_execution`)
-- `src/scorer/stats-report.ts:8` (import, usado en `buildStatsReport` para `savingsUsd`)
+**Importaciones:**
+- `src/router-cli.ts:13` — `import { computeCostUsd } from './pricing/model-pricing'`
+- `src/mcp-server.ts:28` — `import { computeCostUsd } from './pricing/model-pricing'`
+- `src/scorer/stats-report.ts:8` — `import { computeCostUsd, getPricing } from '../pricing/model-pricing'`
 
-No aparece en `tests/` ni en `src/index.ts` (no se re-exporta en la API pública).
+**Llamadas:**
+- `src/router-cli.ts:187`
+- `src/mcp-server.ts:432`
+
+El resto de coincidencias (40+ archivos) son resultados de benchmarks, logs `.jsonl` y documentación `.md`/`.txt` (reportes, `dev.md`, `repomix-output.*`), no código.
 
 ## Metricas
 
-- tokens_input: 56503
-- tokens_output: 317
-- tokens_reasoning: 372
+- tokens_input: 30271
+- tokens_output: 370
+- tokens_reasoning: 188
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 57192
+- tokens_total: 30829
 - cost_usd: 0
-- tool_calls: 2
-- tools_usadas: grep, grep
-- assistant_messages: 3
+- tool_calls: 3
+- tools_usadas: grep, bash, grep
+- assistant_messages: 4

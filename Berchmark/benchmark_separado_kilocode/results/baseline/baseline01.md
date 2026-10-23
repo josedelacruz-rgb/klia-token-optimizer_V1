@@ -5,38 +5,49 @@
 **TaskType:** REPOSITORY_SEARCH
 **Modelo:** klia/GLM-5.2
 **Modo:** baseline
-**Fecha:** 2026-10-22T08:20:53Z
+**Fecha:** 2026-10-23T07:23:32Z
 **Duracion:** 49s
 **Estado:** success
 
 ## Respuesta
 
-La función `classifyTask` está en `src/classifier/task-classifier.ts:45` y clasifica una tarea (a partir de `TaskSignals`) en uno de los tipos del router, siguiendo este orden de prioridad:
+## `classifyTask`
 
-1. `isRefactor` → `REFACTOR`
-2. `isMultistep` → `MULTISTEP`
-3. `hasTerminalCommands` → `TERMINAL`
-4. `isPackaging` → `REPO_PACKAGING` (generar paquete del repo, territorio REPOMIX)
-5. `isRepositorySearch && isLiteralSearch` → `LITERAL_SEARCH` (grep nativo, sin SEMBLE)
-6. `isRepositorySearch` → `REPOSITORY_SEARCH` (SEMBLE)
-7. Contexto grande/extremo → `LARGE_CONTEXT`
-8. `fileCount >= manyFilesThreshold` (8) → `REPOSITORY_SEARCH`
-9. Pocos archivos (≤3), contexto pequeño y `toolCallsExpected` bajo → `SMALL_CODE`
-10. Resto → `UNKNOWN`
+**Ubicación:** `src/classifier/task-classifier.ts:45`
 
-Recibe `TaskSignals` (señales extraídas de la query y del entorno) y opciones configurables: umbrales de contexto grande (1 MB) y extremo (5 MB) y umbral de "muchos archivos" (8). Se usa desde `src/index.ts` (API pública) y la importa el test `tests/classifier/task-classifier.test.ts:4`.
+Es el clasificador principal del router. Recibe `TaskSignals` (señales heurísticas de la tarea) y devuelve un `TaskType` que el selector usará para elegir el optimizador.
 
-Curiosidad: tu query es exactamente el caso del test `tests/classifier/task-classifier.test.ts:103`, que verifica que `"Busca la funcion classifyTask..."` cae en `REPOSITORY_SEARCH`.
+**Qué hace** (en orden de prioridad, primer match gana):
+
+1. `isRefactor` → `REFACTOR` (task-classifier.ts:51)
+2. `isMultistep` → `MULTISTEP` (task-classifier.ts:55)
+3. `hasTerminalCommands` → `TERMINAL` (task-classifier.ts:59)
+4. `isPackaging` → `REPO_PACKAGING` (task-classifier.ts:66) — va antes que búsqueda: el agente *genera* el paquete, no busca.
+5. `isRepositorySearch && isLiteralSearch` → `LITERAL_SEARCH` (task-classifier.ts:75) — grep nativo resuelve texto literal más barato que un saver semántico.
+6. `isRepositorySearch` → `REPOSITORY_SEARCH` (task-classifier.ts:79)
+7. Contexto grande (`classifyContextSize`) → `LARGE_CONTEXT` (task-classifier.ts:83)
+8. `fileCount >= manyFilesThreshold` (8) → `REPOSITORY_SEARCH` (task-classifier.ts:88)
+9. Contexto pequeño con pocos archivos y pocas tool calls → `SMALL_CODE` (task-classifier.ts:93)
+10. Fallback → `UNKNOWN` (task-classifier.ts:101)
+
+**Opciones configurables** (`TaskClassifierOptions`, con defaults): `largeContextThresholdBytes` (1 MB), `extremeContextThresholdBytes` (5 MB), `manyFilesThreshold` (8).
+
+**Relación con el resto:**
+- `classifyContextSize` (task-classifier.ts:31) es un helper interno que distingue `LARGE_CONTEXT` vs `LARGE_CONTEXT_EXTREME` (este último prioriza SEMBLE).
+- `isSmallTrivialTask` (task-classifier.ts:123) usa `classifyTask` como gate: si no hay señales de coste y el tipo es `UNKNOWN`/`SMALL_CODE`, la tarea se ejecuta sin enrutar por el router.
+- `extractSignalsFromQuery` (task-classifier.ts:141) construye `TaskSignals` a partir de texto con regex (castellano e inglés), detectando terminal, multistep, refactor, packaging, búsqueda literal vs semántica (vía `hasCodeIdentifier`), visión global y文档ación/onboarding.
+
+Es el componente de entrada de la arquitectura: clasifica primero para que el selector y las reglas base (`src/rules/base-rules.ts`) decidan después.
 
 ## Metricas
 
-- tokens_input: 23608
-- tokens_output: 481
-- tokens_reasoning: 30
+- tokens_input: 31710
+- tokens_output: 921
+- tokens_reasoning: 52
 - tokens_cache_read: 0
 - tokens_cache_write: 0
-- tokens_total: 24119
+- tokens_total: 32683
 - cost_usd: 0
-- tool_calls: 2
-- tools_usadas: grep, read
-- assistant_messages: 3
+- tool_calls: 4
+- tools_usadas: grep, grep, glob, read
+- assistant_messages: 4

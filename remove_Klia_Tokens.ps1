@@ -495,10 +495,10 @@ if ($kiloConfigPaths.Count -eq 0) {
             continue
         }
         $dirty = $false
-        foreach ($mcpName in @('serena', 'context-mode', 'context_mode', 'klia-token-optimizer', 'router-klia')) {
+        foreach ($mcpName in @('selle', 'repomix', 'context-mode', 'context_mode', 'klia-token-optimizer', 'router-klia')) {
             if (Remove-McpEntry $kcfg $mcpName) { $dirty = $true }
         }
-        foreach ($pat in @('context-mode', 'serena')) {
+        foreach ($pat in @('openrtk', 'context-mode', 'context_mode', 'repomix', 'selle', 'serena')) {
             if (Remove-PluginEntry $kcfg $pat) { $dirty = $true }
         }
         if ($dirty) {
